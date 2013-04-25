@@ -1,6 +1,6 @@
 
 #
-# Copyright (c) 2012 Jonathan Topf
+# Copyright (c) 2012-2013 Jonathan Topf
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -20,7 +20,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 #
-
 
 import maya.cmds as cmds
 import maya.mel as mel
@@ -255,8 +254,8 @@ def get_maya_scene(params):
     geo_dir = '_geometry'
     ms_commands.create_dir(os.path.join(params['output_directory'], geo_dir))
 
-    environment = None
     # get environment
+    environment = None
     if params['environment']:
         environment = MMsEnvironment(params, params['environment'])
         environment.add_environment_sample(params['output_directory'], texture_dir, 0)
@@ -266,28 +265,23 @@ def get_maya_scene(params):
     frame_sample_number = 1
 
     while current_frame <= end_frame:
-        cmds.currentTime(current_frame)
-
         ms_commands.info("Adding motion samples, frame {0}...".format(current_frame))
 
-        # if this is the first sample of a frame set initial_sample True
-        if frame_sample_number == 1:
-            initial_sample = True
-        else:
-            initial_sample = False
+        cmds.currentTime(current_frame)
+
+        # determine if this is the first sample of a frame
+        initial_sample = (frame_sample_number == 1)
 
         for transform in maya_root_transforms:
             add_scene_sample(transform, params['export_transformation_blur'], params['export_deformation_blur'], params['export_camera_blur'], current_frame, start_frame, frame_sample_number, initial_sample, params['output_directory'], geo_dir, texture_dir)
 
-
         frame_sample_number += 1
-
         if frame_sample_number == params['motion_samples']:
             frame_sample_number = 1
 
         current_frame += sample_increment
 
-        # add code to export textures here
+        # TODO: add code to export textures here
 
     # return to pre-export time
     cmds.currentTime(start_time)
@@ -297,10 +291,8 @@ def get_maya_scene(params):
 
 #--------------------------------------------------------------------------------------------------
 # add_scene_sample function.
+# TODO: needs mechanism to sample frames for camera and transforms on whole frame numbers for non mb scenes
 #--------------------------------------------------------------------------------------------------
-
-
-# needs mechanism to sample frames for camera and transforms on whole frame numbers for non mb scenes
 
 def add_scene_sample(m_transform, transform_blur, deform_blur, camera_blur, current_frame, start_frame, frame_sample_number, initial_sample, export_root, geo_dir, tex_dir):
 
@@ -477,18 +469,15 @@ class MMesh(MTransformChild):
             for material_name in attached_material_names:
                 if cmds.nodeType(material_name) == 'ms_appleseed_material':
                     self.ms_materials.append(MMsMaterial(self.params, material_name))
-
                 else:
                     self.generic_materials.append(MGenericMaterial(self.params, material_name))
 
-
     def add_deform_sample(self, export_root, geo_dir, time):
-        file_name = '%s_%i_%i.obj' % (self.safe_short_name, self.id, time)
-        output_file_path = os.path.join(geo_dir, file_name)
-
-        # if the shape current transform is visible export
+        # if the shape current transform is visible, export;
         # otherwise skip export and just append a null
         if ms_commands.visible_in_hierarchy(self.transform.name):
+            file_name = '%s_%i_%i.obj' % (self.safe_short_name, self.id, time)
+            output_file_path = os.path.join(geo_dir, file_name)
 
             # set file path as relative value
             self.mesh_file_names.append(output_file_path)
@@ -497,7 +486,6 @@ class MMesh(MTransformChild):
             absolute_file_path = os.path.join(export_root, output_file_path)
             if not os.path.exists(absolute_file_path) or self.params['overwrite_existing_geometry']:
                 self.params['obj_exporter'](self.name, absolute_file_path, overwrite=True)
-
         else:
             self.mesh_file_names.append(None)
 
@@ -962,10 +950,9 @@ class AsColor():
     def __init__(self):
         self.name = None
         self.RGB_color = [0.5, 0.5, 0.5]
-        self.alpha = 1
+        self.alpha = 1.0
         self.multiplier = AsParameter('multiplier', '1.0')
         self.color_space = AsParameter('color_space', 'srgb')
-        self.wavelength_range = '400.0, 700.0'
 
     def emit_xml(self, doc):
         doc.start_element('color name="%s"' % self.name)
@@ -975,9 +962,11 @@ class AsColor():
         doc.start_element('values')
         doc.append_line('%.6f %.6f %.6f' % (self.RGB_color[0], self.RGB_color[1], self.RGB_color[2]))
         doc.end_element('values')
+
         doc.start_element('alpha')
         doc.append_line('%.6f' % self.alpha)
         doc.end_element('alpha')
+
         doc.end_element('color')
 
 
@@ -1474,7 +1463,6 @@ class AsFrame():
         self.color_space = AsParameter('color_space', 'linear_rgb')
         self.resolution = None
         self.premultiplied_alpha = AsParameter('premultiplied_alpha', 'true')
-
 
     def emit_xml(self, doc):
         doc.start_element('frame name="%s"' % self.name)
