@@ -38,8 +38,8 @@ import math
 # Constants.
 #--------------------------------------------------------------------------------------------------
 
-MAYASEED_VERSION = '0.3.2'
-MAYASEED_URL = 'https://github.com/jonathantopf/mayaseed'
+MAYASEED_VERSION = '0.3.3'
+MAYASEED_URL = 'https://github.com/jupiter-jazz/Mayaseed'
 APPLESEED_URL = 'http://appleseedhq.net/'
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
 
@@ -52,25 +52,31 @@ class ms_info_dial():
     def __init__(self):
         if cmds.window('ms_info_window', query=True, exists=True):
             cmds.deleteUI('ms_info_window')
-        window = cmds.window('ms_info_window', title='Mayaseed info', sizeable=False)
+
+        window = cmds.window('ms_info_window', title='About Mayaseed', sizeable=False)
+
         cmds.columnLayout(rs=10, columnOffset=['both', 20], width=600)
+
         cmds.rowLayout(numberOfColumns=2)
         cmds.text('', width=30)
         cmds.image(image=os.path.join(ROOT_DIRECTORY, 'graphics', 'mayaseed.png'))
         cmds.setParent('..')
-        cmds.text('Version: ' + MAYASEED_VERSION)
-        cmds.text(open(os.path.join(ROOT_DIRECTORY, 'scripts', 'about.txt'),'r').read(), width=500, wordWrap=True, al='left')
+
+        cmds.text('Version ' + MAYASEED_VERSION)
+        cmds.text('Mayaseed is a Maya plugin for exporting scenes to the appleseed renderer.')
+        cmds.text('Written by Jonathan Topf.')
+
         cmds.rowLayout(numberOfColumns=4)
-        cmds.button( label='Mayaseed website', command=('import webbrowser\nwebbrowser.open_new_tab("http://www.jonathantopf.com/mayaseed/")'))
-        cmds.button( label='appleseed website', command=('import webbrowser\nwebbrowser.open_new_tab("http://appleseedhq.net/")'))
+        cmds.button(label='Mayaseed website', command=('import webbrowser\nwebbrowser.open_new_tab("' + MAYASEED_URL + '")'))
+        cmds.button(label='appleseed website', command=('import webbrowser\nwebbrowser.open_new_tab("' + APPLESEED_URL + '")'))
         cmds.text('', width=166)
-        cmds.button( label='Close', command=('import maya.cmds as cmds\ncmds.deleteUI(\"' + window + '\", window=True)'), width=100)
+        cmds.button(label='Close', command=('import maya.cmds as cmds\ncmds.deleteUI(\"' + window + '\", window=True)'), width=100)
         cmds.setParent('..')
-        cmds.rowLayout(numberOfColumns=2)
-        cmds.text('', width=478)
-        cmds.text('jt')
-        cmds.setParent('..')
+
         cmds.text('')
+
+        cmds.setParent('..')
+
         cmds.showWindow(window)
 
 
@@ -173,6 +179,7 @@ def find_path_to_imf_copy():
 
     return None if imf_copy_path is None else os.path.join(imf_copy_path, 'imf_copy')
 
+
 def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, pass_through=False, relative=True):
     relative_path = os.path.join(texture_dir, os.path.splitext(os.path.split(file_path)[1])[0] + '.exr')
     dest_file = os.path.join(export_root, relative_path)
@@ -258,6 +265,7 @@ def visible_in_hierarchy(parent):
     
     return True
 
+
 #--------------------------------------------------------------------------------------------------
 # Check keys on a given attribute are constant.
 #--------------------------------------------------------------------------------------------------
@@ -320,34 +328,41 @@ def get_entity_defs(xml_file_path, list=False):
     dom = parseString(data)
 
     for entity in dom.getElementsByTagName('entity'):
+        entity_model = entity.getAttribute('model')
+
         # create new dict entry to store the node info
-        nodes[entity.getAttribute('model')] = Node(entity.getAttribute('model'), entity.getAttribute('type'))
+        nodes[entity_model] = Node(entity_model, entity.getAttribute('type'))
 
         for child in entity.childNodes:
-            if child.nodeName =='parameters':
-                # add an attribute and give it a name
-                nodes[entity.getAttribute('model')].attributes[child.getAttribute('name')] = Attribute(child.getAttribute('name'))
+            if child.nodeName != 'parameters':
+                continue
+                
+            # add an attribute and give it a name
+            child_name = child.getAttribute('name')
+            nodes[entity_model].attributes[child_name] = Attribute(child_name)
 
-                # iterate over child nodes and check that they are nodes not text
-                for param in child.childNodes:
-                    if not param.nodeName == '#text': 
-                        # node is a parameter with single value
-                        if param.nodeName == 'parameter':
-                            # get attribute type
-                            if param.getAttribute('name') == 'widget':
-                                nodes[entity.getAttribute('model')].attributes[child.getAttribute('name')].type = param.getAttribute('value')
-                            elif param.getAttribute('name') == 'default':
-                                nodes[entity.getAttribute('model')].attributes[child.getAttribute('name')].default_value = param.getAttribute('value')
-                            elif param.getAttribute('name') == 'label':
-                                nodes[entity.getAttribute('model')].attributes[child.getAttribute('name')].label = param.getAttribute('value')
+            for param in child.childNodes:
+                if param.nodeName == '#text':
+                    continue
 
-                        # node is a parameter with multiple values
-                        elif param.nodeName == 'parameters':
-                            # if the node contains entity types we are interested
-                            if param.getAttribute('name') == 'entity_types':
-                                for node in param.childNodes:
-                                    if node.nodeName == 'parameter':
-                                        nodes[entity.getAttribute('model')].attributes[child.getAttribute('name')].entity_types.append(node.getAttribute('name'))
+                # node is a parameter with single value
+                if param.nodeName == 'parameter':
+                    name = param.getAttribute('name')
+                    value = param.getAttribute('value')
+                    if name == 'widget':
+                        nodes[entity_model].attributes[child_name].type = value
+                    elif name == 'default':
+                        nodes[entity_model].attributes[child_name].default_value = value
+                    elif name == 'label':
+                        nodes[entity_model].attributes[child_name].label = value
+
+                # node is a parameter with multiple values
+                elif param.nodeName == 'parameters':
+                    # if the node contains entity types we are interested
+                    if param.getAttribute('name') == 'entity_types':
+                        for node in param.childNodes:
+                            if node.nodeName == 'parameter':
+                                nodes[entity_model].attributes[child_name].entity_types.append(node.getAttribute('name'))
 
     if list:
         print 'Found the following appleseed nodes:\n'
@@ -407,16 +422,16 @@ def create_shading_node(model, name=None, entity_defs_obj=False):
         if entity_key == model:
             for attr_key in entity_defs[entity_key].attributes.keys():
                 attr = entity_defs[entity_key].attributes[attr_key]
-                if attr.type == 'entity_picker':
+                if attr.type == 'text_box' or attr.type == 'dropdown_list':
+                     cmds.addAttr(shading_node_name, longName=attr_key, dt="string")
+                     cmds.setAttr(shading_node_name + '.' + attr_key, attr.default_value, type="string")
+                elif attr.type == 'entity_picker':
                     # if there is a default value, use it
                     if attr.default_value:
                         default_value = float(attr.default_value)
                         add_color_attr(shading_node_name, attr_key, (default_value, default_value, default_value))
                     else:
                         add_color_attr(shading_node_name, attr_key)
-                elif attr.type == 'text_box':
-                     cmds.addAttr(shading_node_name, longName=attr_key, dt="string")
-                     cmds.setAttr(shading_node_name + '.' + attr_key, attr.default_value, type="string")
             break
 
     return shading_node_name
@@ -524,6 +539,7 @@ def convert_all_materials():
     for material in materials:
         convert_material(material)
 
+
 def convert_selected_materials():
     materials = cmds.ls(sl=True, mat=True)
 
@@ -540,150 +556,131 @@ def convert_selected_materials():
     for material in materials:
         convert_material(material)
 
+
 def convert_material(material):
     if material == 'lambert1':
         info('Cannot convert default material "lambert1"')
         return
 
-    material_type = cmds.nodeType(material)
-
-    if material_type == 'phong' or material_type == 'blinn':
-        convert_phong_blinn_material(material)
-    elif material_type == 'ms_appleseed_material':
-        pass
-    elif material_type == 'surfaceShader':
-        convert_surface_shader_material(material)
-    elif material_type == 'lambert':
-        convert_lambert_material(material)
-    else:
-        warning("don't know how to convert material of type '{0}'".format(material_type))
-
-def convert_phong_blinn_material(material):
     info('converting shader ' + material)
 
-    new_material_node = cmds.shadingNode('ms_appleseed_material', asShader=True, name=material + '_translation')
+    material_type = cmds.nodeType(material)
 
-    # set random hardware color
-    cmds.setAttr(new_material_node + '.hardware_color_in', random.random(), random.random(), random.random(), type='float3')
+    if material_type == 'lambert':
+        converted_material = convert_lambert_material(material)
 
-    color_connection = get_connected_node(material + '.color')
-    specular_color_connection = get_connected_node(material + '.specularColor')
-    transparency_connection = get_connected_node(material + '.transparency')
-    # bump_connection = get_connected_node(material + '.bumpMapping')
-    
+    elif material_type == 'phong' or material_type == 'blinn':
+        converted_material = convert_phong_blinn_material(material)
+
+    elif material_type == 'surfaceShader':
+        converted_material = convert_surface_shader_material(material)
+
+    elif material_type == 'ms_appleseed_material':
+        return
+
+    else:
+        warning("don't know how to convert material of type '{0}'".format(material_type))
+        return
+
+    # assign the new material to the geometry
+    material_shading_group = cmds.listConnections(material, type='shadingEngine')
+    if material_shading_group is not None:
+        cmds.connectAttr(converted_material + '.outColor', material_shading_group[0] + '.surfaceShader', force=True)
+
+
+def set_random_hardware_color(material):
+    cmds.setAttr(material + '.hardware_color_in', random.random(), random.random(), random.random(), type='float3')
+
+
+def assign_connection_or_color(input_name, connection_name, color_name):
+    connection = get_connected_node(connection_name)
+    if connection: 
+        cmds.connectAttr(connection + '.outColor', input_name)
+    else:
+        color = cmds.getAttr(color_name)[0]
+        cmds.setAttr(input_name, color[0], color[1], color[2], type='float3')
+
+
+#--------------------------------------------------------------------------------------------------
+# Convert a Lambert material.
+#--------------------------------------------------------------------------------------------------
+
+def convert_lambert_material(material):
+    converted_material = cmds.shadingNode('ms_appleseed_material', asShader=True, name=(material + '_translation')) 
+    set_random_hardware_color(converted_material)
+
+    # surface shader
     surface_shader = create_shading_node('physical_surface_shader')
-    cmds.connectAttr(surface_shader + '.outColor', new_material_node + '.surface_shader_front_color')
+    cmds.connectAttr(surface_shader + '.outColor', converted_material + '.surface_shader_front_color')
+    assign_connection_or_color(converted_material + '.alpha_map_color', material + '.transparency', material + '.transparency')
 
-    mix_brdf = create_shading_node('bsdf_mix')
-    cmds.setAttr(mix_brdf + '.weight0', 1.0, 1.0, 1.0, type='float3')       # diffuse BRDF
-    cmds.setAttr(mix_brdf + '.weight1', 0.2, 0.2, 0.2, type='float3')       # glossy BRDF
-    cmds.connectAttr(mix_brdf + '.outColor', new_material_node + '.BSDF_front_color')
+    # BRDF
+    brdf = create_shading_node('lambertian_brdf')
+    cmds.connectAttr(brdf + '.outColor', converted_material + '.BSDF_front_color')
+    assign_connection_or_color(brdf + '.reflectance', material + '.color', material + '.color')
+
+    return converted_material
+
+
+#--------------------------------------------------------------------------------------------------
+# Convert a Blinn or Phong material.
+#--------------------------------------------------------------------------------------------------
+
+def convert_phong_blinn_material(material):
+    converted_material = cmds.shadingNode('ms_appleseed_material', asShader=True, name=material + '_translation')
+    set_random_hardware_color(converted_material)
+
+    # surface shader
+    surface_shader = create_shading_node('physical_surface_shader')
+    cmds.connectAttr(surface_shader + '.outColor', converted_material + '.surface_shader_front_color')
+    assign_connection_or_color(converted_material + '.alpha_map_color', material + '.transparency', material + '.transparency')
 
     # diffuse component
     diffuse_brdf = create_shading_node('lambertian_brdf')
-    diffuse_color = cmds.getAttr(material + '.color')[0]
-    diffuse_scale = cmds.getAttr(material + '.diffuse')
-    cmds.setAttr(diffuse_brdf + '.reflectance', diffuse_color[0] * diffuse_scale, diffuse_color[1] * diffuse_scale, diffuse_color[2] * diffuse_scale, type='float3')
+    color_connection = get_connected_node(material + '.color')
     if color_connection: 
-        info("connecting {0}.outColor to {1}.reflectance".format(color_connection, diffuse_brdf))
         cmds.connectAttr(color_connection + '.outColor', diffuse_brdf + '.reflectance')
-    cmds.connectAttr(diffuse_brdf + '.outColor', mix_brdf + '.bsdf0')
+    else:
+        color = cmds.getAttr(material + '.color')[0]
+        scale = cmds.getAttr(material + '.diffuse')
+        cmds.setAttr(diffuse_brdf + '.reflectance', color[0] * scale, color[1] * scale, color[2] * scale, type='float3')
 
     # glossy component
     glossy_brdf = create_shading_node('microfacet_brdf')
-    #cmds.setAttr(glossy_brdf + '.mdf', 'blinn', type='string')
-    material_type = cmds.nodeType(material)
-    if material_type == 'phong':
+    cmds.setAttr(glossy_brdf + '.mdf', 'blinn', type='string')
+    if cmds.nodeType(material) == 'phong':
         mdf_param = cmds.getAttr(material + '.cosinePower') * 1.3
     else:
         mdf_param = 10.0
     cmds.setAttr(glossy_brdf + '.mdf_parameter', mdf_param, mdf_param, mdf_param, type='float3')
-    specular_color = cmds.getAttr(material + '.specularColor')[0]
-    cmds.setAttr(glossy_brdf + '.reflectance', specular_color[0], specular_color[1], specular_color[2], type='float3')
-    if specular_color_connection:
-        info("connecting {0}.outColor to {1}.reflectance".format(specular_color_connection, glossy_brdf))
-        cmds.connectAttr(specular_color_connection + '.outColor', glossy_brdf + '.reflectance')
-    cmds.connectAttr(glossy_brdf + '.outColor', mix_brdf + '.bsdf1')
+    assign_connection_or_color(glossy_brdf + '.reflectance', material + '.specularColor', material + '.specularColor')
 
-    # alpha mapping
-    transparency_color = cmds.getAttr(material + '.transparency')[0]
-    cmds.setAttr(new_material_node + '.alpha_map_color', transparency_color[0], transparency_color[1], transparency_color[2], type='float3')
-    if transparency_connection:
-        info("connecting {0}.outColor to {1}.alpha_map_color".format(transparency_connection, new_material_node))
-        cmds.connectAttr(transparency_connection + '.outColor', new_material_node + '.alpha_map_color')
+    # mix diffuse and glossy
+    mix_brdf = create_shading_node('bsdf_mix')
+    cmds.connectAttr(diffuse_brdf + '.outColor', mix_brdf + '.bsdf0')       # diffuse BRDF
+    cmds.connectAttr(glossy_brdf + '.outColor', mix_brdf + '.bsdf1')        # glossy BRDF
+    cmds.setAttr(mix_brdf + '.weight0', 1.0, 1.0, 1.0, type='float3')       # diffuse weight
+    cmds.setAttr(mix_brdf + '.weight1', 0.2, 0.2, 0.2, type='float3')       # glossy weight
+    cmds.connectAttr(mix_brdf + '.outColor', converted_material + '.BSDF_front_color')
 
-    material_shading_group = cmds.listConnections(material, type='shadingEngine')
-    if material_shading_group != None:
-        cmds.connectAttr(new_material_node + '.outColor', material_shading_group[0] + '.surfaceShader', force=True)
+    return converted_material
+
+
+#--------------------------------------------------------------------------------------------------
+# Convert a surface shader material.
+#--------------------------------------------------------------------------------------------------
 
 def convert_surface_shader_material(material):
-    info('converting shader ' + material)
-
-    new_material_node = cmds.shadingNode('ms_appleseed_material', asShader=True, name=(material + '_translation')) 
-
-    # set random hardware color
-    cmds.setAttr(new_material_node + '.hardware_color_in', random.random(), random.random(), random.random(), type='float3')
-
-    out_color_connection = get_connected_node(material + '.outColor')
-    out_transparency_connection = get_connected_node(material + '.outTransparency')
+    converted_material = cmds.shadingNode('ms_appleseed_material', asShader=True, name=(material + '_translation')) 
+    set_random_hardware_color(converted_material)
 
     # surface shader
     surface_shader = create_shading_node('constant_surface_shader')
-    cmds.connectAttr(surface_shader + '.outColor', new_material_node + '.surface_shader_front_color')
+    cmds.connectAttr(surface_shader + '.outColor', converted_material + '.surface_shader_front_color')
+    assign_connection_or_color(surface_shader + '.color', material + '.outColor', material + '.outColor')
+    assign_connection_or_color(converted_material + '.alpha_map_color', material + '.outTransparency', material + '.outTransparency')
 
-    # color
-    color_value = cmds.getAttr(material + '.outColor')[0]
-    cmds.setAttr(surface_shader + '.color', color_value[0], color_value[1], color_value[2], type='float3')
-    if out_color_connection: 
-        info("connecting {0}.outColor to {1}.color".format(out_color_connection, surface_shader))
-        cmds.connectAttr(out_color_connection + '.outColor', surface_shader + '.color')
-
-    # alpha mapping
-    color_value = cmds.getAttr(material + '.outTransparency')[0]
-    cmds.setAttr(new_material_node + '.alpha_map_color', color_value[0], color_value[1], color_value[2], type='float3')
-    if out_transparency_connection:
-        info("connecting {0}.outColor to {1}.alpha_map_color".format(out_transparency_connection, new_material_node))
-        cmds.connectAttr(out_transparency_connection + '.outColor', new_material_node + '.alpha_map_color')
-
-    material_shading_group = cmds.listConnections(material, type='shadingEngine')
-    if material_shading_group != None:
-        cmds.connectAttr(new_material_node + '.outColor', material_shading_group[0] + '.surfaceShader', force=True)
-
-def convert_lambert_material(material):
-    info('converting shader ' + material)
-
-    new_material_node = cmds.shadingNode('ms_appleseed_material', asShader=True, name=(material + '_translation')) 
-
-    # set random hardware color
-    cmds.setAttr(new_material_node + '.hardware_color_in', random.random(), random.random(), random.random(), type='float3')
-
-    color_connection = get_connected_node(material + '.color')
-    transparency_connection = get_connected_node(material + '.transparency')
-
-    # BRDF and surface shader
-    brdf = create_shading_node('lambertian_brdf')
-    surface_shader = create_shading_node('physical_surface_shader')
-
-    cmds.connectAttr(brdf + '.outColor', new_material_node + '.BSDF_front_color')
-    cmds.connectAttr(surface_shader + '.outColor', new_material_node + '.surface_shader_front_color')
-
-    # reflectance
-    color_value = cmds.getAttr(material + '.color')[0]
-    cmds.setAttr(brdf + '.reflectance', color_value[0], color_value[1], color_value[2], type='float3')
-    if color_connection: 
-        info("connecting {0}.outColor to {1}.reflectance".format(color_connection, surface_shader))
-        cmds.connectAttr(color_connection + '.outColor', brdf + '.reflectance')
-
-    # alpha mapping
-    color_value = cmds.getAttr(material + '.transparency')[0]
-    cmds.setAttr(new_material_node + '.alpha_map_color', color_value[0], color_value[1], color_value[2], type='float3')
-    if transparency_connection:
-        info("connecting {0}.outColor to {1}.alpha_map_color".format(transparency_connection, new_material_node))
-        cmds.connectAttr(transparency_connection + '.outColor', new_material_node + '.alpha_map_color')
-
-    material_shading_group = cmds.listConnections(material, type='shadingEngine')
-    if material_shading_group != None:
-        cmds.connectAttr(new_material_node + '.outColor', material_shading_group[0] + '.surfaceShader', force=True)
+    return converted_material
 
 
 #--------------------------------------------------------------------------------------------------
