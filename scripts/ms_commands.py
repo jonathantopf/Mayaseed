@@ -218,6 +218,9 @@ def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, 
         p = subprocess.Popen(args)
         p.wait()
 
+
+    print 'seems to be exporting'
+
     return result_file
 
 
@@ -692,7 +695,9 @@ def get_attached_materials(mesh_name):
     materials = []
     if shading_engines is not None:
         for shading_engine in shading_engines:
-            materials.append(cmds.listConnections(shading_engine + ".surfaceShader")[0])
+            shading_engine_materials = cmds.listConnections(shading_engine + ".surfaceShader")
+            if shading_engine_materials is not None:
+                materials.append(shading_engine_materials[0])
     return materials
 
 
