@@ -562,6 +562,7 @@ class MFile():
     def __init__(self, params, maya_file_node, source_node=False, attribute=False):
         self.params = params
         self.image_file_names = []
+        self.converted_images = set()
         self.node_type = cmds.nodeType(maya_file_node)
         
         if self.node_type == 'file':
@@ -600,9 +601,10 @@ class MFile():
             image_name = ms_commands.convert_connection_to_image(self.source_node, self.attribute, os.path.join(export_root, texture_dir, ('{0}_{1}.iff'.format(self.name, time))))
 
         if self.params['convert_textures_to_exr']:
-            converted_image = ms_commands.convert_texture_to_exr(image_name, export_root, texture_dir, overwrite=self.params['overwrite_existing_textures'], pass_through=False)
-
-            self.image_file_names.append(converted_image)
+            if os.path.join(texture_dir, os.path.splitext(os.path.split(image_name)[1])[0] + '.exr') not in self.converted_images:
+                converted_image = ms_commands.convert_texture_to_exr(image_name, export_root, texture_dir, overwrite=self.params['overwrite_existing_textures'], pass_through=False)
+                self.converted_images.add(converted_image)
+                self.image_file_names.append(converted_image)
         else:
             self.image_file_names.append(image_name)
 
@@ -784,6 +786,8 @@ class MGenericMaterial():
         self.diffuse = None
         self.alpha = None
         self.incandescence = None
+        self.specular_cosine_power = None
+        self.specular_color = None
 
         self.textures = []
 
@@ -800,10 +804,22 @@ class MGenericMaterial():
                 self.diffuse = m_file_from_color_connection(self.params, self.diffuse)
                 self.textures.append(self.diffuse)
 
-        # work out specular component
+        # work out specular components
+        if cmds.attributeQuery('cosinePower', node=self.name, exists=True):
+            self.specular_cosine_power = MColorConnection(self.params, self.name + '.cosinePower')
+            if self.specular_cosine_power.connected_node is not None:
+                self.specular_cosine_power = m_file_from_color_connection(self.params, self.specular_cosine_power)
+                self.textures.append(self.alpha)
+            elif self.specular_cosine_power.is_black:
+                self.specular_cosine_power = None
+
         if cmds.attributeQuery('specularColor', node=self.name, exists=True):
-            # code should be added here when an appleseed phong/blinn maode is added
-            pass
+            self.specular_color = MColorConnection(self.params, self.name + '.specularColor')
+            if self.specular_color.connected_node is not None:
+                self.specular_color = m_file_from_color_connection(self.params, self.specular_color)
+                self.textures.append(self.alpha)
+            elif self.specular_color.is_black:
+                self.specular_color = None
 
         # work out alpha component
         if cmds.attributeQuery('transparency', node=self.name, exists=True):
@@ -2063,23 +2079,72 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
     new_material = AsMaterial()
     new_material.name = generic_material.safe_name
     root_assembly.materials.append(new_material)
-    
-    new_bsdf = AsBsdf()
-    new_bsdf.name = generic_material.safe_name + '_bsdf'
-    new_bsdf.model = 'lambertian_brdf'
-    root_assembly.bsdfs.append(new_bsdf)
-    new_material.bsdf = AsParameter('bsdf', new_bsdf.name)
+
+    new_lambertian_bsdf = AsBsdf()
+    new_lambertian_bsdf.name = generic_material.safe_name + '_lambertian_bsdf'
+    new_lambertian_bsdf.model = 'lambertian_brdf'
+    root_assembly.bsdfs.append(new_lambertian_bsdf)
+
+    # only use phong mix if the specular color is > 0 or exists
+    if generic_material.specular_color is not None:
+        if not generic_material.specular_color.is_black: 
+
+            new_microfacet_bsdf = AsBsdf()
+            new_microfacet_bsdf.name = generic_material.safe_name + '_microfacet_brdf'
+            new_microfacet_bsdf.model = 'microfacet_brdf'
+            new_microfacet_bsdf.parameters.append(AsParameter('mdf', 'blinn'))
+            root_assembly.bsdfs.append(new_microfacet_bsdf)
+
+            new_bsdf_mix_bsdf = AsBsdf()
+            new_bsdf_mix_bsdf.name = generic_material.safe_name + '_bsdf_mix_bsdf'
+            new_bsdf_mix_bsdf.model = 'bsdf_mix'
+            root_assembly.bsdfs.append(new_bsdf_mix_bsdf)
+
+            new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf0', new_lambertian_bsdf.name))
+            new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf1', new_microfacet_bsdf.name))
+            new_bsdf_mix_bsdf.parameters.append(AsParameter('weight0', '1.0'))
+            new_bsdf_mix_bsdf.parameters.append(AsParameter('weight1', '0.2'))
+
+            new_material.bsdf = AsParameter('bsdf', new_bsdf_mix_bsdf.name)
+
+
+            if generic_material.specular_cosine_power.__class__.__name__ == 'MFile':
+                bsdf_specular_cosine_texture, bsdf_specular_cosine_texture_instance = m_file_to_as_texture(params, generic_material.specular_cosine_power, '_bsdf', non_mb_sample_number)
+                new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_texture_instance.name))
+                root_assembly.textures.append(bsdf_specular_cosine_texture)
+                root_assembly.texture_instances.append(bsdf_specular_cosine_texture_instance)
+            else:
+                bsdf_specular_cosine_color = m_color_connection_to_as_color(generic_material.specular_cosine_power, '_bsdf')
+                bsdf_specular_cosine_color.multiplier.value = bsdf_specular_cosine_color.multiplier.value * 1.3
+                new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_color.name))
+                root_assembly.colors.append(bsdf_specular_cosine_color)
+
+            if generic_material.specular_color.__class__.__name__ == 'MFile':
+                bsdf_specular_color_texture, bsdf_specular_color_texture_instance = m_file_to_as_texture(params, generic_material.specular_color, '_bsdf', non_mb_sample_number)
+                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_texture_instance.name))
+                root_assembly.textures.append(bsdf_specular_color_texture)
+                root_assembly.texture_instances.append(bsdf_specular_color_texture_instance)
+            else:
+                bsdf_specular_color_color = m_color_connection_to_as_color(generic_material.specular_color, '_bsdf')
+                if bsdf_specular_color_color.multiplier.value > 1 : bsdf_specular_color_color.multiplier.value = 1
+                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_color.name))
+                root_assembly.colors.append(bsdf_specular_color_color)
+
+    else:
+        new_material.bsdf = AsParameter('bsdf', new_lambertian_bsdf.name)
+
 
     if generic_material.diffuse.__class__.__name__ == 'MFile':
         bsdf_texture, bsdf_texture_instance = m_file_to_as_texture(params, generic_material.diffuse, '_bsdf', non_mb_sample_number)
-        new_bsdf.parameters.append(AsParameter('reflectance', bsdf_texture_instance.name))
+        new_lambertian_bsdf.parameters.append(AsParameter('reflectance', bsdf_texture_instance.name))
         root_assembly.textures.append(bsdf_texture)
         root_assembly.texture_instances.append(bsdf_texture_instance)
     else:
         bsdf_color = m_color_connection_to_as_color(generic_material.diffuse, '_bsdf')
         if bsdf_color.multiplier.value > 1 : bsdf_color.multiplier.value = 1
-        new_bsdf.parameters.append(AsParameter('reflectance', bsdf_color.name))
+        new_lambertian_bsdf.parameters.append(AsParameter('reflectance', bsdf_color.name))
         root_assembly.colors.append(bsdf_color)
+
 
     if generic_material.incandescence is not None:
         new_edf = AsEdf()
@@ -2097,6 +2162,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             edf_color = m_color_connection_to_as_color(generic_material.incandescence, '_edf')
             new_edf.parameters.append(AsParameter('exitance', edf_color.name))
             root_assembly.colors.append(edf_color)
+
 
     new_surface_shader = AsSurfaceShader()
     new_surface_shader.name = generic_material.safe_name + '_surface_shader'
