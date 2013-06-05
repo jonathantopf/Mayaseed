@@ -672,9 +672,15 @@ class MColorConnection():
             self.name = color_connection
             self.safe_name = ms_commands.legalize_name(self.name)
             self.color_value = cmds.getAttr(self.name)
-            self.normalized_color = ms_commands.normalizeRGB(cmds.getAttr(self.name)[0])[:3]
+
+            if self.color_value.__class__.__name__ != 'float':
+                self.normalized_color = ms_commands.normalizeRGB(self.color_value[0])[:3]
+                self.multiplier = ms_commands.normalizeRGB(self.color_value[0])[3]
+            else:
+                self.normalized_color = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[:3]
+                self.multiplier       = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[3]
+
             self.is_black = self.normalized_color == (0,0,0)
-            self.multiplier = ms_commands.normalizeRGB(cmds.getAttr(self.name)[0])[3]
             self.connected_node = ms_commands.get_connected_node(self.name)
             if self.connected_node is not None:
                 self.connected_node_type = cmds.nodeType(self.connected_node)
