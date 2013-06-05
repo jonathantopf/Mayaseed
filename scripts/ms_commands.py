@@ -218,9 +218,6 @@ def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, 
         p = subprocess.Popen(args)
         p.wait()
 
-
-    print 'seems to be exporting'
-
     return result_file
 
 
