@@ -782,6 +782,7 @@ class MGenericMaterial():
         self.params = params
         self.name = maya_material_name
         self.safe_name = ms_commands.legalize_name(self.name)
+        self.type = cmds.nodeType(maya_material_name)
 
         self.diffuse = None
         self.alpha = None
@@ -2059,8 +2060,12 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
                 as_material = convert_maya_generic_material(params, root_assembly, maya_generic_material, non_mb_sample_number)
 
+                
+                # only apply surface shaders to front of object
+                if maya_generic_material.type != 'surfaceShader':
+                    mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', as_material.name))
+                
                 mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'front', as_material.name))
-                mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', as_material.name))
 
             current_assembly.object_instances.append(mesh_instance)
 
