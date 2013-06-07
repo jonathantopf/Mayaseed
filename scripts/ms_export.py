@@ -34,7 +34,7 @@ reload(ms_commands)
 import ms_export_obj
 import time
 
-INCH_TO_METER = 0.02539999983236
+inch_to_meter = 0.02539999983236
 
 
 #--------------------------------------------------------------------------------------------------
@@ -155,44 +155,26 @@ def get_maya_params(render_settings_node):
     params['output_res_height'] = cmds.getAttr(render_settings_node + '.height')
     params['export_straight_alpha'] = cmds.getAttr(render_settings_node + '.export_straight_alpha')
 
-    # Custom final configuration.
-
-    params['custom_final_config_check'] = cmds.getAttr(render_settings_node + '.export_custom_final_config')
-    params['custom_final_config_engine'] = cmds.getAttr(render_settings_node + '.final_lighting_engine')
-    if params['custom_final_config_engine'] == 0:
-        params['custom_final_config_engine'] = 'pt'
+    # configuration settings.
+    params['sampler'] = cmds.getAttr(render_settings_node + '.sampler')
+    if params['sampler'] == 0:
+        params['sampler'] = 'adaptive'
     else:
-        params['custom_final_config_engine'] = 'drt'
+        params['sampler'] = 'uniform'
 
-    params['drt_dl_bsdf_samples'] = cmds.getAttr(render_settings_node + '.drt_dl_bsdf_samples')
-    params['drt_dl_light_samples'] = cmds.getAttr(render_settings_node + '.drt_dl_light_samples')
-    params['drt_enable_ibl'] = cmds.getAttr(render_settings_node + '.drt_enable_ibl')
-    params['drt_ibl_bsdf_samples'] = cmds.getAttr(render_settings_node + '.drt_ibl_bsdf_samples')
-    params['drt_ibl_env_samples'] = cmds.getAttr(render_settings_node + '.drt_ibl_env_samples')
-    params['drt_max_path_length'] = cmds.getAttr(render_settings_node + '.drt_max_path_length')
-    params['drt_rr_min_path_length'] = cmds.getAttr(render_settings_node + '.drt_rr_min_path_length')
-
-    params['pt_dl_light_samples'] = cmds.getAttr(render_settings_node + '.pt_dl_light_samples')
-    params['pt_enable_caustics'] = cmds.getAttr(render_settings_node + '.pt_enable_caustics')
-    params['pt_enable_dl'] = cmds.getAttr(render_settings_node + '.pt_enable_dl')
-    params['pt_enable_ibl'] = cmds.getAttr(render_settings_node + '.pt_enable_ibl')
-    params['pt_ibl_bsdf_samples'] = cmds.getAttr(render_settings_node + '.pt_ibl_bsdf_samples')
-    params['pt_ibl_env_samples'] = cmds.getAttr(render_settings_node + '.pt_ibl_env_samples')
-    params['pt_max_path_length'] = cmds.getAttr(render_settings_node + '.pt_max_path_length')
-
+    params['uniform_samples'] = cmds.getAttr(render_settings_node + '.uniform_samples')
+    params['uniform_decorrelate_pixels'] = cmds.getAttr(render_settings_node + '.uniform_decorrelate_pixels')
+ 
+    params['adaptive_min_samples'] = cmds.getAttr(render_settings_node + '.adaptive_min_samples')
+    params['adaptive_max_samples'] = cmds.getAttr(render_settings_node + '.adaptive_max_samples')
+    params['adaptive_quality'] = cmds.getAttr(render_settings_node + '.adaptive_quality')
+    params['pt_ibl'] = cmds.getAttr(render_settings_node + '.pt_ibl')
+    params['pt_caustics'] = cmds.getAttr(render_settings_node + '.pt_caustics')
+    params['pt_direct_lighting'] = cmds.getAttr(render_settings_node + '.pt_direct_lighting')
     params['pt_next_event_estimation'] = cmds.getAttr(render_settings_node + '.pt_next_event_estimation')
-    params['pt_rr_min_path_length'] = cmds.getAttr(render_settings_node + '.pt_rr_min_path_length')
-
-    params['gtr_filter_size'] = cmds.getAttr(render_settings_node + '.gtr_filter_size')
-    params['gtr_min_samples'] = cmds.getAttr(render_settings_node + '.gtr_min_samples')
-    params['gtr_max_samples'] = cmds.getAttr(render_settings_node + '.gtr_max_samples')
-    params['gtr_max_contrast'] = cmds.getAttr(render_settings_node + '.gtr_max_contrast')
-    params['gtr_max_variation'] = cmds.getAttr(render_settings_node + '.gtr_max_variation')
-
-    if cmds.getAttr(render_settings_node + '.gtr_sampler') == 0:
-        params['gtr_sampler'] = 'uniform'
-    else:
-        params['gtr_sampler'] = 'adaptive'
+    params['pt_max_bounces'] = cmds.getAttr(render_settings_node + '.pt_max_bounces')
+    params['pt_light_samples'] = cmds.getAttr(render_settings_node + '.pt_light_samples')
+    params['pt_environment_samples'] = cmds.getAttr(render_settings_node + '.pt_environment_samples')
 
     # Select obj exporter.
     if cmds.pluginInfo('ms_export_obj_' + str(int(mel.eval('getApplicationVersionAsFloat()'))), query=True, r=True):
@@ -537,10 +519,10 @@ class MCamera(MTransformChild):
         maya_film_aspect = cmds.getAttr(self.name + '.horizontalFilmAperture') / cmds.getAttr(self.name + '.verticalFilmAperture')
 
         if maya_resolution_aspect > maya_film_aspect:
-            self.film_width = float(cmds.getAttr(self.name + '.horizontalFilmAperture')) * INCH_TO_METER * 100
+            self.film_width = float(cmds.getAttr(self.name + '.horizontalFilmAperture')) * inch_to_meter * 100
             self.film_height = self.film_width / maya_resolution_aspect
         else:
-            self.film_height = float(cmds.getAttr(self.name + '.verticalFilmAperture')) * INCH_TO_METER * 100
+            self.film_height = float(cmds.getAttr(self.name + '.verticalFilmAperture')) * inch_to_meter * 100
             self.film_width = self.film_height * maya_resolution_aspect
 
     def add_matrix_sample(self):
@@ -673,9 +655,15 @@ class MColorConnection():
             self.name = color_connection
             self.safe_name = ms_commands.legalize_name(self.name)
             self.color_value = cmds.getAttr(self.name)
-            self.normalized_color = ms_commands.normalizeRGB(cmds.getAttr(self.name)[0])[:3]
+
+            if self.color_value.__class__.__name__ != 'float':
+                self.normalized_color = ms_commands.normalizeRGB(self.color_value[0])[:3]
+                self.multiplier = ms_commands.normalizeRGB(self.color_value[0])[3]
+            else:
+                self.normalized_color = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[:3]
+                self.multiplier       = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[3]
+
             self.is_black = self.normalized_color == (0,0,0)
-            self.multiplier = ms_commands.normalizeRGB(cmds.getAttr(self.name)[0])[3]
             self.connected_node = ms_commands.get_connected_node(self.name)
             if self.connected_node is not None:
                 self.connected_node_type = cmds.nodeType(self.connected_node)
@@ -775,10 +763,13 @@ class MGenericMaterial():
         self.params = params
         self.name = maya_material_name
         self.safe_name = ms_commands.legalize_name(self.name)
+        self.type = cmds.nodeType(maya_material_name)
 
         self.diffuse = None
         self.alpha = None
         self.incandescence = None
+        self.specular_cosine_power = None
+        self.specular_color = None
 
         self.textures = []
 
@@ -795,10 +786,22 @@ class MGenericMaterial():
                 self.diffuse = m_file_from_color_connection(self.params, self.diffuse)
                 self.textures.append(self.diffuse)
 
-        # work out specular component
+        # work out specular components
+        if cmds.attributeQuery('cosinePower', node=self.name, exists=True):
+            self.specular_cosine_power = MColorConnection(self.params, self.name + '.cosinePower')
+            if self.specular_cosine_power.connected_node is not None:
+                self.specular_cosine_power = m_file_from_color_connection(self.params, self.specular_cosine_power)
+                self.textures.append(self.alpha)
+            elif self.specular_cosine_power.is_black:
+                self.specular_cosine_power = None
+
         if cmds.attributeQuery('specularColor', node=self.name, exists=True):
-            # code should be added here when an appleseed phong/blinn maode is added
-            pass
+            self.specular_color = MColorConnection(self.params, self.name + '.specularColor')
+            if self.specular_color.connected_node is not None:
+                self.specular_color = m_file_from_color_connection(self.params, self.specular_color)
+                self.textures.append(self.alpha)
+            elif self.specular_color.is_black:
+                self.specular_color = None
 
         # work out alpha component
         if cmds.attributeQuery('transparency', node=self.name, exists=True):
@@ -1755,42 +1758,30 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         final_config.name = 'final'
         final_config.base = 'base_final'
 
-        if ['custom_final_config_check']:
-            final_config.parameters.append(AsParameter('lighting_engine', params['custom_final_config_engine']))
+        for config in [interactive_config, final_config]:
+            config.parameters.append(AsParameter('lighting_engine', 'pt'))
+            config.parameters.append(AsParameter('pixel_renderer', params['sampler']))
 
-            pt_parameters = AsParameters()
-            pt_parameters.name = 'pt'
-            pt_parameters.parameters.append(AsParameter('dl_light_samples',      params['pt_dl_light_samples']))
-            pt_parameters.parameters.append(AsParameter('enable_caustics',       params['pt_enable_caustics']))
-            pt_parameters.parameters.append(AsParameter('enable_dl',             params['pt_enable_dl']))
-            pt_parameters.parameters.append(AsParameter('enable_ibl',            params['pt_enable_ibl']))
-            pt_parameters.parameters.append(AsParameter('ibl_env_samples',       params['pt_ibl_env_samples']))
-            pt_parameters.parameters.append(AsParameter('ibl_bsdf_samples',      params['pt_ibl_bsdf_samples']))
-            pt_parameters.parameters.append(AsParameter('max_path_length',       params['pt_max_path_length']))
-            pt_parameters.parameters.append(AsParameter('next_event_estimation', params['pt_next_event_estimation']))
-            pt_parameters.parameters.append(AsParameter('rr_min_path_length',    params['pt_rr_min_path_length']))
-            final_config.parameters.append(pt_parameters)
+            adaptive_pixel_renderer_params = AsParameters('adaptive_pixel_renderer')
+            adaptive_pixel_renderer_params.parameters.append(AsParameter('min_samples', params['adaptive_min_samples']))
+            adaptive_pixel_renderer_params.parameters.append(AsParameter('max_samples', params['adaptive_max_samples']))
+            adaptive_pixel_renderer_params.parameters.append(AsParameter('quality', params['adaptive_quality']))
+            config.parameters.append(adaptive_pixel_renderer_params)
 
-            drt_parameters = AsParameters()
-            drt_parameters.name = 'drt'
-            drt_parameters.parameters.append(AsParameter('dl_bsdf_samples',      params['drt_dl_bsdf_samples']))
-            drt_parameters.parameters.append(AsParameter('dl_light_samples',     params['drt_dl_light_samples']))
-            drt_parameters.parameters.append(AsParameter('enable_ibl',           params['drt_enable_ibl']))
-            drt_parameters.parameters.append(AsParameter('ibl_bsdf_samples',     params['drt_ibl_bsdf_samples']))
-            drt_parameters.parameters.append(AsParameter('ibl_env_samples',      params['drt_ibl_env_samples']))
-            drt_parameters.parameters.append(AsParameter('max_path_length',      params['drt_max_path_length']))
-            drt_parameters.parameters.append(AsParameter('rr_min_path_length',   params['drt_rr_min_path_length']))
-            final_config.parameters.append(drt_parameters)
+            uniform_pixel_renderer_params = AsParameters('uniform_pixel_renderer')
+            uniform_pixel_renderer_params.parameters.append(AsParameter('samples', params['uniform_samples']))
+            uniform_pixel_renderer_params.parameters.append(AsParameter('decorrelate_pixels', params['uniform_decorrelate_pixels']))
+            config.parameters.append(uniform_pixel_renderer_params)
 
-            generic_tile_renderer_parameters = AsParameters()
-            generic_tile_renderer_parameters.name = 'generic_tile_renderer'
-            generic_tile_renderer_parameters.parameters.append(AsParameter('filter_size',   params['gtr_filter_size']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('sampler',       params['gtr_sampler']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('min_samples',   params['gtr_min_samples']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('max_samples',   params['gtr_max_samples']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('max_contrast',  params['gtr_max_contrast']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('max_variation', params['gtr_max_variation']))
-            final_config.parameters.append(generic_tile_renderer_parameters)
+            pt_params = AsParameters('pt')
+            pt_params.parameters.append(AsParameter('dl_light_samples', params['pt_light_samples']))
+            pt_params.parameters.append(AsParameter('enable_caustics', params['pt_caustics']))
+            pt_params.parameters.append(AsParameter('enable_dl', params['pt_direct_lighting']))
+            pt_params.parameters.append(AsParameter('enable_ibl', params['pt_ibl']))
+            pt_params.parameters.append(AsParameter('ibl_env_samples', params['pt_environment_samples']))
+            pt_params.parameters.append(AsParameter('max_path_length', params['pt_max_bounces']))
+            pt_params.parameters.append(AsParameter('next_event_estimation', params['pt_next_event_estimation']))
+            config.parameters.append(pt_params)
 
         # begin scene object
         as_project.scene = AsScene()
@@ -2038,8 +2029,12 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
                 as_material = convert_maya_generic_material(params, root_assembly, maya_generic_material, non_mb_sample_number)
 
+                
+                # only apply surface shaders to front of object
+                if maya_generic_material.type != 'surfaceShader':
+                    mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', as_material.name))
+                
                 mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'front', as_material.name))
-                mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', as_material.name))
 
             current_assembly.object_instances.append(mesh_instance)
 
@@ -2058,23 +2053,72 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
     new_material = AsMaterial()
     new_material.name = generic_material.safe_name
     root_assembly.materials.append(new_material)
-    
-    new_bsdf = AsBsdf()
-    new_bsdf.name = generic_material.safe_name + '_bsdf'
-    new_bsdf.model = 'lambertian_brdf'
-    root_assembly.bsdfs.append(new_bsdf)
-    new_material.bsdf = AsParameter('bsdf', new_bsdf.name)
+
+    new_lambertian_bsdf = AsBsdf()
+    new_lambertian_bsdf.name = generic_material.safe_name + '_lambertian_bsdf'
+    new_lambertian_bsdf.model = 'lambertian_brdf'
+    root_assembly.bsdfs.append(new_lambertian_bsdf)
+
+    # only use phong mix if the specular color is > 0 or exists
+    if generic_material.specular_color is not None:
+        if not generic_material.specular_color.is_black: 
+
+            new_microfacet_bsdf = AsBsdf()
+            new_microfacet_bsdf.name = generic_material.safe_name + '_microfacet_brdf'
+            new_microfacet_bsdf.model = 'microfacet_brdf'
+            new_microfacet_bsdf.parameters.append(AsParameter('mdf', 'blinn'))
+            root_assembly.bsdfs.append(new_microfacet_bsdf)
+
+            new_bsdf_mix_bsdf = AsBsdf()
+            new_bsdf_mix_bsdf.name = generic_material.safe_name + '_bsdf_mix_bsdf'
+            new_bsdf_mix_bsdf.model = 'bsdf_mix'
+            root_assembly.bsdfs.append(new_bsdf_mix_bsdf)
+
+            new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf0', new_lambertian_bsdf.name))
+            new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf1', new_microfacet_bsdf.name))
+            new_bsdf_mix_bsdf.parameters.append(AsParameter('weight0', '1.0'))
+            new_bsdf_mix_bsdf.parameters.append(AsParameter('weight1', '0.2'))
+
+            new_material.bsdf = AsParameter('bsdf', new_bsdf_mix_bsdf.name)
+
+
+            if generic_material.specular_cosine_power.__class__.__name__ == 'MFile':
+                bsdf_specular_cosine_texture, bsdf_specular_cosine_texture_instance = m_file_to_as_texture(params, generic_material.specular_cosine_power, '_bsdf', non_mb_sample_number)
+                new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_texture_instance.name))
+                root_assembly.textures.append(bsdf_specular_cosine_texture)
+                root_assembly.texture_instances.append(bsdf_specular_cosine_texture_instance)
+            else:
+                bsdf_specular_cosine_color = m_color_connection_to_as_color(generic_material.specular_cosine_power, '_bsdf')
+                bsdf_specular_cosine_color.multiplier.value = bsdf_specular_cosine_color.multiplier.value * 1.3
+                new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_color.name))
+                root_assembly.colors.append(bsdf_specular_cosine_color)
+
+            if generic_material.specular_color.__class__.__name__ == 'MFile':
+                bsdf_specular_color_texture, bsdf_specular_color_texture_instance = m_file_to_as_texture(params, generic_material.specular_color, '_bsdf', non_mb_sample_number)
+                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_texture_instance.name))
+                root_assembly.textures.append(bsdf_specular_color_texture)
+                root_assembly.texture_instances.append(bsdf_specular_color_texture_instance)
+            else:
+                bsdf_specular_color_color = m_color_connection_to_as_color(generic_material.specular_color, '_bsdf')
+                if bsdf_specular_color_color.multiplier.value > 1 : bsdf_specular_color_color.multiplier.value = 1
+                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_color.name))
+                root_assembly.colors.append(bsdf_specular_color_color)
+
+    else:
+        new_material.bsdf = AsParameter('bsdf', new_lambertian_bsdf.name)
+
 
     if generic_material.diffuse.__class__.__name__ == 'MFile':
         bsdf_texture, bsdf_texture_instance = m_file_to_as_texture(params, generic_material.diffuse, '_bsdf', non_mb_sample_number)
-        new_bsdf.parameters.append(AsParameter('reflectance', bsdf_texture_instance.name))
+        new_lambertian_bsdf.parameters.append(AsParameter('reflectance', bsdf_texture_instance.name))
         root_assembly.textures.append(bsdf_texture)
         root_assembly.texture_instances.append(bsdf_texture_instance)
     else:
         bsdf_color = m_color_connection_to_as_color(generic_material.diffuse, '_bsdf')
         if bsdf_color.multiplier.value > 1 : bsdf_color.multiplier.value = 1
-        new_bsdf.parameters.append(AsParameter('reflectance', bsdf_color.name))
+        new_lambertian_bsdf.parameters.append(AsParameter('reflectance', bsdf_color.name))
         root_assembly.colors.append(bsdf_color)
+
 
     if generic_material.incandescence is not None:
         new_edf = AsEdf()
@@ -2092,6 +2136,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             edf_color = m_color_connection_to_as_color(generic_material.incandescence, '_edf')
             new_edf.parameters.append(AsParameter('exitance', edf_color.name))
             root_assembly.colors.append(edf_color)
+
 
     new_surface_shader = AsSurfaceShader()
     new_surface_shader.name = generic_material.safe_name + '_surface_shader'
