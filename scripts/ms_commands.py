@@ -631,12 +631,12 @@ def convert_phong_blinn_material(material):
     set_random_hardware_color(converted_material)
 
     # surface shader
-    surface_shader = create_shading_node('physical_surface_shader')
+    surface_shader = create_shading_node('physical_surface_shader', name=(material + '_surface_shader'))
     cmds.connectAttr(surface_shader + '.outColor', converted_material + '.surface_shader_front_color')
     assign_connection_or_color(converted_material + '.alpha_map_color', material + '.transparency', material + '.transparency')
 
     # diffuse component
-    diffuse_brdf = create_shading_node('lambertian_brdf')
+    diffuse_brdf = create_shading_node('lambertian_brdf', name=(material + 'lambert_brdf'))
     color_connection = get_connected_node(material + '.color')
     if color_connection: 
         cmds.connectAttr(color_connection + '.outColor', diffuse_brdf + '.reflectance')
@@ -646,7 +646,7 @@ def convert_phong_blinn_material(material):
         cmds.setAttr(diffuse_brdf + '.reflectance', color[0] * scale, color[1] * scale, color[2] * scale, type='float3')
 
     # glossy component
-    glossy_brdf = create_shading_node('microfacet_brdf')
+    glossy_brdf = create_shading_node('microfacet_brdf', name=(material + '_blinn_brdf'))
     cmds.setAttr(glossy_brdf + '.mdf', 'blinn', type='string')
     if cmds.nodeType(material) == 'phong':
         mdf_param = cmds.getAttr(material + '.cosinePower') * 1.3
@@ -656,7 +656,7 @@ def convert_phong_blinn_material(material):
     assign_connection_or_color(glossy_brdf + '.reflectance', material + '.specularColor', material + '.specularColor')
 
     # mix diffuse and glossy
-    mix_brdf = create_shading_node('bsdf_mix')
+    mix_brdf = create_shading_node('bsdf_mix', name=(material + '_bsdf_mix'))
     cmds.connectAttr(diffuse_brdf + '.outColor', mix_brdf + '.bsdf0')       # diffuse BRDF
     cmds.connectAttr(glossy_brdf + '.outColor', mix_brdf + '.bsdf1')        # glossy BRDF
     cmds.setAttr(mix_brdf + '.weight0', 1.0, 1.0, 1.0, type='float3')       # diffuse weight
@@ -675,7 +675,7 @@ def convert_surface_shader_material(material):
     set_random_hardware_color(converted_material)
 
     # surface shader
-    surface_shader = create_shading_node('constant_surface_shader')
+    surface_shader = create_shading_node('constant_surface_shader', name=(material + '_surface_shader'))
     cmds.connectAttr(surface_shader + '.outColor', converted_material + '.surface_shader_front_color')
     assign_connection_or_color(surface_shader + '.color', material + '.outColor', material + '.outColor')
     assign_connection_or_color(converted_material + '.alpha_map_color', material + '.outTransparency', material + '.outTransparency')
