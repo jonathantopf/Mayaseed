@@ -2060,7 +2060,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
     root_assembly.bsdfs.append(new_lambertian_bsdf)
 
     # only use phong mix if the specular color is > 0 or exists
-    if generic_material.specular_color is not None:
+    if (generic_material.specular_color is not None) and (generic_material.specular_cosine_power is not None):
         if not generic_material.specular_color.is_black: 
 
             new_microfacet_bsdf = AsBsdf()
