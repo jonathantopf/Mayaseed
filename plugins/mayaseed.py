@@ -30,12 +30,12 @@ import maya.cmds as cmds
 import inspect
 import os
 import os.path
-import ms_menu
 
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
 sys.path.append(os.path.join(ROOT_DIRECTORY, 'scripts'))
 sys.path.append(os.path.join(ROOT_DIRECTORY, 'graphics'))
 
+import ms_menu
 
 #--------------------------------------------------------------------------------------------------
 # ms_renderSettings node.
