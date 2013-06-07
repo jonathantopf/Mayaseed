@@ -537,10 +537,10 @@ class MCamera(MTransformChild):
         maya_film_aspect = cmds.getAttr(self.name + '.horizontalFilmAperture') / cmds.getAttr(self.name + '.verticalFilmAperture')
 
         if maya_resolution_aspect > maya_film_aspect:
-            self.film_width = float(cmds.getAttr(self.name + '.horizontalFilmAperture')) * INCH_TO_METER * 100
+            self.film_width = float(cmds.getAttr(self.name + '.horizontalFilmAperture')) * inch_to_meter * 100
             self.film_height = self.film_width / maya_resolution_aspect
         else:
-            self.film_height = float(cmds.getAttr(self.name + '.verticalFilmAperture')) * INCH_TO_METER * 100
+            self.film_height = float(cmds.getAttr(self.name + '.verticalFilmAperture')) * inch_to_meter * 100
             self.film_width = self.film_height * maya_resolution_aspect
 
     def add_matrix_sample(self):
