@@ -185,153 +185,92 @@ def ms_renderSettings_nodeInitializer():
     export_straight_alpha_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_straight_alpha = export_straight_alpha_nAttr.create("export_straight_alpha", "export_straight", OpenMaya.MFnNumericData.kBoolean, True)
 
+    # sampler
+    sampler_enumAttr = OpenMaya.MFnEnumAttribute()
+    ms_renderSettings.sampler = sampler_enumAttr.create("sampler", "sampler")
+    sampler_enumAttr.addField("Adaptive", 0)
+    sampler_enumAttr.addField("Uniform", 1)
+    ms_renderSettings.addAttribute(ms_renderSettings.sampler)
 
-    # custom final config
-    export_custom_final_config_nAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.export_custom_final_config = export_custom_final_config_nAttr.create("export_custom_final_config", "export_final", OpenMaya.MFnNumericData.kBoolean, True)  
-    
-    # lighting engine
-    final_config_lighting_engine_enumAttr = OpenMaya.MFnEnumAttribute()
-    ms_renderSettings.final_config_lighting_engine = final_config_lighting_engine_enumAttr.create("final_lighting_engine", "final_engine")
-    final_config_lighting_engine_enumAttr.addField("Path Tracing", 0)
-    final_config_lighting_engine_enumAttr.addField("Distributed Ray Tracing", 1)
 
-    # min_samples
-    min_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.min_samples = min_samples_AttrInt.create("min_samples", "min_samples", OpenMaya.MFnNumericData.kInt, 1)
-    min_samples_AttrInt.setHidden(False)
-    min_samples_AttrInt.setKeyable(True)
+    # uniform sampler
+    # uniform_samples
+    uniform_samples_AttrInt = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.uniform_samples = uniform_samples_AttrInt.create("uniform_samples", "uniform_samples", OpenMaya.MFnNumericData.kInt, 64)
+    uniform_samples_AttrInt.setHidden(False)
+    uniform_samples_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.uniform_samples)
 
-    # max_samples
-    max_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.max_samples = max_samples_AttrInt.create("max_samples", "max_samples", OpenMaya.MFnNumericData.kInt, 1)
-    max_samples_AttrInt.setHidden(False)
-    max_samples_AttrInt.setKeyable(True)
+    # decorrelate_pixel
+    uniform_decorrelate_pixelsnAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.uniform_decorrelate_pixels = uniform_decorrelate_pixelsnAttr.create("uniform_decorrelate_pixels", "uniform_decorrelate_pixels", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.uniform_decorrelate_pixels)
 
-    # drt_settings
-    # dl_bsdf_samples
-    drt_dl_bsdf_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.drt_dl_bsdf_samples = drt_dl_bsdf_samples_AttrInt.create("drt_dl_bsdf_samples", "drt_dl_bsdf_samples", OpenMaya.MFnNumericData.kInt, 1)
-    drt_dl_bsdf_samples_AttrInt.setHidden(False)
-    drt_dl_bsdf_samples_AttrInt.setKeyable(True)
 
-    # dl_light_samples
-    drt_dl_light_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.drt_dl_light_samples = drt_dl_light_samples_AttrInt.create("drt_dl_light_samples", "drt_dl_light_samples", OpenMaya.MFnNumericData.kInt, 1)
-    drt_dl_light_samples_AttrInt.setHidden(False)
-    drt_dl_light_samples_AttrInt.setKeyable(True)
+    # adaptive_sampler
+    # adaptive_min_samples
+    adaptive_min_samples_AttrInt = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.adaptive_min_samples = adaptive_min_samples_AttrInt.create("adaptive_min_samples", "adaptive_min_samples", OpenMaya.MFnNumericData.kInt, 16)
+    adaptive_min_samples_AttrInt.setHidden(False)
+    adaptive_min_samples_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.adaptive_min_samples)
+
+    # adaptive_max_samples
+    adaptive_max_samples_AttrInt = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.adaptive_max_samples = adaptive_max_samples_AttrInt.create("adaptive_max_samples", "adaptive_max_samples", OpenMaya.MFnNumericData.kInt, 128)
+    adaptive_max_samples_AttrInt.setHidden(False)
+    adaptive_max_samples_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.adaptive_max_samples)
+
+    # adaptive_quality
+    adaptive_quality_AttrFloat = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.adaptive_quality = adaptive_quality_AttrFloat.create("adaptive_quality", "adaptive_quality", OpenMaya.MFnNumericData.kFloat, 3)
+    adaptive_quality_AttrFloat.setHidden(False)
+    adaptive_quality_AttrFloat.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.adaptive_quality)
+
 
     # enable_ibl
-    drt_enable_iblnAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.drt_enable_ibl = drt_enable_iblnAttr.create("drt_enable_ibl", "drt_enable_ibl", OpenMaya.MFnNumericData.kBoolean, True)
-
-    # ibl_bsdf_samples
-    drt_ibl_bsdf_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.drt_ibl_bsdf_samples = drt_ibl_bsdf_samples_AttrInt.create("drt_ibl_bsdf_samples", "drt_ibl_bsdf_samples", OpenMaya.MFnNumericData.kInt, 1)
-    drt_ibl_bsdf_samples_AttrInt.setHidden(False)
-    drt_ibl_bsdf_samples_AttrInt.setKeyable(True)
-
-    # ibl_env_samples
-    drt_ibl_env_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.drt_ibl_env_samples = drt_ibl_env_samples_AttrInt.create("drt_ibl_env_samples", "drt_ibl_env_samples", OpenMaya.MFnNumericData.kInt, 1)
-    drt_ibl_env_samples_AttrInt.setHidden(False)
-    drt_ibl_env_samples_AttrInt.setKeyable(True)
-
-    # max_path_length
-    drt_max_path_length_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.drt_max_path_length = drt_max_path_length_AttrInt.create("drt_max_path_length", "drt_max_path_length", OpenMaya.MFnNumericData.kInt, 0)
-    drt_max_path_length_AttrInt.setHidden(False)
-    drt_max_path_length_AttrInt.setKeyable(True)
-
-    # rr_min_path_length
-    drt_rr_min_path_length_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.drt_rr_min_path_length = drt_rr_min_path_length_AttrInt.create("drt_rr_min_path_length", "drt_rr_min_path_length", OpenMaya.MFnNumericData.kInt, 1)
-    drt_rr_min_path_length_AttrInt.setHidden(False)
-    drt_rr_min_path_length_AttrInt.setKeyable(True)
-
-    # pt settings
-    # dl_light_samples
-    pt_dl_light_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_dl_light_samples = pt_dl_light_samples_AttrInt.create("pt_dl_light_samples", "pt_dl_light_samples", OpenMaya.MFnNumericData.kInt, 1)
-    pt_dl_light_samples_AttrInt.setHidden(False)
-    pt_dl_light_samples_AttrInt.setKeyable(True)
+    pt_iblnAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.pt_ibl = pt_iblnAttr.create("pt_ibl", "pt_ibl", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.pt_ibl)
 
     # enable_caustics
-    pt_enable_causticsnAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_enable_caustics = pt_enable_causticsnAttr.create("pt_enable_caustics", "pt_enable_caustics", OpenMaya.MFnNumericData.kBoolean, False)
+    pt_causticsnAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.pt_caustics = pt_causticsnAttr.create("pt_caustics", "pt_caustics", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.pt_caustics)
 
     # enable_dl
     pt_enable_dlnAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_enable_dl = pt_enable_dlnAttr.create("pt_enable_dl", "pt_enable_dl", OpenMaya.MFnNumericData.kBoolean, True)
-
-    # enable_ibl
-    pt_enable_iblnAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_enable_ibl = pt_enable_iblnAttr.create("pt_enable_ibl", "pt_enable_ibl", OpenMaya.MFnNumericData.kBoolean, True)
-
-    # ibl_bsdf_samples
-    pt_ibl_bsdf_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_ibl_bsdf_samples = pt_ibl_bsdf_samples_AttrInt.create("pt_ibl_bsdf_samples", "pt_ibl_bsdf_samples", OpenMaya.MFnNumericData.kInt, 1)
-    pt_ibl_bsdf_samples_AttrInt.setHidden(False)
-    pt_ibl_bsdf_samples_AttrInt.setKeyable(True)
-
-    # ibl_env_samples
-    pt_ibl_env_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_ibl_env_samples = pt_ibl_env_samples_AttrInt.create("pt_ibl_env_samples", "pt_ibl_env_samples", OpenMaya.MFnNumericData.kInt, 1)
-    pt_ibl_env_samples_AttrInt.setHidden(False)
-    pt_ibl_env_samples_AttrInt.setKeyable(True)
-
-    # max_path_length
-    pt_max_path_length_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_max_path_length = pt_max_path_length_AttrInt.create("pt_max_path_length", "pt_max_path_length", OpenMaya.MFnNumericData.kInt, 3)
-    pt_max_path_length_AttrInt.setHidden(False)
-    pt_max_path_length_AttrInt.setKeyable(True)
+    ms_renderSettings.pt_direct_lighting = pt_enable_dlnAttr.create("pt_direct_lighting", "pt_direct_lighting", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.pt_direct_lighting)
 
     # next_event_estimation
     pt_next_event_estimationnAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.pt_next_event_estimation = pt_next_event_estimationnAttr.create("pt_next_event_estimation", "pt_next_event_estimation", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.pt_next_event_estimation)
 
-    # rr_min_path_length
-    pt_rr_min_path_length_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_rr_min_path_length = pt_rr_min_path_length_AttrInt.create("pt_rr_min_path_length", "pt_rr_min_path_length", OpenMaya.MFnNumericData.kInt, 3)
-    pt_rr_min_path_length_AttrInt.setHidden(False)
-    pt_rr_min_path_length_AttrInt.setKeyable(True)
+    # pt_max_bounces
+    pt_max_bounces_AttrFloat = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.pt_max_bounces = pt_max_bounces_AttrFloat.create("pt_max_bounces", "pt_max_bounces", OpenMaya.MFnNumericData.kInt, 4)
+    pt_max_bounces_AttrFloat.setHidden(False)
+    pt_max_bounces_AttrFloat.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.pt_max_bounces)
 
-    # generic tile renderer
-    # filter_size
-    gtr_filter_size_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.gtr_filter_size = gtr_filter_size_AttrInt.create("gtr_filter_size", "gtr_filter_size", OpenMaya.MFnNumericData.kInt, 2)
-    gtr_filter_size_AttrInt.setHidden(False)
-    gtr_filter_size_AttrInt.setKeyable(True)
+    # pt_light_samples
+    pt_light_samples_AttrFloat = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.pt_light_samples = pt_light_samples_AttrFloat.create("pt_light_samples", "pt_light_samples", OpenMaya.MFnNumericData.kInt, 1)
+    pt_light_samples_AttrFloat.setHidden(False)
+    pt_light_samples_AttrFloat.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.pt_light_samples)
 
-    # min_samples
-    gtr_min_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.gtr_min_samples = gtr_min_samples_AttrInt.create("gtr_min_samples", "gtr_min_samples", OpenMaya.MFnNumericData.kInt, 8)
-    gtr_min_samples_AttrInt.setHidden(False)
-    gtr_min_samples_AttrInt.setKeyable(True)
+    # pt_environment_samples
+    pt_environment_samples_AttrFloat = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.pt_environment_samples = pt_environment_samples_AttrFloat.create("pt_environment_samples", "pt_environment_samples", OpenMaya.MFnNumericData.kInt, 1)
+    pt_environment_samples_AttrFloat.setHidden(False)
+    pt_environment_samples_AttrFloat.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.pt_environment_samples)
 
-    # max_samples
-    gtr_max_samples_AttrInt = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.gtr_max_samples = gtr_max_samples_AttrInt.create("gtr_max_samples", "gtr_max_samples", OpenMaya.MFnNumericData.kInt, 64)
-    gtr_max_samples_AttrInt.setHidden(False)
-    gtr_max_samples_AttrInt.setKeyable(True)
-
-    # max_contrast
-    gtr_max_contrast_AttrFloat = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.gtr_max_contrast = gtr_max_contrast_AttrFloat.create("gtr_max_contrast", "gtr_max_contrast", OpenMaya.MFnNumericData.kFloat, 0.004)
-    gtr_max_contrast_AttrFloat.setHidden(False)
-    gtr_max_contrast_AttrFloat.setKeyable(True)
-
-    # max_variation
-    gtr_max_variation_AttrFloat = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.gtr_max_variation = gtr_max_variation_AttrFloat.create("gtr_max_variation", "gtr_max_variation", OpenMaya.MFnNumericData.kFloat, 0.15)
-    gtr_max_variation_AttrFloat.setHidden(False)
-    gtr_max_variation_AttrFloat.setKeyable(True)
-
-    # sampler enum
-    gtr_sampler_enumAttr = OpenMaya.MFnEnumAttribute()
-    ms_renderSettings.gtr_sampler = gtr_sampler_enumAttr.create("gtr_sampler", "gtr_sampler")
-    gtr_sampler_enumAttr.addField("uniform", 0)
-    gtr_sampler_enumAttr.addField("adaptive", 1)
 
     # profile export
     profile_export_nAttr = OpenMaya.MFnNumericAttribute()
@@ -381,35 +320,6 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.addAttribute(ms_renderSettings.width)
     ms_renderSettings.addAttribute(ms_renderSettings.height)
     ms_renderSettings.addAttribute(ms_renderSettings.export_straight_alpha)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.export_custom_final_config)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.final_config_lighting_engine)
-    ms_renderSettings.addAttribute(ms_renderSettings.min_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.max_samples)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.drt_dl_bsdf_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.drt_dl_light_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.drt_enable_ibl)
-    ms_renderSettings.addAttribute(ms_renderSettings.drt_ibl_bsdf_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.drt_ibl_env_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.drt_max_path_length)
-    ms_renderSettings.addAttribute(ms_renderSettings.drt_rr_min_path_length)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_dl_light_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_enable_caustics)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_enable_dl)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_enable_ibl)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_ibl_bsdf_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_ibl_env_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_max_path_length)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_next_event_estimation)
-    ms_renderSettings.addAttribute(ms_renderSettings.pt_rr_min_path_length)
-    ms_renderSettings.addAttribute(ms_renderSettings.gtr_filter_size)
-    ms_renderSettings.addAttribute(ms_renderSettings.gtr_min_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.gtr_max_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.gtr_max_contrast)
-    ms_renderSettings.addAttribute(ms_renderSettings.gtr_max_variation)
-    ms_renderSettings.addAttribute(ms_renderSettings.gtr_sampler)
 
     ms_renderSettings.addAttribute(ms_renderSettings.profile_export)
     ms_renderSettings.addAttribute(ms_renderSettings.autodetect_alpha)

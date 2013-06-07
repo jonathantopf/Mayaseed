@@ -236,36 +236,22 @@ global proc AEms_renderSettingsTemplate(string $nodeName) {
         editorTemplate -endLayout;
 
         editorTemplate -beginLayout "Configuration Settings" -collapse true;
-            editorTemplate -addControl "export_custom_final_config";
-            editorTemplate -addControl "gtr_sampler";
-            editorTemplate -addControl "gtr_filter_size";
-            editorTemplate -addControl "gtr_min_samples";
-            editorTemplate -addControl "gtr_max_samples";
-            editorTemplate -addControl "gtr_max_contrast";
-            editorTemplate -addControl "gtr_max_variation";
-            editorTemplate -addControl "final_lighting_engine";
-
-            editorTemplate -beginLayout "DRT Settings" -collapse true;
-                editorTemplate -addControl "drt_dl_bsdf_samples";
-                editorTemplate -addControl "drt_dl_light_samples";
-                editorTemplate -addControl "drt_enable_ibl";
-                editorTemplate -addControl "drt_ibl_bsdf_samples";
-                editorTemplate -addControl "drt_ibl_env_samples";
-                editorTemplate -addControl "drt_max_path_length";
-                editorTemplate -addControl "drt_rr_min_path_length";
-            editorTemplate -endLayout;
-
-            editorTemplate -beginLayout "PT Settings" -collapse true;
-                editorTemplate -addControl "pt_dl_light_samples";
-                editorTemplate -addControl "pt_enable_caustics";
-                editorTemplate -addControl "pt_enable_dl";
-                editorTemplate -addControl "pt_enable_ibl";
-                editorTemplate -addControl "pt_ibl_bsdf_samples";
-                editorTemplate -addControl "pt_ibl_env_samples";
-                editorTemplate -addControl "pt_max_path_length";
-                editorTemplate -addControl "pt_next_event_estimation";
-                editorTemplate -addControl "pt_rr_min_path_length";
-            editorTemplate -endLayout;
+            editorTemplate -addControl "sampler";
+            editorTemplate -addControl "adaptive_min_samples";
+            editorTemplate -addControl "adaptive_max_samples";
+            editorTemplate -addControl "adaptive_quality";
+            editorTemplate -addSeparator;
+            editorTemplate -addControl "uniform_samples";
+            editorTemplate -addControl "uniform_decorrelate_pixels";
+            editorTemplate -addSeparator;
+            editorTemplate -addControl "pt_direct_lighting";
+            editorTemplate -addControl "pt_ibl";
+            editorTemplate -addControl "pt_caustics";
+            editorTemplate -addSeparator;
+            editorTemplate -addControl "pt_next_event_estimation";
+            editorTemplate -addControl "pt_max_bounces";
+            editorTemplate -addControl "pt_light_samples";
+            editorTemplate -addControl "pt_environment_samples";
         editorTemplate -endLayout;
 
         editorTemplate -beginLayout "Advanced Settings" -collapse true;

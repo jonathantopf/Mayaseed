@@ -155,44 +155,26 @@ def get_maya_params(render_settings_node):
     params['output_res_height'] = cmds.getAttr(render_settings_node + '.height')
     params['export_straight_alpha'] = cmds.getAttr(render_settings_node + '.export_straight_alpha')
 
-    # Custom final configuration.
-
-    params['custom_final_config_check'] = cmds.getAttr(render_settings_node + '.export_custom_final_config')
-    params['custom_final_config_engine'] = cmds.getAttr(render_settings_node + '.final_lighting_engine')
-    if params['custom_final_config_engine'] == 0:
-        params['custom_final_config_engine'] = 'pt'
+    # configuration settings.
+    params['sampler'] = cmds.getAttr(render_settings_node + '.sampler')
+    if params['sampler'] == 0:
+        params['sampler'] = 'adaptive'
     else:
-        params['custom_final_config_engine'] = 'drt'
+        params['sampler'] = 'uniform'
 
-    params['drt_dl_bsdf_samples'] = cmds.getAttr(render_settings_node + '.drt_dl_bsdf_samples')
-    params['drt_dl_light_samples'] = cmds.getAttr(render_settings_node + '.drt_dl_light_samples')
-    params['drt_enable_ibl'] = cmds.getAttr(render_settings_node + '.drt_enable_ibl')
-    params['drt_ibl_bsdf_samples'] = cmds.getAttr(render_settings_node + '.drt_ibl_bsdf_samples')
-    params['drt_ibl_env_samples'] = cmds.getAttr(render_settings_node + '.drt_ibl_env_samples')
-    params['drt_max_path_length'] = cmds.getAttr(render_settings_node + '.drt_max_path_length')
-    params['drt_rr_min_path_length'] = cmds.getAttr(render_settings_node + '.drt_rr_min_path_length')
-
-    params['pt_dl_light_samples'] = cmds.getAttr(render_settings_node + '.pt_dl_light_samples')
-    params['pt_enable_caustics'] = cmds.getAttr(render_settings_node + '.pt_enable_caustics')
-    params['pt_enable_dl'] = cmds.getAttr(render_settings_node + '.pt_enable_dl')
-    params['pt_enable_ibl'] = cmds.getAttr(render_settings_node + '.pt_enable_ibl')
-    params['pt_ibl_bsdf_samples'] = cmds.getAttr(render_settings_node + '.pt_ibl_bsdf_samples')
-    params['pt_ibl_env_samples'] = cmds.getAttr(render_settings_node + '.pt_ibl_env_samples')
-    params['pt_max_path_length'] = cmds.getAttr(render_settings_node + '.pt_max_path_length')
-
+    params['uniform_samples'] = cmds.getAttr(render_settings_node + '.uniform_samples')
+    params['uniform_decorrelate_pixels'] = cmds.getAttr(render_settings_node + '.uniform_decorrelate_pixels')
+ 
+    params['adaptive_min_samples'] = cmds.getAttr(render_settings_node + '.adaptive_min_samples')
+    params['adaptive_max_samples'] = cmds.getAttr(render_settings_node + '.adaptive_max_samples')
+    params['adaptive_quality'] = cmds.getAttr(render_settings_node + '.adaptive_quality')
+    params['pt_ibl'] = cmds.getAttr(render_settings_node + '.pt_ibl')
+    params['pt_caustics'] = cmds.getAttr(render_settings_node + '.pt_caustics')
+    params['pt_direct_lighting'] = cmds.getAttr(render_settings_node + '.pt_direct_lighting')
     params['pt_next_event_estimation'] = cmds.getAttr(render_settings_node + '.pt_next_event_estimation')
-    params['pt_rr_min_path_length'] = cmds.getAttr(render_settings_node + '.pt_rr_min_path_length')
-
-    params['gtr_filter_size'] = cmds.getAttr(render_settings_node + '.gtr_filter_size')
-    params['gtr_min_samples'] = cmds.getAttr(render_settings_node + '.gtr_min_samples')
-    params['gtr_max_samples'] = cmds.getAttr(render_settings_node + '.gtr_max_samples')
-    params['gtr_max_contrast'] = cmds.getAttr(render_settings_node + '.gtr_max_contrast')
-    params['gtr_max_variation'] = cmds.getAttr(render_settings_node + '.gtr_max_variation')
-
-    if cmds.getAttr(render_settings_node + '.gtr_sampler') == 0:
-        params['gtr_sampler'] = 'uniform'
-    else:
-        params['gtr_sampler'] = 'adaptive'
+    params['pt_max_bounces'] = cmds.getAttr(render_settings_node + '.pt_max_bounces')
+    params['pt_light_samples'] = cmds.getAttr(render_settings_node + '.pt_light_samples')
+    params['pt_environment_samples'] = cmds.getAttr(render_settings_node + '.pt_environment_samples')
 
     # Select obj exporter.
     if cmds.pluginInfo('ms_export_obj_' + str(int(mel.eval('getApplicationVersionAsFloat()'))), query=True, r=True):
@@ -1776,42 +1758,30 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         final_config.name = 'final'
         final_config.base = 'base_final'
 
-        if ['custom_final_config_check']:
-            final_config.parameters.append(AsParameter('lighting_engine', params['custom_final_config_engine']))
+        for config in [interactive_config, final_config]:
+            config.parameters.append(AsParameter('lighting_engine', 'pt'))
+            config.parameters.append(AsParameter('pixel_renderer', params['sampler']))
 
-            pt_parameters = AsParameters()
-            pt_parameters.name = 'pt'
-            pt_parameters.parameters.append(AsParameter('dl_light_samples',      params['pt_dl_light_samples']))
-            pt_parameters.parameters.append(AsParameter('enable_caustics',       params['pt_enable_caustics']))
-            pt_parameters.parameters.append(AsParameter('enable_dl',             params['pt_enable_dl']))
-            pt_parameters.parameters.append(AsParameter('enable_ibl',            params['pt_enable_ibl']))
-            pt_parameters.parameters.append(AsParameter('ibl_env_samples',       params['pt_ibl_env_samples']))
-            pt_parameters.parameters.append(AsParameter('ibl_bsdf_samples',      params['pt_ibl_bsdf_samples']))
-            pt_parameters.parameters.append(AsParameter('max_path_length',       params['pt_max_path_length']))
-            pt_parameters.parameters.append(AsParameter('next_event_estimation', params['pt_next_event_estimation']))
-            pt_parameters.parameters.append(AsParameter('rr_min_path_length',    params['pt_rr_min_path_length']))
-            final_config.parameters.append(pt_parameters)
+            adaptive_pixel_renderer_params = AsParameters('adaptive_pixel_renderer')
+            adaptive_pixel_renderer_params.parameters.append(AsParameter('min_samples', params['adaptive_min_samples']))
+            adaptive_pixel_renderer_params.parameters.append(AsParameter('max_samples', params['adaptive_max_samples']))
+            adaptive_pixel_renderer_params.parameters.append(AsParameter('quality', params['adaptive_quality']))
+            config.parameters.append(adaptive_pixel_renderer_params)
 
-            drt_parameters = AsParameters()
-            drt_parameters.name = 'drt'
-            drt_parameters.parameters.append(AsParameter('dl_bsdf_samples',      params['drt_dl_bsdf_samples']))
-            drt_parameters.parameters.append(AsParameter('dl_light_samples',     params['drt_dl_light_samples']))
-            drt_parameters.parameters.append(AsParameter('enable_ibl',           params['drt_enable_ibl']))
-            drt_parameters.parameters.append(AsParameter('ibl_bsdf_samples',     params['drt_ibl_bsdf_samples']))
-            drt_parameters.parameters.append(AsParameter('ibl_env_samples',      params['drt_ibl_env_samples']))
-            drt_parameters.parameters.append(AsParameter('max_path_length',      params['drt_max_path_length']))
-            drt_parameters.parameters.append(AsParameter('rr_min_path_length',   params['drt_rr_min_path_length']))
-            final_config.parameters.append(drt_parameters)
+            uniform_pixel_renderer_params = AsParameters('uniform_pixel_renderer')
+            uniform_pixel_renderer_params.parameters.append(AsParameter('samples', params['uniform_samples']))
+            uniform_pixel_renderer_params.parameters.append(AsParameter('decorrelate_pixels', params['uniform_decorrelate_pixels']))
+            config.parameters.append(uniform_pixel_renderer_params)
 
-            generic_tile_renderer_parameters = AsParameters()
-            generic_tile_renderer_parameters.name = 'generic_tile_renderer'
-            generic_tile_renderer_parameters.parameters.append(AsParameter('filter_size',   params['gtr_filter_size']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('sampler',       params['gtr_sampler']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('min_samples',   params['gtr_min_samples']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('max_samples',   params['gtr_max_samples']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('max_contrast',  params['gtr_max_contrast']))
-            generic_tile_renderer_parameters.parameters.append(AsParameter('max_variation', params['gtr_max_variation']))
-            final_config.parameters.append(generic_tile_renderer_parameters)
+            pt_params = AsParameters('pt')
+            pt_params.parameters.append(AsParameter('dl_light_samples', params['pt_light_samples']))
+            pt_params.parameters.append(AsParameter('enable_caustics', params['pt_caustics']))
+            pt_params.parameters.append(AsParameter('enable_dl', params['pt_direct_lighting']))
+            pt_params.parameters.append(AsParameter('enable_ibl', params['pt_ibl']))
+            pt_params.parameters.append(AsParameter('ibl_env_samples', params['pt_environment_samples']))
+            pt_params.parameters.append(AsParameter('max_path_length', params['pt_max_bounces']))
+            pt_params.parameters.append(AsParameter('next_event_estimation', params['pt_next_event_estimation']))
+            config.parameters.append(pt_params)
 
         # begin scene object
         as_project.scene = AsScene()
