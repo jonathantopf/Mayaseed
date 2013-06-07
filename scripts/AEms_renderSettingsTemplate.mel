@@ -224,9 +224,7 @@ global proc AEms_renderSettingsTemplate(string $nodeName) {
             editorTemplate -callCustom "AEcustomEnvironmentMenuCreate" "AEcustomEnvironmentMenuEdit" "environment";
         editorTemplate -endLayout;
 
-        editorTemplate -beginLayout "Camera Settings" -collapse true;
-            editorTemplate -addControl "export_all_cameras";
-            editorTemplate -addSeparator;
+        editorTemplate -beginLayout "Camera Settings" -collapse true;;
             editorTemplate -addControl "export_all_cameras_as_thin_lens";
         editorTemplate -endLayout;
 

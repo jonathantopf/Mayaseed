@@ -21,7 +21,6 @@
 # THE SOFTWARE.
 #
 
-
 import sys
 import maya.OpenMaya as OpenMaya
 import maya.OpenMayaMPx as OpenMayaMPx
@@ -31,12 +30,11 @@ import maya.cmds as cmds
 import inspect
 import os
 import os.path
+import ms_menu
 
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
 sys.path.append(os.path.join(ROOT_DIRECTORY, 'scripts'))
 sys.path.append(os.path.join(ROOT_DIRECTORY, 'graphics'))
-
-import ms_menu
 
 
 #--------------------------------------------------------------------------------------------------
@@ -55,113 +53,121 @@ def ms_renderSettings_nodeCreator():
 
 def ms_renderSettings_nodeInitializer():
     # define attributes
-    # export button --------------------------------------------
-    export_button_string = OpenMaya.MFnStringData().create("/")
-    export_button_string_Attr = OpenMaya.MFnTypedAttribute()
-    ms_renderSettings.export_button = export_button_string_Attr.create("export", "export", OpenMaya.MFnData.kString, export_button_string)
-
     #  output directory
     output_dir_string = OpenMaya.MFnStringData().create(os.path.join("<ProjectDir>Mayaseed", "<SceneName>"))
     output_dir_Attr = OpenMaya.MFnTypedAttribute()
     ms_renderSettings.output_dir = output_dir_Attr.create("output_directory", "out_dir", OpenMaya.MFnData.kString, output_dir_string)
-    
+    ms_renderSettings.addAttribute(ms_renderSettings.output_dir)
+
     #  output file
     output_file_string = OpenMaya.MFnStringData().create("<SceneName>.#.appleseed")
     output_file_Attr = OpenMaya.MFnTypedAttribute()
     ms_renderSettings.output_file = output_file_Attr.create("output_file", "out_file", OpenMaya.MFnData.kString, output_file_string)  
+    ms_renderSettings.addAttribute(ms_renderSettings.output_file)
 
     # export maya lights
     export_maya_lights_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_maya_lights = export_maya_lights_nAttr.create("export_maya_lights", "export_maya_lights", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.export_maya_lights)
 
     # convert textures to exr
     convert_textures_to_exr_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.convert_textures_to_exr = convert_textures_to_exr_nAttr.create("convert_textures_to_exr", "convert_tex_to_exr", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.convert_textures_to_exr)
 
     # convert shading nodes to textures
     convert_shading_nodes_to_textures_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.convert_shading_nodes_to_textures = convert_shading_nodes_to_textures_nAttr.create("convert_shading_nodes_to_textures", "convert_shading_nodes", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.convert_shading_nodes_to_textures)
 
     #  overwrite existing textures
     overwrite_existing_textures_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.overwrite_existing_textures = overwrite_existing_textures_nAttr.create("overwrite_existing_textures", "overwrite_exrs", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.overwrite_existing_textures)
 
     #  overwrite existing geometry
     overwrite_existing_geometry_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.overwrite_existing_geometry = overwrite_existing_geometry_nAttr.create("overwrite_existing_geometry", "overwrite_geo", OpenMaya.MFnNumericData.kBoolean, True)
-
+    ms_renderSettings.addAttribute(ms_renderSettings.overwrite_existing_geometry)
 
     # export camera blur
     export_camera_blur_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_camera_blur = export_camera_blur_nAttr.create("export_camera_blur", "camera_blur", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.export_camera_blur)
 
     # export transformation blur
     export_transformation_blur_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_transformation_blur = export_transformation_blur_nAttr.create("export_transformation_blur", "transformation_blur", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.export_transformation_blur)
 
     # export deformation blur
     export_deformation_blur_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_deformation_blur = export_deformation_blur_nAttr.create("export_deformation_blur", "deformation_blur", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.export_deformation_blur)
 
     # motion samples
     motion_samples_AttrInt = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.motion_samples = motion_samples_AttrInt.create("motion_samples", "motion_samples", OpenMaya.MFnNumericData.kInt, 2)
     motion_samples_AttrInt.setHidden(False)
     motion_samples_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.motion_samples)
 
     # shutter open time
     shutter_open_AttrFloat = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.shutter_open_time = shutter_open_AttrFloat.create("shutter_open_time", "shutter_open_time", OpenMaya.MFnNumericData.kFloat, 0)
     shutter_open_AttrFloat.setHidden(False)
     shutter_open_AttrFloat.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.shutter_open_time)
 
     # shutter close time
     shutter_close_AttrFloat = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.shutter_close_time = shutter_close_AttrFloat.create("shutter_close_time", "shutter_close_time", OpenMaya.MFnNumericData.kFloat, 1)
     shutter_close_AttrFloat.setHidden(False)
     shutter_close_AttrFloat.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.shutter_close_time)
 
     # export animation
     export_animation_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_animation = export_animation_nAttr.create("export_animation", "export_animation", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.export_animation)
 
     # start_frame
     start_frame_AttrInt = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.start_frame = start_frame_AttrInt.create("animation_start_frame", "start_frame", OpenMaya.MFnNumericData.kInt, 1)
     start_frame_AttrInt.setHidden(False)
     start_frame_AttrInt.setKeyable(False)
-    
+    ms_renderSettings.addAttribute(ms_renderSettings.start_frame)
+
     # end frame
     end_frame_AttrInt = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.end_frame = end_frame_AttrInt.create("animation_end_frame", "end_frame", OpenMaya.MFnNumericData.kInt, 100)
     end_frame_AttrInt.setHidden(False)
     end_frame_AttrInt.setKeyable(False)
+    ms_renderSettings.addAttribute(ms_renderSettings.end_frame)
 
     # export animated textures
     export_animated_textures_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_animated_textures = export_animated_textures_nAttr .create("export_animated_textures", "animated_textures", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.export_animated_textures)
 
     # environent -----------------------------------------------
     # environment message
     environment_msgAttr = OpenMaya.MFnMessageAttribute()
     ms_renderSettings.environment = environment_msgAttr.create("environment", "env")   
+    ms_renderSettings.addAttribute(ms_renderSettings.environment)
 
     # cameras --------------------------------------------------
-    # export all cameras bool attribute
-    export_all_cameras_nAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.export_all_cameras = export_all_cameras_nAttr.create("export_all_cameras", "export_all_cams", OpenMaya.MFnNumericData.kBoolean)
     # export all cameras as thin lens bool attribute
     export_all_cameras_as_thin_lens_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_all_cameras_as_thin_lens = export_all_cameras_as_thin_lens_nAttr.create("export_all_cameras_as_thin_lens", "export_thinlens", OpenMaya.MFnNumericData.kBoolean)
-    # interpret sets as assemblies bool attribute
-    interpret_sets_as_assemblies_nAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.interpret_sets_as_assemblies = interpret_sets_as_assemblies_nAttr.create("interpret_sets_as_assemblies", "sets_as_assemblies", OpenMaya.MFnNumericData.kBoolean)
- 
+    ms_renderSettings.addAttribute(ms_renderSettings.export_all_cameras_as_thin_lens)
+
     # output ---------------------------------------------------
     # camera
     camera_msgAttr = OpenMaya.MFnMessageAttribute()
     ms_renderSettings.camera = camera_msgAttr.create("camera", "cam")
-    
+    ms_renderSettings.addAttribute(ms_renderSettings.camera)
+
     # color space
     color_space_enumAttr = OpenMaya.MFnEnumAttribute()
     ms_renderSettings.color_space = color_space_enumAttr.create("color_space", "col_space")
@@ -169,21 +175,26 @@ def ms_renderSettings_nodeInitializer():
     color_space_enumAttr.addField("Linear RGB", 1)
     color_space_enumAttr.addField("Spectral", 2)
     color_space_enumAttr.addField("ciexyz", 3)
+    ms_renderSettings.addAttribute(ms_renderSettings.color_space)
 
-    # resolution width samples
+    # resolution width
     width_AttrInt = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.width = width_AttrInt.create("frame_width", "width", OpenMaya.MFnNumericData.kInt, 1280)
     width_AttrInt.setHidden(False)
     width_AttrInt.setKeyable(True)
-    # resolution height samples
+    ms_renderSettings.addAttribute(ms_renderSettings.width)
+
+    # resolution height
     height_AttrInt = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.height = height_AttrInt.create("frame_height", "height", OpenMaya.MFnNumericData.kInt, 720)
     height_AttrInt.setHidden(False)
     height_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.height)
 
     # export straight
     export_straight_alpha_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.export_straight_alpha = export_straight_alpha_nAttr.create("export_straight_alpha", "export_straight", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.export_straight_alpha)
 
     # sampler
     sampler_enumAttr = OpenMaya.MFnEnumAttribute()
@@ -191,7 +202,6 @@ def ms_renderSettings_nodeInitializer():
     sampler_enumAttr.addField("Adaptive", 0)
     sampler_enumAttr.addField("Uniform", 1)
     ms_renderSettings.addAttribute(ms_renderSettings.sampler)
-
 
     # uniform sampler
     # uniform_samples
@@ -205,7 +215,6 @@ def ms_renderSettings_nodeInitializer():
     uniform_decorrelate_pixelsnAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.uniform_decorrelate_pixels = uniform_decorrelate_pixelsnAttr.create("uniform_decorrelate_pixels", "uniform_decorrelate_pixels", OpenMaya.MFnNumericData.kBoolean, True)
     ms_renderSettings.addAttribute(ms_renderSettings.uniform_decorrelate_pixels)
-
 
     # adaptive_sampler
     # adaptive_min_samples
@@ -271,61 +280,26 @@ def ms_renderSettings_nodeInitializer():
     pt_environment_samples_AttrFloat.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.pt_environment_samples)
 
-
     # profile export
     profile_export_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.profile_export = profile_export_nAttr.create("profile_export", "profile_export", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.profile_export)
 
     # autodetect alpha
     autodetect_alpha_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.autodetect_alpha = autodetect_alpha_nAttr.create("autodetect_alpha", "autodetect_alpha", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.autodetect_alpha)
 
     # force_linear_texture_interpretation
     force_linear_texture_interpretation_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.force_linear_texture_interpretation = force_linear_texture_interpretation_nAttr.create("force_linear_texture_interpretation", "force_linear_texture_interpretation", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.force_linear_texture_interpretation)
 
     # force_linear_color_interpretation
     force_linear_color_interpretation_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.force_linear_color_interpretation = force_linear_color_interpretation_nAttr.create("force_linear_color_interpretation", "force_linear_color_interpretation", OpenMaya.MFnNumericData.kBoolean, False)
-
-    # add attributes
-    ms_renderSettings.addAttribute(ms_renderSettings.export_button)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.output_dir)
-    ms_renderSettings.addAttribute(ms_renderSettings.output_file)
-    ms_renderSettings.addAttribute(ms_renderSettings.convert_shading_nodes_to_textures)
-    ms_renderSettings.addAttribute(ms_renderSettings.export_maya_lights)
-    ms_renderSettings.addAttribute(ms_renderSettings.convert_textures_to_exr)
-    ms_renderSettings.addAttribute(ms_renderSettings.overwrite_existing_textures)
-    ms_renderSettings.addAttribute(ms_renderSettings.overwrite_existing_geometry)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.export_camera_blur)
-    ms_renderSettings.addAttribute(ms_renderSettings.export_transformation_blur)
-    ms_renderSettings.addAttribute(ms_renderSettings.export_deformation_blur)
-    ms_renderSettings.addAttribute(ms_renderSettings.motion_samples)
-    ms_renderSettings.addAttribute(ms_renderSettings.shutter_open_time)
-    ms_renderSettings.addAttribute(ms_renderSettings.shutter_close_time)
-    ms_renderSettings.addAttribute(ms_renderSettings.export_animation)
-    ms_renderSettings.addAttribute(ms_renderSettings.start_frame)
-    ms_renderSettings.addAttribute(ms_renderSettings.end_frame)
-    ms_renderSettings.addAttribute(ms_renderSettings.export_animated_textures)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.environment)
-    ms_renderSettings.addAttribute(ms_renderSettings.export_all_cameras)
-    ms_renderSettings.addAttribute(ms_renderSettings.export_all_cameras_as_thin_lens)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.interpret_sets_as_assemblies)
-    ms_renderSettings.addAttribute(ms_renderSettings.camera)
-    ms_renderSettings.addAttribute(ms_renderSettings.color_space)
-    ms_renderSettings.addAttribute(ms_renderSettings.width)
-    ms_renderSettings.addAttribute(ms_renderSettings.height)
-    ms_renderSettings.addAttribute(ms_renderSettings.export_straight_alpha)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.profile_export)
-    ms_renderSettings.addAttribute(ms_renderSettings.autodetect_alpha)
-
-    ms_renderSettings.addAttribute(ms_renderSettings.force_linear_texture_interpretation)
     ms_renderSettings.addAttribute(ms_renderSettings.force_linear_color_interpretation)
+
 
 def initializePlugin(obj):
     plugin = OpenMayaMPx.MFnPlugin(obj)
@@ -349,6 +323,7 @@ def initializePlugin(obj):
 
     ms_menu.createMenu()
     ms_menu.buildMenu()
+
 
 def uninitializePlugin(obj):
     plugin = OpenMayaMPx.MFnPlugin(obj)
