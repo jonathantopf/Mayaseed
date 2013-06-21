@@ -207,7 +207,8 @@ def get_maya_scene(params):
     # find all root transforms and create Mtransforms from them
     for maya_transform in cmds.ls(tr=True, long=True):
         if not cmds.listRelatives(maya_transform, ap=True, fullPath=True):
-            maya_root_transforms.append(MTransform(params, maya_transform, None))
+            if ms_commands.transform_is_renderable(maya_transform):
+                maya_root_transforms.append(MTransform(params, maya_transform, None))
 
     start_frame = int(start_time)
     end_frame = start_frame
@@ -373,8 +374,9 @@ class MTransform():
         if mesh_names is not None:
             self.has_children = True
             for mesh_name in mesh_names:
-                if ms_commands.transform_is_visible(mesh_name):
-                    self.child_meshes.append(MMesh(params, mesh_name, self))
+                if ms_commands.transform_is_renderable(mesh_name):
+                    if ms_commands.transform_is_visible(mesh_name):
+                        self.child_meshes.append(MMesh(params, mesh_name, self))
 
         light_names = cmds.listRelatives(self.name, type='light', fullPath=True)
         if light_names is not None:
