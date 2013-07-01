@@ -2076,6 +2076,16 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
     new_lambertian_bsdf.model = 'lambertian_brdf'
     root_assembly.bsdfs.append(new_lambertian_bsdf)
 
+    # material transparrency
+    if generic_material.alpha is not None:
+        if generic_material.alpha.__class__.__name__ == 'MFile':
+            alpha_texture, alpha_texture_instance = m_file_to_as_texture(params, generic_material.alpha, '_alpha', non_mb_sample_number)
+            new_material.alpha_map = AsParameter('alpha_map', alpha_texture_instance.name)
+            root_assembly.textures.append(alpha_texture)
+            root_assembly.texture_instances.append(alpha_texture_instance)
+        else:
+            new_material.alpha_map = AsParameter('alpha_map', generic_material.alpha.color_value[0][0] * -1)
+
     # only use phong mix if the specular color is > 0 or exists
     if (generic_material.specular_color is not None) and (generic_material.specular_cosine_power is not None):
         if not generic_material.specular_color.is_black: 
