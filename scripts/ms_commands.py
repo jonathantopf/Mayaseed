@@ -430,7 +430,10 @@ def create_shading_node(model, name=None, entity_defs_obj=False):
 
     cmds.addAttr(shading_node_name, longName='node_type', dt="string")
     cmds.setAttr(shading_node_name + '.node_type', entity_defs[model].type, type="string", lock=True)
-    
+
+    cmds.addAttr(shading_node_name, longName='render_layer', dt="string")
+    cmds.setAttr(shading_node_name + '.render_layer', '', type="string")
+
     for entity_key in entity_defs.keys():
         if entity_key == model:
             for attr_key in entity_defs[entity_key].attributes.keys():

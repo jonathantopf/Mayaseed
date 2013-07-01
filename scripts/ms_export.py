@@ -856,11 +856,17 @@ class MMsShadingNode():
 
         self.type = cmds.getAttr(self.name + '.node_type')    # bsdf, edf etc.
         self.model = cmds.getAttr(self.name + '.node_model')  # lambertian etc.
+        self.render_layer = None
 
         self.child_shading_nodes = []
         self.attributes = dict()
         self.colors = []
         self.textures = []
+
+        # add a render layer attribute if its set
+        maya_render_layer = cmds.getAttr(self.name + '.render_layer')
+        if maya_render_layer is not '':
+            self.render_layer = maya_render_layer
 
         # add the correct attributes based on the entity defs xml
         for attribute_key in params['entity_defs'][self.model].attributes.keys():
@@ -1286,11 +1292,14 @@ class AsBsdf():
         self.name = None
         self.model = None
         self.parameters = []
+        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('bsdf name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
+        if self.render_layer is not None:
+            self.render_layer.emit_xml(doc)
         doc.end_element('bsdf')
 
 
@@ -1306,11 +1315,14 @@ class AsEdf():
         self.name = None
         self.model = None
         self.parameters = []
+        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('edf name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
+        if self.render_layer is not None:
+            self.render_layer.emit_xml(doc) 
         doc.end_element('edf')
 
 
@@ -1326,11 +1338,14 @@ class AsSurfaceShader():
         self.name = None
         self.model = None
         self.parameters = []
+        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('surface_shader name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
+        if self.render_layer is not None:
+            self.render_layer.emit_xml(doc)
         doc.end_element('surface_shader')
 
 
@@ -2327,6 +2342,8 @@ def build_as_shading_nodes(params, root_assembly, current_maya_shading_node, non
 
     current_shading_node.name = current_maya_shading_node.safe_name
     current_shading_node.model = current_maya_shading_node.model
+    if current_shading_node.render_layer is not '':
+        current_shading_node.render_layer = AsParameter('render_layer', current_maya_shading_node.render_layer)
 
     for attrib_key in current_maya_shading_node.attributes:
         if current_maya_shading_node.attributes[attrib_key].__class__.__name__ == 'MMsShadingNode':
