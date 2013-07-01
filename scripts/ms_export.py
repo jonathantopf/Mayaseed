@@ -2141,25 +2141,41 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         new_edf = AsEdf()
         new_edf.name = generic_material.safe_name + '_edf'
         new_edf.model = 'diffuse_edf'
+        new_edf.parameters.append(AsParameter('render_layer', generic_material.safe_name + '_layer'))
         root_assembly.edfs.append(new_edf)
         new_material.edf = AsParameter('edf', new_edf.name)
+
+        # add a constant surface shader
+        new_surface_shader = AsSurfaceShader()
+        new_surface_shader.name = generic_material.safe_name + '_surface_shader'
+        new_surface_shader.model = 'constant_surface_shader'
+        root_assembly.surface_shaders.append(new_surface_shader)
+        new_material.surface_shader = AsParameter('surface_shader', new_surface_shader.name)
 
         if generic_material.incandescence.__class__.__name__ == 'MFile':
             edf_texture, edf_texture_instance = m_file_to_as_texture(params, generic_material.incandescence, '_edf', non_mb_sample_number)
             new_edf.parameters.append(AsParameter('exitance', edf_texture_instance.name))
             root_assembly.textures.append(edf_texture)
             root_assembly.texture_instances.append(edf_texture_instance)
+
+            # attach edf texture to surface_shader color
+            new_surface_shader.parameters.append(AsParameter('color', edf_texture_instance.name))
         else:
             edf_color = m_color_connection_to_as_color(generic_material.incandescence, '_edf')
             new_edf.parameters.append(AsParameter('exitance', edf_color.name))
             root_assembly.colors.append(edf_color)
 
+            # attach edf color to surface_shader color
+            new_surface_shader.parameters.append(AsParameter('color', edf_color.name))
 
-    new_surface_shader = AsSurfaceShader()
-    new_surface_shader.name = generic_material.safe_name + '_surface_shader'
-    new_surface_shader.model = 'physical_surface_shader'
-    root_assembly.surface_shaders.append(new_surface_shader)
-    new_material.surface_shader = AsParameter('surface_shader', new_surface_shader.name)
+
+    else:
+        # add a physical surface shader
+        new_surface_shader = AsSurfaceShader()
+        new_surface_shader.name = generic_material.safe_name + '_surface_shader'
+        new_surface_shader.model = 'physical_surface_shader'
+        root_assembly.surface_shaders.append(new_surface_shader)
+        new_material.surface_shader = AsParameter('surface_shader', new_surface_shader.name)
 
     if generic_material.alpha is not None:
         if generic_material.alpha.__class__.__name__ == 'MFile':
