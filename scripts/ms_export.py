@@ -2093,48 +2093,47 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
     # only use phong mix if the specular color is > 0 or exists
     if (generic_material.specular_color is not None) and (generic_material.specular_cosine_power is not None):
-        if not generic_material.specular_color.is_black: 
 
-            new_microfacet_bsdf = AsBsdf()
-            new_microfacet_bsdf.name = generic_material.safe_name + '_microfacet_brdf'
-            new_microfacet_bsdf.model = 'microfacet_brdf'
-            new_microfacet_bsdf.parameters.append(AsParameter('mdf', 'blinn'))
-            root_assembly.bsdfs.append(new_microfacet_bsdf)
+        new_microfacet_bsdf = AsBsdf()
+        new_microfacet_bsdf.name = generic_material.safe_name + '_microfacet_brdf'
+        new_microfacet_bsdf.model = 'microfacet_brdf'
+        new_microfacet_bsdf.parameters.append(AsParameter('mdf', 'blinn'))
+        root_assembly.bsdfs.append(new_microfacet_bsdf)
 
-            new_bsdf_mix_bsdf = AsBsdf()
-            new_bsdf_mix_bsdf.name = generic_material.safe_name + '_bsdf_mix_bsdf'
-            new_bsdf_mix_bsdf.model = 'bsdf_mix'
-            root_assembly.bsdfs.append(new_bsdf_mix_bsdf)
+        new_bsdf_mix_bsdf = AsBsdf()
+        new_bsdf_mix_bsdf.name = generic_material.safe_name + '_bsdf_mix_bsdf'
+        new_bsdf_mix_bsdf.model = 'bsdf_mix'
+        root_assembly.bsdfs.append(new_bsdf_mix_bsdf)
 
-            new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf0', new_lambertian_bsdf.name))
-            new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf1', new_microfacet_bsdf.name))
-            new_bsdf_mix_bsdf.parameters.append(AsParameter('weight0', '1.0'))
-            new_bsdf_mix_bsdf.parameters.append(AsParameter('weight1', '0.2'))
+        new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf0', new_lambertian_bsdf.name))
+        new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf1', new_microfacet_bsdf.name))
+        new_bsdf_mix_bsdf.parameters.append(AsParameter('weight0', '1.0'))
+        new_bsdf_mix_bsdf.parameters.append(AsParameter('weight1', '0.2'))
 
-            new_material.bsdf = AsParameter('bsdf', new_bsdf_mix_bsdf.name)
+        new_material.bsdf = AsParameter('bsdf', new_bsdf_mix_bsdf.name)
 
 
-            if generic_material.specular_cosine_power.__class__.__name__ == 'MFile':
-                bsdf_specular_cosine_texture, bsdf_specular_cosine_texture_instance = m_file_to_as_texture(params, generic_material.specular_cosine_power, '_bsdf', non_mb_sample_number)
-                new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_texture_instance.name))
-                root_assembly.textures.append(bsdf_specular_cosine_texture)
-                root_assembly.texture_instances.append(bsdf_specular_cosine_texture_instance)
-            else:
-                bsdf_specular_cosine_color = m_color_connection_to_as_color(generic_material.specular_cosine_power, '_bsdf')
-                bsdf_specular_cosine_color.multiplier.value = bsdf_specular_cosine_color.multiplier.value * 1.3
-                new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_color.name))
-                root_assembly.colors.append(bsdf_specular_cosine_color)
+        if generic_material.specular_cosine_power.__class__.__name__ == 'MFile':
+            bsdf_specular_cosine_texture, bsdf_specular_cosine_texture_instance = m_file_to_as_texture(params, generic_material.specular_cosine_power, '_bsdf', non_mb_sample_number)
+            new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_texture_instance.name))
+            root_assembly.textures.append(bsdf_specular_cosine_texture)
+            root_assembly.texture_instances.append(bsdf_specular_cosine_texture_instance)
+        else:
+            bsdf_specular_cosine_color = m_color_connection_to_as_color(generic_material.specular_cosine_power, '_bsdf')
+            bsdf_specular_cosine_color.multiplier.value = bsdf_specular_cosine_color.multiplier.value * 1.3
+            new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_color.name))
+            root_assembly.colors.append(bsdf_specular_cosine_color)
 
-            if generic_material.specular_color.__class__.__name__ == 'MFile':
-                bsdf_specular_color_texture, bsdf_specular_color_texture_instance = m_file_to_as_texture(params, generic_material.specular_color, '_bsdf', non_mb_sample_number)
-                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_texture_instance.name))
-                root_assembly.textures.append(bsdf_specular_color_texture)
-                root_assembly.texture_instances.append(bsdf_specular_color_texture_instance)
-            else:
-                bsdf_specular_color_color = m_color_connection_to_as_color(generic_material.specular_color, '_bsdf')
-                if bsdf_specular_color_color.multiplier.value > 1 : bsdf_specular_color_color.multiplier.value = 1
-                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_color.name))
-                root_assembly.colors.append(bsdf_specular_color_color)
+        if generic_material.specular_color.__class__.__name__ == 'MFile':
+            bsdf_specular_color_texture, bsdf_specular_color_texture_instance = m_file_to_as_texture(params, generic_material.specular_color, '_bsdf', non_mb_sample_number)
+            new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_texture_instance.name))
+            root_assembly.textures.append(bsdf_specular_color_texture)
+            root_assembly.texture_instances.append(bsdf_specular_color_texture_instance)
+        else:
+            bsdf_specular_color_color = m_color_connection_to_as_color(generic_material.specular_color, '_bsdf')
+            if bsdf_specular_color_color.multiplier.value > 1 : bsdf_specular_color_color.multiplier.value = 1
+            new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_color.name))
+            root_assembly.colors.append(bsdf_specular_color_color)
 
     else:
         new_material.bsdf = AsParameter('bsdf', new_lambertian_bsdf.name)
