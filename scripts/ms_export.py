@@ -794,7 +794,7 @@ class MGenericMaterial():
             self.specular_cosine_power = MColorConnection(self.params, self.name + '.cosinePower')
             if self.specular_cosine_power.connected_node is not None:
                 self.specular_cosine_power = m_file_from_color_connection(self.params, self.specular_cosine_power)
-                self.textures.append(self.alpha)
+                self.textures.append(self.specular_cosine_power)
             elif self.specular_cosine_power.is_black:
                 self.specular_cosine_power = None
 
@@ -802,7 +802,7 @@ class MGenericMaterial():
             self.specular_color = MColorConnection(self.params, self.name + '.specularColor')
             if self.specular_color.connected_node is not None:
                 self.specular_color = m_file_from_color_connection(self.params, self.specular_color)
-                self.textures.append(self.alpha)
+                self.textures.append(self.specular_color)
             elif self.specular_color.is_black:
                 self.specular_color = None
 
