@@ -175,6 +175,7 @@ def get_maya_params(render_settings_node):
     params['pt_max_bounces'] = cmds.getAttr(render_settings_node + '.pt_max_bounces')
     params['pt_light_samples'] = cmds.getAttr(render_settings_node + '.pt_light_samples')
     params['pt_environment_samples'] = cmds.getAttr(render_settings_node + '.pt_environment_samples')
+    params['pt_max_ray_intensity'] = cmds.getAttr(render_settings_node + '.pt_max_ray_intensity')
 
     # Select obj exporter.
     if cmds.pluginInfo('ms_export_obj_' + str(int(mel.eval('getApplicationVersionAsFloat()'))), query=True, r=True):
@@ -1798,6 +1799,10 @@ def translate_maya_scene(params, maya_scene, maya_environment):
             pt_params.parameters.append(AsParameter('ibl_env_samples', params['pt_environment_samples']))
             pt_params.parameters.append(AsParameter('max_path_length', params['pt_max_bounces']))
             pt_params.parameters.append(AsParameter('next_event_estimation', params['pt_next_event_estimation']))
+
+            if params['pt_max_ray_intensity'] > 0:
+                pt_params.parameters.append(AsParameter('max_ray_intensity', params['pt_max_ray_intensity']))                
+
             config.parameters.append(pt_params)
 
         # begin scene object
