@@ -83,7 +83,9 @@ class WriteXml():
 def check_export_cancelled():
     if cmds.progressWindow(query=True, isCancelled=True):
         cmds.progressWindow(endProgress=1)
-        raise RuntimeError('Export Cancelled.')
+        ms_commands.warning("Export cancelled")
+        sys.exit()
+        # raise RuntimeError('Export Cancelled.')
 
 
 #--------------------------------------------------------------------------------------------------
@@ -297,6 +299,8 @@ def get_maya_scene(params):
 #--------------------------------------------------------------------------------------------------
 
 def add_scene_sample(m_transform, transform_blur, deform_blur, camera_blur, current_frame, start_frame, frame_sample_number, initial_sample, export_root, geo_dir, tex_dir):
+
+    check_export_cancelled()
 
     if transform_blur or initial_sample:
         m_transform.add_transform_sample()
@@ -1748,6 +1752,9 @@ def translate_maya_scene(params, maya_scene, maya_environment):
     cmds.refresh(cv=True)
 
     for i, frame_number in enumerate(frame_list):
+
+        check_export_cancelled()
+
         ms_commands.info("Exporting frame %i..." % frame_number)
 
         # mb_sample_number is list of indices that should be iterated over in the cached Maya scene for objects with motion blur
