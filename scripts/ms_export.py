@@ -198,18 +198,24 @@ def get_maya_scene(params):
 
     """ Parses the Maya scene and returns a list of root transforms with the relevant children """
 
-    ms_commands.info("Caching Maya scene data...")
+    info_message = "Caching Maya transform data..."
+    ms_commands.info(info_message)
 
     start_time = cmds.currentTime(query=True)
 
     # the Maya scene is stored as a list of root transforms that contain meshes/geometry/lights as children
     maya_root_transforms = []
 
+    cmds.progressWindow(e=True, status=info_message, progress=0, max=1)
+    cmds.refresh(cv=True)
+
     # find all root transforms and create Mtransforms from them
     for maya_transform in cmds.ls(tr=True, long=True):
         if not cmds.listRelatives(maya_transform, ap=True, fullPath=True):
             if ms_commands.transform_is_renderable(maya_transform):
                 maya_root_transforms.append(MTransform(params, maya_transform, None))
+
+    cmds.progressWindow(e=True, progress=1)
 
     start_frame = int(start_time)
     end_frame = start_frame
@@ -248,8 +254,16 @@ def get_maya_scene(params):
     current_frame = start_frame
     frame_sample_number = 1
 
+
+    cmds.progressWindow(edit=True, progress=0, status='Adding motion samples', max=end_frame - start_frame + 1)
+    cmds.refresh(cv=True)
     while current_frame <= end_frame:
-        ms_commands.info("Adding motion samples, frame {0}...".format(current_frame))
+
+        info_message = "Adding motion samples, frame {0}...".format(current_frame)
+        ms_commands.info(info_message)
+
+        cmds.progressWindow(e=True, status=info_message)
+        cmds.refresh(cv=True)
 
         cmds.currentTime(current_frame)
 
@@ -265,10 +279,14 @@ def get_maya_scene(params):
 
         current_frame += sample_increment
 
-        # TODO: add code to export textures here
+        cmds.progressWindow(e=True, progress=current_frame - start_frame)
+        cmds.refresh(cv=True)
 
     # return to pre-export time
     cmds.currentTime(start_time)
+
+    cmds.progressWindow(e=True, progress=end_frame - start_frame)
+    cmds.refresh(cv=True)
 
     return maya_root_transforms, environment
 
@@ -471,6 +489,7 @@ class MMesh(MTransformChild):
             absolute_file_path = os.path.join(export_root, output_file_path)
             if not os.path.exists(absolute_file_path) or self.params['overwrite_existing_geometry']:
                 self.params['obj_exporter'](self.name, absolute_file_path, overwrite=True)
+
         else:
             self.mesh_file_names.append(None)
 
@@ -1725,7 +1744,10 @@ def translate_maya_scene(params, maya_scene, maya_environment):
     if params['export_animation']:
         frame_list = range(params['animation_start_frame'], params['animation_end_frame'] + 1)
 
-    for frame_number in frame_list:
+    cmds.progressWindow(e=True, status='Translating maya scene', progress=0, max=len(frame_list))
+    cmds.refresh(cv=True)
+
+    for i, frame_number in enumerate(frame_list):
         ms_commands.info("Exporting frame %i..." % frame_number)
 
         # mb_sample_number is list of indices that should be iterated over in the cached Maya scene for objects with motion blur
@@ -1936,6 +1958,8 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         project_file_path = os.path.join(params['output_directory'], file_name)
 
         as_object_models.append((project_file_path, as_project))
+
+        cmds.progressWindow(e=True, progress=i)
 
     return as_object_models
 
@@ -2438,6 +2462,13 @@ def export_container(render_settings_node):
 
     export_start_time = time.time()
 
+    cmds.progressWindow(title='Exporting ...',
+                        min=0,
+                        max=100,
+                        progress=0,
+                        status='Beginning export',
+                        isInterruptable=True)
+
     params = get_maya_params(render_settings_node)
     maya_scene, maya_environment = get_maya_scene(params)
     scene_cache_finish_time = time.time()
@@ -2449,7 +2480,10 @@ def export_container(render_settings_node):
 
     ms_commands.info('Scene translated in %.2f seconds.' % (scene_translation_finish_time - scene_cache_finish_time))
 
-    for as_object in as_object_models:
+    cmds.progressWindow(e=True, status='Writing scene files', progress=0, max=len(as_object_models))
+    cmds.refresh(cv=True)
+
+    for i, as_object in enumerate(as_object_models):
         ms_commands.info('Saving %s...' % as_object[0])
         doc = WriteXml(as_object[0])
         doc.append_line('<?xml version="1.0" encoding="UTF-8"?>')
@@ -2457,7 +2491,12 @@ def export_container(render_settings_node):
         as_object[1].emit_xml(doc)
         doc.close()
 
+        cmds.progressWindow(e=True, progress=i)
+        cmds.refresh(cv=True)
+
     export_finish_time = time.time()
+
+    cmds.progressWindow(endProgress=1)
 
     completed_message = 'Export completed in %.2f seconds, see the script editor for details.' % (export_finish_time - export_start_time)
 
