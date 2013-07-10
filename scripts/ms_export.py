@@ -2118,6 +2118,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             root_assembly.textures.append(alpha_texture)
             root_assembly.texture_instances.append(alpha_texture_instance)
         else:
+            # we invert the alpha color here to match the maya viewport behavior
             new_material.alpha_map = AsParameter('alpha_map', generic_material.alpha.color_value[0][0] * -1)
 
     # only use phong mix if the specular color is > 0 or exists
@@ -2149,7 +2150,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             root_assembly.texture_instances.append(bsdf_specular_cosine_texture_instance)
         else:
             bsdf_specular_cosine_color = m_color_connection_to_as_color(generic_material.specular_cosine_power, '_bsdf')
-            bsdf_specular_cosine_color.multiplier.value = bsdf_specular_cosine_color.multiplier.value * 1.3
+            bsdf_specular_cosine_color.multiplier.value *= 1.3
             new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_color.name))
             root_assembly.colors.append(bsdf_specular_cosine_color)
 
