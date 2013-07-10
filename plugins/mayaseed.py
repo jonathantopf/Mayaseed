@@ -280,6 +280,13 @@ def ms_renderSettings_nodeInitializer():
     pt_environment_samples_AttrFloat.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.pt_environment_samples)
 
+    # pt_max_ray_intensity
+    pt_max_ray_intensity_AttrFloat = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.pt_max_ray_intensity = pt_max_ray_intensity_AttrFloat.create("pt_max_ray_intensity", "pt_max_ray_intensity", OpenMaya.MFnNumericData.kFloat, 0)
+    pt_max_ray_intensity_AttrFloat.setHidden(False)
+    pt_max_ray_intensity_AttrFloat.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.pt_max_ray_intensity)
+
     # profile export
     profile_export_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.profile_export = profile_export_nAttr.create("profile_export", "profile_export", OpenMaya.MFnNumericData.kBoolean, False)

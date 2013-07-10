@@ -227,6 +227,8 @@ def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, 
 
 def transform_is_visible(node_name):
 
+    """ Returns the visibility state of a transform for the current frame, this visibility state may change over time """
+
     # check if the node exists
     if not cmds.objExists(node_name):
         return False
@@ -244,6 +246,17 @@ def transform_is_visible(node_name):
         if cmds.getAttr(node_name + '.intermediateObject'):
             return False
 
+    return True
+
+
+#--------------------------------------------------------------------------------------------------
+# Check if an object is visible for the current frame.
+#--------------------------------------------------------------------------------------------------
+
+def transform_is_renderable(node_name):
+
+    """ Returns the renderability state of a transform, this value will not change over time """
+
     # check if it is a hidden display layer
     if cmds.attributeQuery('overrideEnabled', node=node_name, exists=True) and cmds.getAttr(node_name + '.overrideEnabled'):
         if not cmds.getAttr(node_name + '.overrideVisibility'):
@@ -253,7 +266,7 @@ def transform_is_visible(node_name):
 
 
 #--------------------------------------------------------------------------------------------------
-# check if a transform or any of its parents are set as visible
+# check if a transform or any of its parents are set as visible.
 #--------------------------------------------------------------------------------------------------
 
 def visible_in_hierarchy(parent):
@@ -417,7 +430,10 @@ def create_shading_node(model, name=None, entity_defs_obj=False):
 
     cmds.addAttr(shading_node_name, longName='node_type', dt="string")
     cmds.setAttr(shading_node_name + '.node_type', entity_defs[model].type, type="string", lock=True)
-    
+
+    cmds.addAttr(shading_node_name, longName='render_layer', dt="string")
+    cmds.setAttr(shading_node_name + '.render_layer', '', type="string")
+
     for entity_key in entity_defs.keys():
         if entity_key == model:
             for attr_key in entity_defs[entity_key].attributes.keys():
