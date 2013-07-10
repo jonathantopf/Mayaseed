@@ -85,8 +85,7 @@ def check_export_cancelled():
         cmds.progressWindow(endProgress=1)
         ms_commands.warning("Export cancelled")
         sys.exit()
-        # raise RuntimeError('Export Cancelled.')
-
+        
 
 #--------------------------------------------------------------------------------------------------
 # get_maya_params function.
@@ -202,14 +201,13 @@ def get_maya_scene(params):
 
     info_message = "Caching Maya transform data..."
     ms_commands.info(info_message)
+    cmds.progressWindow(e=True, status=info_message, progress=0, max=1)
+    cmds.refresh(cv=True)
 
     start_time = cmds.currentTime(query=True)
 
     # the Maya scene is stored as a list of root transforms that contain meshes/geometry/lights as children
     maya_root_transforms = []
-
-    cmds.progressWindow(e=True, status=info_message, progress=0, max=1)
-    cmds.refresh(cv=True)
 
     # find all root transforms and create Mtransforms from them
     for maya_transform in cmds.ls(tr=True, long=True):
@@ -887,7 +885,7 @@ class MMsShadingNode():
         self.colors = []
         self.textures = []
 
-        # add a render layer attribute if its set
+        # add a render layer attribute if it's set
         maya_render_layer = cmds.getAttr(self.name + '.render_layer')
         if maya_render_layer is not '':
             self.render_layer = maya_render_layer
@@ -2112,7 +2110,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
     new_lambertian_bsdf.model = 'lambertian_brdf'
     root_assembly.bsdfs.append(new_lambertian_bsdf)
 
-    # material transparrency
+    # material transparency
     if generic_material.alpha is not None:
         if generic_material.alpha.__class__.__name__ == 'MFile':
             alpha_texture, alpha_texture_instance = m_file_to_as_texture(params, generic_material.alpha, '_alpha', non_mb_sample_number)
