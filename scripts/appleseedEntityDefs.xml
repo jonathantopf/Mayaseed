@@ -487,6 +487,22 @@
                 <parameter name="texture_instance" value="Textures" />
             </parameters>
         </parameters>
+
+        <parameters name="importance_multiplier">
+            <parameter name="default" value="1.0" />
+            <parameter name="label" value="Importance multiplier" />
+            <parameter name="use" value="optional" />
+            <parameter name="widget" value="text_box" />
+        </parameters>
+
+        <parameters name="cast_indirect_light">
+            <parameter name="default" value="True" />
+            <parameter name="label" value="Cast indirect light" />
+            <parameter name="use" value="optional" />
+            <parameter name="widget" value="text_box" />
+        </parameters>
+
+
     </entity>
     <entity type="environment_edf" model="constant_environment_edf">
         <parameters name="exitance">
