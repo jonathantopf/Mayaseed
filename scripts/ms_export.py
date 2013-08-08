@@ -680,15 +680,21 @@ class MColorConnection():
             self.safe_name = ms_commands.legalize_name(self.name)
             self.color_value = cmds.getAttr(self.name)
 
-            if self.color_value.__class__.__name__ != 'float':
-                self.normalized_color = ms_commands.normalizeRGB(self.color_value[0])[:3]
-                self.multiplier = ms_commands.normalizeRGB(self.color_value[0])[3]
-            else:
+            if self.color_value.__class__.__name__ == 'float':
                 self.normalized_color = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[:3]
                 self.multiplier       = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[3]
+            else:
+                self.normalized_color = ms_commands.normalizeRGB(self.color_value[0])[:3]
+                self.multiplier = ms_commands.normalizeRGB(self.color_value[0])[3]
 
             self.is_black = self.normalized_color == (0,0,0)
             self.connected_node = ms_commands.get_connected_node(self.name)
+
+            if (self.normalized_color[0] == self.normalized_color[1]) and (self.normalized_color[0] == self.normalized_color[2]):
+                self.is_grey = True
+            else:
+                self.is_grey = False
+
             if self.connected_node is not None:
                 self.connected_node_type = cmds.nodeType(self.connected_node)
 
@@ -792,7 +798,7 @@ class MGenericMaterial():
         self.diffuse = None
         self.alpha = None
         self.incandescence = None
-        self.specular_cosine_power = None
+        self.glossiness = None
         self.specular_color = None
 
         self.textures = []
@@ -812,12 +818,13 @@ class MGenericMaterial():
 
         # work out specular components
         if cmds.attributeQuery('cosinePower', node=self.name, exists=True):
-            self.specular_cosine_power = MColorConnection(self.params, self.name + '.cosinePower')
-            if self.specular_cosine_power.connected_node is not None:
-                self.specular_cosine_power = m_file_from_color_connection(self.params, self.specular_cosine_power)
-                self.textures.append(self.specular_cosine_power)
-            elif self.specular_cosine_power.is_black:
-                self.specular_cosine_power = None
+            self.glossiness = MColorConnection(self.params, self.name + '.cosinePower')
+            self.glossiness.multiplier = ((self.glossiness.multiplier - 2) / 98) * -1 +1
+            if self.glossiness.connected_node is not None:
+                self.glossiness = m_file_from_color_connection(self.params, self.glossiness)
+                self.textures.append(self.glossiness)
+            elif self.glossiness.is_black:
+                self.glossiness = None
 
         if cmds.attributeQuery('specularColor', node=self.name, exists=True):
             self.specular_color = MColorConnection(self.params, self.name + '.specularColor')
@@ -898,7 +905,7 @@ class MMsShadingNode():
             maya_attribute = self.name + '.' + attribute_key
 
             # if the attribute is a color/entity
-            if params['entity_defs'][self.model].attributes[attribute_key].type == 'entity_picker':
+            if (params['entity_defs'][self.model].attributes[attribute_key].type == 'colormap') or (params['entity_defs'][self.model].attributes[attribute_key].type == 'entity'):
                 color_connection = MColorConnection(self.params, maya_attribute)
 
                 if color_connection.connected_node:
@@ -2123,7 +2130,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             new_material.alpha_map = AsParameter('alpha_map', generic_material.alpha.color_value[0][0] * -1)
 
     # only use phong mix if the specular color is > 0 or exists
-    if (generic_material.specular_color is not None) and (generic_material.specular_cosine_power is not None):
+    if (generic_material.specular_color is not None) and (generic_material.glossiness is not None):
 
         new_microfacet_bsdf = AsBsdf()
         new_microfacet_bsdf.name = generic_material.safe_name + '_microfacet_brdf'
@@ -2144,17 +2151,17 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         new_material.bsdf = AsParameter('bsdf', new_bsdf_mix_bsdf.name)
 
 
-        if generic_material.specular_cosine_power.__class__.__name__ == 'MFile':
-            bsdf_specular_cosine_texture, bsdf_specular_cosine_texture_instance = m_file_to_as_texture(params, generic_material.specular_cosine_power, '_bsdf', non_mb_sample_number)
-            new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_texture_instance.name))
-            if not get_from_list(root_assembly.textures, bsdf_specular_cosine_texture.name):
-                root_assembly.textures.append(bsdf_specular_cosine_texture)
-                root_assembly.texture_instances.append(bsdf_specular_cosine_texture_instance)
+        if generic_material.glossiness.__class__.__name__ == 'MFile':
+            bsdf_glossiness_texture, bsdf_glossiness_texture_instance = m_file_to_as_texture(params, generic_material.glossiness, '_bsdf', non_mb_sample_number)
+            new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_glossiness_texture_instance.name))
+            if not get_from_list(root_assembly.textures, bsdf_glossiness_texture.name):
+                root_assembly.textures.append(bsdf_glossiness_texture)
+                root_assembly.texture_instances.append(bsdf_glossiness_texture_instance)
         else:
-            bsdf_specular_cosine_color = m_color_connection_to_as_color(generic_material.specular_cosine_power, '_bsdf')
-            bsdf_specular_cosine_color.multiplier.value *= 1.3
-            new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_specular_cosine_color.name))
-            root_assembly.colors.append(bsdf_specular_cosine_color)
+            bsdf_glossiness_color = m_color_connection_to_as_color(generic_material.glossiness, '_bsdf')
+            bsdf_glossiness_color.multiplier.value *= 1.3
+            new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_glossiness_color.name))
+            root_assembly.colors.append(bsdf_glossiness_color)
 
         if generic_material.specular_color.__class__.__name__ == 'MFile':
             bsdf_specular_color_texture, bsdf_specular_color_texture_instance = m_file_to_as_texture(params, generic_material.specular_color, '_bsdf', non_mb_sample_number)
@@ -2445,19 +2452,23 @@ def build_as_shading_nodes(params, root_assembly, current_maya_shading_node, non
             current_shading_node.parameters.append(new_shading_node_parameter)
 
         elif current_maya_shading_node.attributes[attrib_key].__class__.__name__ == 'MColorConnection':
-            new_color_entity = get_from_list(root_assembly.colors, current_maya_shading_node.attributes[attrib_key].safe_name)
 
-            if new_color_entity is None:
-                new_color_entity = AsColor()
-                new_color_entity.name = current_maya_shading_node.attributes[attrib_key].safe_name
-                new_color_entity.RGB_color = current_maya_shading_node.attributes[attrib_key].normalized_color
-                new_color_entity.multiplier.value = current_maya_shading_node.attributes[attrib_key].multiplier
-                if params['force_linear_color_interpretation']:
-                    new_color_entity.color_space.value = 'linear_rgb'
+            if current_maya_shading_node.attributes[attrib_key].is_grey is True:
+                current_shading_node.parameters.append(AsParameter(attrib_key, current_maya_shading_node.attributes[attrib_key].normalized_color[0]))
+            else:
+
+                new_color_entity = get_from_list(root_assembly.colors, current_maya_shading_node.attributes[attrib_key].safe_name)
+
+                if new_color_entity is None:
+                    new_color_entity = AsColor()
+                    new_color_entity.name = current_maya_shading_node.attributes[attrib_key].safe_name
+                    new_color_entity.RGB_color = current_maya_shading_node.attributes[attrib_key].normalized_color
+                    new_color_entity.multiplier.value = current_maya_shading_node.attributes[attrib_key].multiplier
+                    if params['force_linear_color_interpretation']:
+                        new_color_entity.color_space.value = 'linear_rgb'
+
                 root_assembly.colors.append(new_color_entity)
-
-            new_shading_node_parameter = AsParameter(attrib_key, new_color_entity.name)
-            current_shading_node.parameters.append(new_shading_node_parameter)
+                current_shading_node.parameters.append(AsParameter(attrib_key, new_color_entity.name))
 
         elif current_maya_shading_node.attributes[attrib_key].__class__.__name__ == 'str':
             new_shading_node_parameter = AsParameter(attrib_key, current_maya_shading_node.attributes[attrib_key])
