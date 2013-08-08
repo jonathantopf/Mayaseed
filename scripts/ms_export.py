@@ -1384,7 +1384,7 @@ class AsSurfaceShader():
 
 class AsLight():
 
-    """ Class representing appleseed Surface Shader entity """
+    """ Class representing appleseed Light entity """
 
     def __init__(self):
         self.name = None
