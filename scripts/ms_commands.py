@@ -438,7 +438,7 @@ def create_shading_node(model, name=None, entity_defs_obj=False):
         if entity_key == model:
             for attr_key in entity_defs[entity_key].attributes.keys():
                 attr = entity_defs[entity_key].attributes[attr_key]
-                if attr.type == 'text' or attr.type == 'enumeration':
+                if attr.type == 'text' or attr.type == 'enumeration' or attr.type == 'boolean':
                      cmds.addAttr(shading_node_name, longName=attr_key, dt="string")
                      cmds.setAttr(shading_node_name + '.' + attr_key, attr.default_value, type="string")
                 elif (attr.type == 'colormap') or (attr.type == 'entity'):
