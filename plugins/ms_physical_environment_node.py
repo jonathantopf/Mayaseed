@@ -294,7 +294,7 @@ def ms_physical_environment_nodeInitializer():
 
     # horizon_shift
     horizon_shift_AttrFloat = OpenMaya.MFnNumericAttribute()
-    ms_physical_environment.horizon_shift = horizon_shift_AttrFloat.create("horizon_shift", "horizon_shift", OpenMaya.MFnNumericData.kFloat, 1)
+    ms_physical_environment.horizon_shift = horizon_shift_AttrFloat.create("horizon_shift", "horizon_shift", OpenMaya.MFnNumericData.kFloat, 0)
     horizon_shift_AttrFloat.setHidden(False)
     horizon_shift_AttrFloat.setKeyable(True)
     ms_physical_environment.addAttribute(ms_physical_environment.horizon_shift)
