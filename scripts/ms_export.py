@@ -248,7 +248,11 @@ def get_maya_scene(params):
     # get environment
     environment = None
     if params['environment']:
-        environment = MMsEnvironment(params, params['environment'])
+        if cmds.nodeType(params['environment']) == 'ms_physical_environment':
+            environment = MMsPhysicalEnvironment(params, params['environment'])
+        else:
+            environment = MMsEnvironment(params, params['environment'])
+
         environment.add_environment_sample(params['output_directory'], 0)
 
     # add motion samples
@@ -666,6 +670,52 @@ class MMsEnvironment():
             self.latitude_longitude_exitance.add_image_sample(export_root, time)
         if self.mirrorball_exitance is not None:
             self.mirrorball_exitance.add_image_sample(export_root, time)
+
+#--------------------------------------------------------------------------------------------------
+# MMsPhysicalEnvironment class.
+#--------------------------------------------------------------------------------------------------
+
+class MMsPhysicalEnvironment():
+
+    """ Lightweight class representing Maya ms_physical_environment nodes """
+
+    def __init__(self, params, maya_ms_environment_node):
+        self.params = params
+        self.name = maya_ms_environment_node
+        self.safe_name = ms_commands.legalize_name(self.name)
+
+        self.model = cmds.getAttr(self.name + '.model')
+
+        # ********** key *************
+        # hosek_environment_edf    = 0
+        # preetham_environment_edf = 1
+
+        if self.model == 0:
+            self.model = "hosek_environment_edf"
+        elif self.model == 1:
+            self.model = "preetham_environment_edf"
+
+        self.ground_albedo         = cmds.getAttr(self.name + '.ground_albedo')
+        self.horizon_shift         = cmds.getAttr(self.name + '.horizon_shift')
+        self.luminance_multiplier  = cmds.getAttr(self.name + '.luminance_multiplier')
+        self.saturation_multiplier = cmds.getAttr(self.name + '.saturation_multiplier')
+        self.sun_phi               = cmds.getAttr(self.name + '.sun_phi')
+        self.sun_theta             = cmds.getAttr(self.name + '.sun_theta')
+        self.turbidity             = self.get_connections(self.name + '.turbidity')
+        self.turbidity_max         = cmds.getAttr(self.name + '.turbidity_max')
+        self.turbidity_min         = cmds.getAttr(self.name + '.turbidity_min')
+
+    def get_connections(self, attr_name):
+        connection = MColorConnection(self.params, attr_name)
+        if connection.connected_node is not None:
+            return m_file_from_color_connection(self.params, connection)
+
+        return connection
+
+    def add_environment_sample(self, export_root, time):
+        if self.turbidity is not None:
+            if self.turbidity.__class__.__name__ == 'MFile':
+                self.turbidity.add_image_sample(export_root, time)
 
 
 #--------------------------------------------------------------------------------------------------
@@ -1845,6 +1895,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
 
         # if present add the environment
         if maya_environment is not None:
+
             environment = AsEnvironment()
             environment.name = maya_environment.safe_name
 
@@ -1854,38 +1905,61 @@ def translate_maya_scene(params, maya_scene, maya_environment):
 
             environment.environment_edf = AsParameter('environment_edf', environment_edf.name)
 
-            if environment_edf.model == 'constant_environment_edf':
-                constant_environment_color = m_color_connection_to_as_color(maya_environment.constant_exitance, '_constant_exitance')
-                environment_edf.parameters.append(AsParameter('exitance', constant_environment_color.name))
-                as_project.scene.colors.append(constant_environment_color)
+            if maya_environment.__class__.__name__ == 'MMsPhysicalEnvironment':
+                environment_edf.model = maya_environment.model
+                environment_edf.parameters.append(AsParameter('ground_albedo' , maya_environment.ground_albedo))
+                environment_edf.parameters.append(AsParameter('horizon_shift' , maya_environment.horizon_shift))
+                environment_edf.parameters.append(AsParameter('luminance_multiplier' , maya_environment.luminance_multiplier))
+                environment_edf.parameters.append(AsParameter('saturation_multiplier' , maya_environment.saturation_multiplier))
+                environment_edf.parameters.append(AsParameter('sun_phi' , maya_environment.sun_phi))
+                environment_edf.parameters.append(AsParameter('sun_theta' , maya_environment.sun_theta))
+                environment_edf.parameters.append(AsParameter('turbidity_max' , maya_environment.turbidity_max))
+                environment_edf.parameters.append(AsParameter('turbidity_min' , maya_environment.turbidity_min))
 
-            elif environment_edf.model == 'gradient_environment_edf':
-                gradient_horizon_exitance = m_color_connection_to_as_color(maya_environment.gradient_horizon_exitance, '_horizon_exitance')
-                environment_edf.parameters.append(AsParameter('horizon_exitance', gradient_horizon_exitance.name))
-                as_project.scene.colors.append(gradient_horizon_exitance)
+                if maya_environment.turbidity.__class__.__name__ == 'MFile':
+                    turbidity_file, turbidity_file_instance = m_file_to_as_texture(params, maya_environment.turbidity, '_texture', non_mb_sample_number)
+                    as_project.scene.textures.append(turbidity_file)
+                    as_project.scene.texture_instances.append(turbidity_file_instance)
+                    environment_edf.parameters.append(AsParameter('exitance', turbidity_file_instance.name))
+                else:
+                    turbidity_color = m_color_connection_to_as_color(maya_environment.turbidity, '_turbidity')
+                    environment_edf.parameters.append(AsParameter('turbidity', turbidity_color.name))
+                    as_project.scene.colors.append(turbidity_color)
 
-                zenith_horizon_exitance = m_color_connection_to_as_color(maya_environment.gradient_zenith_exitance, '_zenith_exitance')
-                environment_edf.parameters.append(AsParameter('zenith_exitance', zenith_horizon_exitance.name))
-                as_project.scene.colors.append(zenith_horizon_exitance)
+            else:
+                # environment must be generic
+                if environment_edf.model == 'constant_environment_edf':
+                    constant_environment_color = m_color_connection_to_as_color(maya_environment.constant_exitance, '_constant_exitance')
+                    environment_edf.parameters.append(AsParameter('exitance', constant_environment_color.name))
+                    as_project.scene.colors.append(constant_environment_color)
 
-            elif environment_edf.model == 'latlong_map_environment_edf':
-                lat_long_map, lat_long_map_instance = m_file_to_as_texture(params, maya_environment.latitude_longitude_exitance, '_texture', non_mb_sample_number)                
-                
-                as_project.scene.textures.append(lat_long_map)
-                as_project.scene.texture_instances.append(lat_long_map_instance)
+                elif environment_edf.model == 'gradient_environment_edf':
+                    gradient_horizon_exitance = m_color_connection_to_as_color(maya_environment.gradient_horizon_exitance, '_horizon_exitance')
+                    environment_edf.parameters.append(AsParameter('horizon_exitance', gradient_horizon_exitance.name))
+                    as_project.scene.colors.append(gradient_horizon_exitance)
 
-                environment_edf.parameters.append(AsParameter('exitance', lat_long_map_instance.name))
+                    zenith_horizon_exitance = m_color_connection_to_as_color(maya_environment.gradient_zenith_exitance, '_zenith_exitance')
+                    environment_edf.parameters.append(AsParameter('zenith_exitance', zenith_horizon_exitance.name))
+                    as_project.scene.colors.append(zenith_horizon_exitance)
 
-            elif environment_edf.model == 'mirrorball_map_environment_edf':
-                mirror_ball_map, mirror_ball_map_instance = m_file_to_as_texture(params, maya_environment.mirrorball_exitance, '_texture', non_mb_sample_number)
-                
-                as_project.scene.textures.append(mirror_ball_map)
-                as_project.scene.texture_instances.append(mirror_ball_map_instance)
+                elif environment_edf.model == 'latlong_map_environment_edf':
+                    lat_long_map, lat_long_map_instance = m_file_to_as_texture(params, maya_environment.latitude_longitude_exitance, '_texture', non_mb_sample_number)                
+                    
+                    as_project.scene.textures.append(lat_long_map)
+                    as_project.scene.texture_instances.append(lat_long_map_instance)
 
-                environment_edf.parameters.append(AsParameter('exitance', mirror_ball_map_instance.name))
+                    environment_edf.parameters.append(AsParameter('exitance', lat_long_map_instance.name))
 
-            environment_edf.parameters.append(AsParameter('exitance_multiplier', str(maya_environment.exitance_multiplier)))
+                elif environment_edf.model == 'mirrorball_map_environment_edf':
+                    mirror_ball_map, mirror_ball_map_instance = m_file_to_as_texture(params, maya_environment.mirrorball_exitance, '_texture', non_mb_sample_number)
+                    
+                    as_project.scene.textures.append(mirror_ball_map)
+                    as_project.scene.texture_instances.append(mirror_ball_map_instance)
 
+                    environment_edf.parameters.append(AsParameter('exitance', mirror_ball_map_instance.name))
+
+                environment_edf.parameters.append(AsParameter('exitance_multiplier', str(maya_environment.exitance_multiplier)))
+            print 'fff'
             as_project.scene.environment = environment
             as_project.scene.environment_edfs.append(environment_edf)
 
