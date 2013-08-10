@@ -733,7 +733,7 @@ class MColorConnection():
 
             if self.color_value.__class__.__name__ == 'float':
                 self.normalized_color = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[:3]
-                self.multiplier       = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[3]
+                self.multiplier = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[3]
             else:
                 self.normalized_color = ms_commands.normalizeRGB(self.color_value[0])[:3]
                 self.multiplier = ms_commands.normalizeRGB(self.color_value[0])[3]
@@ -964,7 +964,8 @@ class MMsShadingNode():
             maya_attribute = self.name + '.' + attribute_key
 
             # if the attribute is a color/entity
-            if (params['entity_defs'][self.model].attributes[attribute_key].type == 'colormap') or (params['entity_defs'][self.model].attributes[attribute_key].type == 'entity'):
+            entity_type = params['entity_defs'][self.model].attributes[attribute_key].type
+            if (entity_type == 'colormap') or (entity_type == 'entity'):
                 color_connection = MColorConnection(self.params, maya_attribute)
 
                 if color_connection.connected_node:
@@ -2454,7 +2455,6 @@ def convert_maya_ms_material_network(params, root_assembly, ms_material, non_mb_
                     texture_instance = existing_texture_instance
 
                 front_material.displacement_map = AsParameter('displacement_map', texture_instance.name)
-
                 front_material.displacement_mode = displacement_mode
                 front_material.bump_amplitude = bump_amplitude
                 front_material.normal_map_up = normal_map_up
