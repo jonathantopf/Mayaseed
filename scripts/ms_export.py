@@ -38,7 +38,7 @@ import shutil
 
 INCH_TO_METER = 0.02539999983236
 GEO_DIR = '_geometry'
-TEXTURE_DIR = '_geometry'
+TEXTURE_DIR = '_textures'
 
 #--------------------------------------------------------------------------------------------------
 # WriteXml class.
