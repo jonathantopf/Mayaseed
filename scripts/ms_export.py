@@ -2111,7 +2111,7 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                 # create new light mesh instance and material
                 light_mesh = AsObject()
                 light_mesh.name = light.safe_name
-                light_mesh.file_names = AsParameter('filename', '_geometry/maya_area_light.obj')
+                light_mesh.file_names = AsParameter('filename', GEO_DIR + '/maya_area_light.obj')
 
                 light_mesh_transform = AsTransform()
                 if current_matrix_stack is not []:
