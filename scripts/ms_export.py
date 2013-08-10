@@ -2043,7 +2043,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         root_assembly.surface_shaders.append(default_surface_shader)
         root_assembly.materials.append(default_material)
 
-        # create default area light edf bacm material and surfce shaders
+        # create default area light edf back material and surface shaders
         default_invisible_surface_shader = AsSurfaceShader()
 
         default_invisible_material = AsMaterial()
@@ -2278,7 +2278,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
         new_bsdf_blend_bsdf.parameters.append(AsParameter('bsdf0', new_microfacet_bsdf.name))
         new_bsdf_blend_bsdf.parameters.append(AsParameter('bsdf1', new_lambertian_bsdf.name))
-        
+
         if generic_material.reflectivity.__class__.__name__ == 'MFile':
             bsdf_reflectivity_texture, bsdf_reflectivity_texture_instance = m_file_to_as_texture(params, generic_material.reflectivity, '_reflectivity', non_mb_sample_number)
             new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', bsdf_reflectivity_texture_instance.name))
