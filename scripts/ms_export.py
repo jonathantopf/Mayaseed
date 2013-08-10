@@ -2641,7 +2641,7 @@ def export_container(render_settings_node):
 
     ms_commands.info('Scene cached for translation in %.2f seconds.' % (scene_cache_finish_time - export_start_time))
 
-    # copy area light primatives into export directory
+    # copy area light primitives into export directory
     current_script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     obj_file_name = 'maya_area_light.obj'
     obj_source_path = os.path.join(current_script_path, obj_file_name)
