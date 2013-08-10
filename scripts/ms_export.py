@@ -408,7 +408,7 @@ class MTransform():
         if light_names is not None:
             self.has_children = True
             for light_name in light_names:
-                if (cmds.nodeType(light_name) == 'pointLight') or (cmds.nodeType(light_name) == 'spotLight') or (cmds.nodeType(light_name) == 'areaLight'):
+                if cmds.nodeType(light_name) == 'pointLight' or cmds.nodeType(light_name) == 'spotLight' or cmds.nodeType(light_name) == 'areaLight':
                     self.child_lights.append(MLight(params, light_name, self))
 
         camera_names = cmds.listRelatives(self.name, type='camera', fullPath=True)
