@@ -1959,7 +1959,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
                     environment_edf.parameters.append(AsParameter('exitance', mirror_ball_map_instance.name))
 
                 environment_edf.parameters.append(AsParameter('exitance_multiplier', str(maya_environment.exitance_multiplier)))
-            print 'fff'
+
             as_project.scene.environment = environment
             as_project.scene.environment_edfs.append(environment_edf)
 
