@@ -885,6 +885,14 @@ class MGenericMaterial():
             elif self.specular_color.is_black:
                 self.specular_color = None
 
+        if cmds.attributeQuery('reflectivity', node=self.name, exists=True):
+            self.reflectivity = MColorConnection(self.params, self.name + '.reflectivity')
+            if self.reflectivity.connected_node is not None:
+                self.reflectivity = m_file_from_color_connection(self.params, self.reflectivity)
+                self.textures.append(self.reflectivity)
+            elif self.reflectivity.is_black:
+                self.reflectivity = None
+
         # work out alpha component
         if cmds.attributeQuery('transparency', node=self.name, exists=True):
             self.alpha = MColorConnection(self.params, self.name + '.transparency')
@@ -2263,17 +2271,25 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         new_microfacet_bsdf.parameters.append(AsParameter('mdf', 'blinn'))
         root_assembly.bsdfs.append(new_microfacet_bsdf)
 
-        new_bsdf_mix_bsdf = AsBsdf()
-        new_bsdf_mix_bsdf.name = generic_material.safe_name + '_bsdf_mix_bsdf'
-        new_bsdf_mix_bsdf.model = 'bsdf_mix'
-        root_assembly.bsdfs.append(new_bsdf_mix_bsdf)
+        new_bsdf_blend_bsdf = AsBsdf()
+        new_bsdf_blend_bsdf.name = generic_material.safe_name + '_bsdf_blend_bsdf'
+        new_bsdf_blend_bsdf.model = 'bsdf_blend'
+        root_assembly.bsdfs.append(new_bsdf_blend_bsdf)
 
-        new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf0', new_lambertian_bsdf.name))
-        new_bsdf_mix_bsdf.parameters.append(AsParameter('bsdf1', new_microfacet_bsdf.name))
-        new_bsdf_mix_bsdf.parameters.append(AsParameter('weight0', '1.0'))
-        new_bsdf_mix_bsdf.parameters.append(AsParameter('weight1', '0.2'))
+        new_bsdf_blend_bsdf.parameters.append(AsParameter('bsdf0', new_microfacet_bsdf.name))
+        new_bsdf_blend_bsdf.parameters.append(AsParameter('bsdf1', new_lambertian_bsdf.name))
+        
+        if generic_material.reflectivity.__class__.__name__ == 'MFile':
+            bsdf_reflectivity_texture, bsdf_reflectivity_texture_instance = m_file_to_as_texture(params, generic_material.reflectivity, '_reflectivity', non_mb_sample_number)
+            new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', bsdf_reflectivity_texture_instance.name))
 
-        new_material.bsdf = AsParameter('bsdf', new_bsdf_mix_bsdf.name)
+            if not get_from_list(root_assembly.textures, bsdf_reflectivity_texture.name):
+                root_assembly.textures.append(bsdf_reflectivity_texture)
+                root_assembly.texture_instances.append(bsdf_reflectivity_texture_instance)
+        else:
+            new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', generic_material.reflectivity.color[0]))
+
+        new_material.bsdf = AsParameter('bsdf', new_bsdf_blend_bsdf.name)
 
 
         if generic_material.glossiness.__class__.__name__ == 'MFile':
@@ -2294,7 +2310,6 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             if not get_from_list(root_assembly.textures, bsdf_specular_color_texture.name):
                 root_assembly.textures.append(bsdf_specular_color_texture)
                 root_assembly.texture_instances.append(bsdf_specular_color_texture_instance)
-
         else:
             bsdf_specular_color_color = m_color_connection_to_as_color(generic_material.specular_color, '_bsdf')
             if bsdf_specular_color_color.multiplier.value > 1 : bsdf_specular_color_color.multiplier.value = 1
