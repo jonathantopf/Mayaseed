@@ -53,13 +53,13 @@ def ms_renderSettings_nodeCreator():
 
 def ms_renderSettings_nodeInitializer():
     # define attributes
-    #  output directory
+    # output directory
     output_dir_string = OpenMaya.MFnStringData().create(os.path.join("<ProjectDir>Mayaseed", "<SceneName>"))
     output_dir_Attr = OpenMaya.MFnTypedAttribute()
     ms_renderSettings.output_dir = output_dir_Attr.create("output_directory", "out_dir", OpenMaya.MFnData.kString, output_dir_string)
     ms_renderSettings.addAttribute(ms_renderSettings.output_dir)
 
-    #  output file
+    # output file
     output_file_string = OpenMaya.MFnStringData().create("<SceneName>.#.appleseed")
     output_file_Attr = OpenMaya.MFnTypedAttribute()
     ms_renderSettings.output_file = output_file_Attr.create("output_file", "out_file", OpenMaya.MFnData.kString, output_file_string)  
@@ -80,12 +80,12 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.convert_shading_nodes_to_textures = convert_shading_nodes_to_textures_nAttr.create("convert_shading_nodes_to_textures", "convert_shading_nodes", OpenMaya.MFnNumericData.kBoolean, True)
     ms_renderSettings.addAttribute(ms_renderSettings.convert_shading_nodes_to_textures)
 
-    #  overwrite existing textures
+    # overwrite existing textures
     overwrite_existing_textures_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.overwrite_existing_textures = overwrite_existing_textures_nAttr.create("overwrite_existing_textures", "overwrite_exrs", OpenMaya.MFnNumericData.kBoolean, True)
     ms_renderSettings.addAttribute(ms_renderSettings.overwrite_existing_textures)
 
-    #  overwrite existing geometry
+    # overwrite existing geometry
     overwrite_existing_geometry_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.overwrite_existing_geometry = overwrite_existing_geometry_nAttr.create("overwrite_existing_geometry", "overwrite_geo", OpenMaya.MFnNumericData.kBoolean, True)
     ms_renderSettings.addAttribute(ms_renderSettings.overwrite_existing_geometry)
