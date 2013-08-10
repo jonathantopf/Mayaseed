@@ -2292,49 +2292,55 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
         new_material.bsdf = AsParameter('bsdf', new_bsdf_blend_bsdf.name)
 
-
+        # glossiness parameter
         if generic_material.glossiness.__class__.__name__ == 'MFile':
-            bsdf_glossiness_texture, bsdf_glossiness_texture_instance = m_file_to_as_texture(params, generic_material.glossiness, '_bsdf', non_mb_sample_number)
-            new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_glossiness_texture_instance.name))
+            bsdf_glossiness_texture, bsdf_glossiness_texture_instance = m_file_to_as_texture(params, generic_material.glossiness, '_file', non_mb_sample_number)
+            new_microfacet_bsdf.parameters.append(AsParameter('glossiness', bsdf_glossiness_texture_instance.name))
             if not get_from_list(root_assembly.textures, bsdf_glossiness_texture.name):
                 root_assembly.textures.append(bsdf_glossiness_texture)
                 root_assembly.texture_instances.append(bsdf_glossiness_texture_instance)
         else:
-            bsdf_glossiness_color = m_color_connection_to_as_color(generic_material.glossiness, '_bsdf')
-            bsdf_glossiness_color.multiplier.value *= 1.3
-            new_microfacet_bsdf.parameters.append(AsParameter('mdf_parameter', bsdf_glossiness_color.name))
-            root_assembly.colors.append(bsdf_glossiness_color)
+            if generic_material.glossiness.is_grey:
+                new_microfacet_bsdf.parameters.append(AsParameter('glossiness', (generic_material.glossiness.color_value / 100) * 1.3))
+            else:
+                bsdf_glossiness_color = m_color_connection_to_as_color(generic_material.glossiness, '_color')
+                bsdf_glossiness_color.multiplier.value *= 1.3
+                new_microfacet_bsdf.parameters.append(AsParameter('glossiness', bsdf_glossiness_color.name))
+                root_assembly.colors.append(bsdf_glossiness_color)
 
         if generic_material.specular_color.__class__.__name__ == 'MFile':
-            bsdf_specular_color_texture, bsdf_specular_color_texture_instance = m_file_to_as_texture(params, generic_material.specular_color, '_bsdf', non_mb_sample_number)
+            bsdf_specular_color_texture, bsdf_specular_color_texture_instance = m_file_to_as_texture(params, generic_material.specular_color, '_file', non_mb_sample_number)
             new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_texture_instance.name))
             if not get_from_list(root_assembly.textures, bsdf_specular_color_texture.name):
                 root_assembly.textures.append(bsdf_specular_color_texture)
                 root_assembly.texture_instances.append(bsdf_specular_color_texture_instance)
         else:
-            bsdf_specular_color_color = m_color_connection_to_as_color(generic_material.specular_color, '_bsdf')
-            if bsdf_specular_color_color.multiplier.value > 1 : bsdf_specular_color_color.multiplier.value = 1
-            new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_color.name))
-            root_assembly.colors.append(bsdf_specular_color_color)
+            if generic_material.specular_color.is_grey:
+                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', generic_material.specular_color.color_value[0][0]))
+            else:
+                bsdf_specular_color_color = m_color_connection_to_as_color(generic_material.specular_color, '_color')
+                if bsdf_specular_color_color.multiplier.value > 1 : bsdf_specular_color_color.multiplier.value = 1
+                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_color.name))
+                root_assembly.colors.append(bsdf_specular_color_color)
 
     else:
         new_material.bsdf = AsParameter('bsdf', new_lambertian_bsdf.name)
 
-
+    # reflectance parameter
     if generic_material.diffuse.__class__.__name__ == 'MFile':
-        bsdf_texture, bsdf_texture_instance = m_file_to_as_texture(params, generic_material.diffuse, '_bsdf', non_mb_sample_number)
+        bsdf_texture, bsdf_texture_instance = m_file_to_as_texture(params, generic_material.diffuse, '_file', non_mb_sample_number)
         new_lambertian_bsdf.parameters.append(AsParameter('reflectance', bsdf_texture_instance.name))
 
         if not get_from_list(root_assembly.textures, bsdf_texture.name):
             root_assembly.textures.append(bsdf_texture)
             root_assembly.texture_instances.append(bsdf_texture_instance)
     else:
-        bsdf_color = m_color_connection_to_as_color(generic_material.diffuse, '_bsdf')
+        bsdf_color = m_color_connection_to_as_color(generic_material.diffuse, '_color')
         if bsdf_color.multiplier.value > 1 : bsdf_color.multiplier.value = 1
         new_lambertian_bsdf.parameters.append(AsParameter('reflectance', bsdf_color.name))
         root_assembly.colors.append(bsdf_color)
 
-
+    # incandescence component
     if generic_material.incandescence is not None:
         new_edf = AsEdf()
         new_edf.name = generic_material.safe_name + '_edf'
