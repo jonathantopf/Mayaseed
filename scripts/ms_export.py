@@ -2288,7 +2288,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
                 root_assembly.textures.append(bsdf_reflectivity_texture)
                 root_assembly.texture_instances.append(bsdf_reflectivity_texture_instance)
         else:
-            new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', generic_material.reflectivity.color[0]))
+            new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', generic_material.reflectivity.color_value))
 
         new_material.bsdf = AsParameter('bsdf', new_bsdf_blend_bsdf.name)
 
