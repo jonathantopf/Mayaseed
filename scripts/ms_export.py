@@ -448,6 +448,12 @@ class MTransformChild():
         self.safe_short_name = ms_commands.legalize_name(self.short_name)
         self.transform = MTransform_object
 
+        self.custom_attributes = {}
+
+        for attribute in ms_commands.CUSTOM_ATTRIBUTES:
+            if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
+                self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
+
 
 #--------------------------------------------------------------------------------------------------
 # MMesh class.
@@ -764,6 +770,12 @@ class MMsMaterial():
         self.params = params
         self.name = maya_ms_material_name
         self.safe_name = ms_commands.legalize_name(self.name)
+
+        self.custom_attributes = {}
+
+        for attribute in ms_commands.CUSTOM_ATTRIBUTES:
+            if cmds.attributeQuery(attribute, n=self.name, ex=True):
+                self.custom_attributes[attribute] = cmds.getAttr(self.name + '.' + attribute)
 
         self.shading_nodes = []
         self.colors = []
@@ -2037,29 +2049,35 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         root_assembly_instance.transforms.append(AsTransform())
         as_project.scene.assembly_instances.append(root_assembly_instance)
 
-        # create default material
+        # create default materials
         default_material = AsMaterial()
         default_material.name = 'as_default_material'
         default_material.alpha_map = AsParameter('alpha_map', '0')
 
-        default_surface_shader = AsSurfaceShader()
-        default_surface_shader.name = 'as_default_surface_shader'
-        default_surface_shader.model = 'constant_surface_shader'
-        default_surface_shader.parameters.append(AsParameter('color', '0'))
-        default_surface_shader.parameters.append(AsParameter('alpha_multiplier', '0'))
+        # clear surface shader
+        default_clear_surface_shader = AsSurfaceShader()
+        default_clear_surface_shader.name = 'as_default_clear_surface_shader'
+        default_clear_surface_shader.model = 'constant_surface_shader'
+        default_clear_surface_shader.parameters.append(AsParameter('color', '0'))
+        default_clear_surface_shader.parameters.append(AsParameter('alpha_multiplier', '0'))
+        root_assembly.surface_shaders.append(default_clear_surface_shader)
 
-        default_material.surface_shader = AsParameter('surface_shader', default_surface_shader.name)
+        # physical surface_shader
+        default_physical_surface_shader = AsSurfaceShader()
+        default_physical_surface_shader.name = 'as_default_physical_surface_shader'
+        default_physical_surface_shader.model = 'physical_surface_shader'
+        root_assembly.surface_shaders.append(default_physical_surface_shader)
 
-        root_assembly.surface_shaders.append(default_surface_shader)
+        # default material
+        default_material.surface_shader = AsParameter('surface_shader', default_clear_surface_shader.name)
         root_assembly.materials.append(default_material)
 
-        # create default area light edf back material and surface shaders
+        # create default invisible material 
         default_invisible_surface_shader = AsSurfaceShader()
-
         default_invisible_material = AsMaterial()
         default_invisible_material.name = 'as_default_invisible_material'
         default_invisible_material.alpha_map = AsParameter('alpha_map', '0')
-        default_invisible_material.surface_shader = AsParameter('surface_shader', default_surface_shader.name)
+        default_invisible_material.surface_shader = AsParameter('surface_shader', default_clear_surface_shader.name)
 
         root_assembly.materials.append(default_invisible_material)
 
@@ -2149,9 +2167,16 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                 light_edf.parameters.append(AsParameter('radiance_multiplier', light.multiplier))
                 current_assembly.edfs.append(light_edf)
 
-                light_material.surface_shader = AsParameter('surface_shader', 'as_default_surface_shader')
-                light_material.edf = AsParameter('edf', light_edf.name)
+                light_material.surface_shader = AsParameter('surface_shader', 'as_default_clear_surface_shader')
                 light_material.alpha_map = AsParameter('alpha_map', '0')
+
+                # in this case simpler to set the surface shader and reset it as its not a simple if else situation
+                if 'ms_area_light_visibility' in light.custom_attributes:
+                    if light.custom_attributes['ms_area_light_visibility'] is True:
+                        light_material.surface_shader = AsParameter('surface_shader', 'as_default_physical_surface_shader')
+                        light_material.alpha_map = None
+
+                light_material.edf = AsParameter('edf', light_edf.name)
                 current_assembly.materials.append(light_material)
 
                 light_mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment('0', 'front', light_material.name))

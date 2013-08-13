@@ -45,6 +45,26 @@ ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentf
 
 
 #--------------------------------------------------------------------------------------------------
+# Custom attributes.
+#--------------------------------------------------------------------------------------------------
+
+# attr name, data type, attribute type, default_value
+
+CUSTOM_ATTRIBUTES = [
+# generic attributes
+#['ms_render_layer', 'string', None, ''],
+
+# light / edf attributes
+['ms_area_light_visibility', None, 'bool', False],
+#['ms_cast_indirect_light', None, 'bool', False],
+#['ms_importance_multiplier', None, 'long', 1],
+
+# geo attributes
+#['ms_front_lighting_samples', None, 'long', 1],
+#['ms_back_lighting_samples', None, 'long', 1],
+]
+
+#--------------------------------------------------------------------------------------------------
 # Show About dialog.
 #--------------------------------------------------------------------------------------------------
 
@@ -793,3 +813,57 @@ def matrix_remove_scale(m):
 
 def normalize_path(path):
     return path.replace('\\', '/') if os.name == "nt" else path
+
+
+#--------------------------------------------------------------------------------------------------
+# Add/remove custom attributes.
+#--------------------------------------------------------------------------------------------------
+
+def add_custom_attr(node, attr):
+    attr_signature = None
+
+    for item in CUSTOM_ATTRIBUTES:
+        if item[0] == attr:
+            attr_signature = item
+
+    if attr_signature is None:
+        warning('attribute: {0} not found'.format(attr))
+        return 
+
+    if cmds.attributeQuery(attr, n=node, ex=True):
+        warning('attribute exists: {0}.{1}'.format(node, attr))
+        return
+
+    if attr_signature[1] is None:
+        cmds.addAttr(node, longName=attr, at=attr_signature[2])
+    else:
+        cmds.addAttr(node, longName=attr, dt=attr_signature[1])
+
+    cmds.setAttr(node + '.' + attr, attr_signature[3])
+
+
+def remove_custom_attr(node, attr):
+    cmds.deleteAttr(node, at=attr)
+
+
+#--------------------------------------------------------------------------------------------------
+# Add/remove custom attributes to selection.
+#--------------------------------------------------------------------------------------------------
+
+def get_selection():
+    selection = cmds.ls(sl=True)
+    for i in range(len(selection)):
+            relatives = cmds.listRelatives(selection[i])
+            if relatives is not None:
+                selection[i] = relatives[0]
+    return selection
+
+def selection_add_custom_attr(attr):
+    for item in get_selection():
+        add_custom_attr(item, attr)
+
+def selection_remove_custom_attr(attr):
+    for item in get_selection():
+        remove_custom_attr(item, attr)
+
+

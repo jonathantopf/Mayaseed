@@ -47,7 +47,7 @@ def buildMenu():
     for render_settings_node in cmds.ls(type='ms_renderSettings'):
         cmds.menuItem(label=render_settings_node, parent='menu_export', command=('import ms_export \nreload(ms_export)\nms_export.export("{0}")'.format(render_settings_node)))
     cmds.menuItem(divider=True, parent='ms_menu')
-    
+
     # Add/Select Render Settings Node
     cmds.menuItem(label='Add Render Settings Node', parent='ms_menu', command='import maya.cmds\nmaya.cmds.createNode("ms_renderSettings")')
     cmds.menuItem('menu_select_render_settings', subMenu=True, label='Select Render Settings Node', to=True, parent='ms_menu')
@@ -91,6 +91,19 @@ def buildMenu():
         if entity_defs[entity_key].type == 'surface_shader':
             command = 'import ms_commands\nms_commands.create_shading_node("' + entity_key + '")'
             cmds.menuItem(label=entity_key, parent='menu_create_surface_shader', command=command)
+
+    # add / remove custom attribs
+    cmds.menuItem(divider=True, parent='ms_menu')
+
+    cmds.menuItem('menu_add_attr', subMenu=True, to=True, label='Add Custom Attribute', parent='ms_menu')
+    for item in ms_commands.CUSTOM_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_add_custom_attr_to_selection("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_add_attr', command='import ms_commands; ms_commands.selection_add_custom_attr("{0}")'.format(item[0]))
+
+    cmds.menuItem('menu_remove_attr', subMenu=True, to=True, label='Remove Custom Attribute', parent='ms_menu')
+    for item in ms_commands.CUSTOM_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_remove_custom_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_remove_attr', command='import ms_commands; ms_commands.selection_remove_custom_attr("{0}")'.format(item[0]))
 
     # convert materials
     cmds.menuItem(divider=True, parent='ms_menu')
