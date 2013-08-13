@@ -31,10 +31,10 @@ global proc AEms_physical_environmentTemplate(string $nodeName) {
          editorTemplate -addControl "sun_theta";
          editorTemplate -addSeparator;
          editorTemplate -addControl "turbidity";
-         editorTemplate -addControl "turbidity_min";
-         editorTemplate -addControl "turbidity_max";
+         editorTemplate -addControl "turbidity_multiplier";
          editorTemplate -addSeparator;
          editorTemplate -addControl "luminance_multiplier";
+         editorTemplate -addControl "luminance_gamma";
          editorTemplate -addControl "saturation_multiplier";
          editorTemplate -addSeparator;
          editorTemplate -addControl "horizon_shift";

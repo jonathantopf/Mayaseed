@@ -156,6 +156,11 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.environment = environment_msgAttr.create("environment", "env")   
     ms_renderSettings.addAttribute(ms_renderSettings.environment)
 
+    # render_sky
+    render_skynAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.render_sky = render_skynAttr.create("render_sky", "render_sky", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.render_sky)
+
     # cameras --------------------------------------------------
     # export all cameras as thin lens bool attribute
     export_all_cameras_as_thin_lens_nAttr = OpenMaya.MFnNumericAttribute()

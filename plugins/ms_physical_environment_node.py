@@ -257,19 +257,12 @@ def ms_physical_environment_nodeInitializer():
     turbidity_nAttr.setKeyable(True)
     ms_physical_environment.addAttribute(ms_physical_environment.turbidity)
 
-    # turbidity_max
-    turbidity_max_AttrFloat = OpenMaya.MFnNumericAttribute()
-    ms_physical_environment.turbidity_max = turbidity_max_AttrFloat.create("turbidity_max", "turbidity_max", OpenMaya.MFnNumericData.kFloat, 6)
-    turbidity_max_AttrFloat.setHidden(False)
-    turbidity_max_AttrFloat.setKeyable(True)
-    ms_physical_environment.addAttribute(ms_physical_environment.turbidity_max)
-
-    # turbidity_min
-    turbidity_min_AttrFloat = OpenMaya.MFnNumericAttribute()
-    ms_physical_environment.turbidity_min = turbidity_min_AttrFloat.create("turbidity_min", "turbidity_min", OpenMaya.MFnNumericData.kFloat, 2)
-    turbidity_min_AttrFloat.setHidden(False)
-    turbidity_min_AttrFloat.setKeyable(True)
-    ms_physical_environment.addAttribute(ms_physical_environment.turbidity_min)
+    # turbidity_multiplier
+    turbidity_multiplier_AttrFloat = OpenMaya.MFnNumericAttribute()
+    ms_physical_environment.turbidity_multiplier = turbidity_multiplier_AttrFloat.create("turbidity_multiplier", "turbidity_multiplier", OpenMaya.MFnNumericData.kFloat, 1)
+    turbidity_multiplier_AttrFloat.setHidden(False)
+    turbidity_multiplier_AttrFloat.setKeyable(True)
+    ms_physical_environment.addAttribute(ms_physical_environment.turbidity_multiplier)
 
     # luminance_multiplier
     luminance_multiplier_AttrFloat = OpenMaya.MFnNumericAttribute()
@@ -277,6 +270,13 @@ def ms_physical_environment_nodeInitializer():
     luminance_multiplier_AttrFloat.setHidden(False)
     luminance_multiplier_AttrFloat.setKeyable(True)
     ms_physical_environment.addAttribute(ms_physical_environment.luminance_multiplier)
+
+    # luminance_gamma
+    luminance_gamma_AttrFloat = OpenMaya.MFnNumericAttribute()
+    ms_physical_environment.luminance_gamma = luminance_gamma_AttrFloat.create("luminance_gamma", "luminance_gamma", OpenMaya.MFnNumericData.kFloat, 1)
+    luminance_gamma_AttrFloat.setHidden(False)
+    luminance_gamma_AttrFloat.setKeyable(True)
+    ms_physical_environment.addAttribute(ms_physical_environment.luminance_gamma)
 
     # saturation_multiplier
     saturation_multiplier_AttrFloat = OpenMaya.MFnNumericAttribute()

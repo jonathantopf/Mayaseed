@@ -133,6 +133,8 @@ def get_maya_params(render_settings_node):
     else:
         params['environment'] = False
 
+    params['render_sky'] = cmds.getAttr(render_settings_node + '.render_sky')
+
     # Cameras.
     # params['sceneCameraExportAllCameras'] = cmds.checkBox('ms_sceneCameraExportAllCameras', query=True, value=True)
     params['export_all_cameras_as_thin_lens'] = cmds.getAttr(render_settings_node + '.export_all_cameras_as_thin_lens')
@@ -699,11 +701,11 @@ class MMsPhysicalEnvironment():
         self.horizon_shift         = cmds.getAttr(self.name + '.horizon_shift')
         self.luminance_multiplier  = cmds.getAttr(self.name + '.luminance_multiplier')
         self.saturation_multiplier = cmds.getAttr(self.name + '.saturation_multiplier')
+        self.luminance_gamma       = cmds.getAttr(self.name + '.luminance_gamma')
         self.sun_phi               = cmds.getAttr(self.name + '.sun_phi')
         self.sun_theta             = cmds.getAttr(self.name + '.sun_theta')
         self.turbidity             = self.get_connections(self.name + '.turbidity')
-        self.turbidity_max         = cmds.getAttr(self.name + '.turbidity_max')
-        self.turbidity_min         = cmds.getAttr(self.name + '.turbidity_min')
+        self.turbidity_multiplier  = cmds.getAttr(self.name + '.turbidity_multiplier')
 
     def get_connections(self, attr_name):
         connection = MColorConnection(self.params, attr_name)
@@ -1920,10 +1922,10 @@ def translate_maya_scene(params, maya_scene, maya_environment):
                 environment_edf.parameters.append(AsParameter('horizon_shift' , maya_environment.horizon_shift))
                 environment_edf.parameters.append(AsParameter('luminance_multiplier' , maya_environment.luminance_multiplier))
                 environment_edf.parameters.append(AsParameter('saturation_multiplier' , maya_environment.saturation_multiplier))
+                environment_edf.parameters.append(AsParameter('luminance_gamma' , maya_environment.luminance_gamma))
                 environment_edf.parameters.append(AsParameter('sun_phi' , maya_environment.sun_phi))
                 environment_edf.parameters.append(AsParameter('sun_theta' , maya_environment.sun_theta))
-                environment_edf.parameters.append(AsParameter('turbidity_max' , maya_environment.turbidity_max))
-                environment_edf.parameters.append(AsParameter('turbidity_min' , maya_environment.turbidity_min))
+                environment_edf.parameters.append(AsParameter('turbidity_multiplier' , maya_environment.turbidity_multiplier))
 
                 if maya_environment.turbidity.__class__.__name__ == 'MFile':
                     turbidity_file, turbidity_file_instance = m_file_to_as_texture(params, maya_environment.turbidity, '_texture', non_mb_sample_number)
@@ -1968,6 +1970,13 @@ def translate_maya_scene(params, maya_scene, maya_environment):
                     environment_edf.parameters.append(AsParameter('exitance', mirror_ball_map_instance.name))
 
                 environment_edf.parameters.append(AsParameter('exitance_multiplier', str(maya_environment.exitance_multiplier)))
+
+            if params['render_sky']:
+                environment_shader = AsEnvironmentShader()
+                environment_shader.name = maya_environment.safe_name + '_shader'
+                environment_shader.edf = AsParameter('environment_edf', environment_edf.name)
+                environment.environment_shader = AsParameter('environment_shader', environment_shader.name)
+                as_project.scene.environment_shaders.append(environment_shader)
 
             as_project.scene.environment = environment
             as_project.scene.environment_edfs.append(environment_edf)
