@@ -2164,10 +2164,7 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                 new_light = AsLight()
                 new_light.name = light.safe_name
                 
-                if light.color.__class__.__name__ == 'MFile':
-                    new_light.exitance_multiplier.value = new_light.exitance_multiplier.value * light_color.multiplier.value
-                else: 
-                    new_light.exitance_multiplier.value = light.multiplier
+                new_light.exitance_multiplier.value = light.multiplier
 
                 new_light.exitance = AsParameter('exitance', light_color.name)
                 new_light.transform = AsTransform()
