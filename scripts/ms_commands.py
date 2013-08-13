@@ -362,7 +362,7 @@ def get_entity_defs(xml_file_path, list=False):
                 if param.nodeName == 'parameter':
                     name = param.getAttribute('name')
                     value = param.getAttribute('value')
-                    if name == 'widget':
+                    if name == 'type':
                         nodes[entity_model].attributes[child_name].type = value
                     elif name == 'default':
                         nodes[entity_model].attributes[child_name].default_value = value
@@ -438,10 +438,10 @@ def create_shading_node(model, name=None, entity_defs_obj=False):
         if entity_key == model:
             for attr_key in entity_defs[entity_key].attributes.keys():
                 attr = entity_defs[entity_key].attributes[attr_key]
-                if attr.type == 'text_box' or attr.type == 'dropdown_list':
+                if attr.type == 'text' or attr.type == 'enumeration' or attr.type == 'boolean':
                      cmds.addAttr(shading_node_name, longName=attr_key, dt="string")
                      cmds.setAttr(shading_node_name + '.' + attr_key, attr.default_value, type="string")
-                elif attr.type == 'entity_picker':
+                elif (attr.type == 'colormap') or (attr.type == 'entity'):
                     # if there is a default value, use it
                     if attr.default_value:
                         default_value = float(attr.default_value)
@@ -663,12 +663,12 @@ def convert_phong_blinn_material(material):
 
     # glossy component
     glossy_brdf = create_shading_node('microfacet_brdf', name=(material + '_blinn_brdf'))
-    cmds.setAttr(glossy_brdf + '.mdf', 'blinn', type='string')
+    cmds.setAttr(glossy_brdf + '.glossiness', 'blinn', type='string')
     if cmds.nodeType(material) == 'phong':
-        mdf_param = cmds.getAttr(material + '.cosinePower') * 1.3
+        glossy_param = ((cmds.getAttr(material + '.cosinePower') - 2) / 98) * -1 + 1
     else:
-        mdf_param = 10.0
-    cmds.setAttr(glossy_brdf + '.mdf_parameter', mdf_param, mdf_param, mdf_param, type='float3')
+        glossy_param = 0.5
+    cmds.setAttr(glossy_brdf + '.mdf_parameter', glossy_param, glossy_param, glossy_param, type='float3')
     assign_connection_or_color(glossy_brdf + '.reflectance', material + '.specularColor', material + '.specularColor')
 
     # mix diffuse and glossy
