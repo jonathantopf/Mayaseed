@@ -867,7 +867,7 @@ class MGenericMaterial():
         for attribute in ms_commands.CUSTOM_ATTRIBUTES:
             if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
                 self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
-                
+
         # work out diffuse component
         if cmds.attributeQuery('color', node=self.name, exists=True):
             self.diffuse = MColorConnection(self.params, self.name + '.color')
@@ -2165,6 +2165,14 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                 light_edf.render_layer = AsParameter('render_layer', light.safe_name)
                 light_edf.parameters.append(AsParameter('radiance', light_color.name))
                 light_edf.parameters.append(AsParameter('radiance_multiplier', light.multiplier))
+
+                if 'ms_cast_indirect_light' in light.custom_attributes:
+                    if light.custom_attributes['ms_cast_indirect_light'] is False:
+                        light_edf.parameters.append(AsParameter('cast_indirect_light', 'false'))
+
+                if 'ms_importance_multiplier' in light.custom_attributes:
+                    light_edf.parameters.append(AsParameter('importance_multiplier', light.custom_attributes['ms_importance_multiplier']))
+
                 current_assembly.edfs.append(light_edf)
 
                 light_material.surface_shader = AsParameter('surface_shader', 'as_default_clear_surface_shader')

@@ -56,8 +56,8 @@ CUSTOM_ATTRIBUTES = [
 
 # light / edf attributes
 ['ms_area_light_visibility', None, 'bool', False],
-#['ms_cast_indirect_light', None, 'bool', False],
-#['ms_importance_multiplier', None, 'long', 1],
+['ms_cast_indirect_light', None, 'bool', False],
+['ms_importance_multiplier', None, 'long', 1],
 
 # material attributes
 ['ms_front_lighting_samples', None, 'long', 1],
