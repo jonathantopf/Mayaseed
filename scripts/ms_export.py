@@ -771,12 +771,6 @@ class MMsMaterial():
         self.name = maya_ms_material_name
         self.safe_name = ms_commands.legalize_name(self.name)
 
-        self.custom_attributes = {}
-
-        for attribute in ms_commands.CUSTOM_ATTRIBUTES:
-            if cmds.attributeQuery(attribute, n=self.name, ex=True):
-                self.custom_attributes[attribute] = cmds.getAttr(self.name + '.' + attribute)
-
         self.shading_nodes = []
         self.colors = []
         self.textures = []
@@ -867,6 +861,12 @@ class MGenericMaterial():
         self.specular_color = None
 
         self.textures = []
+
+        self.custom_attributes = {}
+
+        for attribute in ms_commands.CUSTOM_ATTRIBUTES:
+            if cmds.attributeQuery(attribute, n=self.name, ex=True):
+                self.custom_attributes[attribute] = cmds.getAttr(self.name + '.' + attribute)
 
         # work out diffuse component
         if cmds.attributeQuery('color', node=self.name, exists=True):
