@@ -865,9 +865,9 @@ class MGenericMaterial():
         self.custom_attributes = {}
 
         for attribute in ms_commands.CUSTOM_ATTRIBUTES:
-            if cmds.attributeQuery(attribute, n=self.name, ex=True):
-                self.custom_attributes[attribute] = cmds.getAttr(self.name + '.' + attribute)
-
+            if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
+                self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
+                
         # work out diffuse component
         if cmds.attributeQuery('color', node=self.name, exists=True):
             self.diffuse = MColorConnection(self.params, self.name + '.color')
