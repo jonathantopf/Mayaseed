@@ -59,9 +59,9 @@ CUSTOM_ATTRIBUTES = [
 #['ms_cast_indirect_light', None, 'bool', False],
 #['ms_importance_multiplier', None, 'long', 1],
 
-# geo attributes
-#['ms_front_lighting_samples', None, 'long', 1],
-#['ms_back_lighting_samples', None, 'long', 1],
+# material attributes
+['ms_front_lighting_samples', None, 'long', 1],
+['ms_back_lighting_samples', None, 'long', 1],
 ]
 
 #--------------------------------------------------------------------------------------------------
@@ -458,9 +458,10 @@ def create_shading_node(model, name=None, entity_defs_obj=False):
         if entity_key == model:
             for attr_key in entity_defs[entity_key].attributes.keys():
                 attr = entity_defs[entity_key].attributes[attr_key]
-                if attr.type == 'text' or attr.type == 'enumeration' or attr.type == 'boolean':
+                if attr.type == 'text' or attr.type == 'enumeration' or attr.type == 'boolean' or attr.type == 'numeric':
                      cmds.addAttr(shading_node_name, longName=attr_key, dt="string")
                      cmds.setAttr(shading_node_name + '.' + attr_key, attr.default_value, type="string")
+
                 elif (attr.type == 'colormap') or (attr.type == 'entity'):
                     # if there is a default value, use it
                     if attr.default_value:

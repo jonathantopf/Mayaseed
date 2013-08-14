@@ -2425,6 +2425,12 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             new_surface_shader.parameters.append(AsParameter('exitance', alpha_color.name))
             root_assembly.colors.append(alpha_color)
 
+    # custom attributes
+    if 'ms_front_lighting_samples' in generic_material.custom_attributes:
+        new_surface_shader.parameters.append(AsParameter('front_lighting_samples', generic_material.custom_attributes['ms_front_lighting_samples']))
+    if 'ms_back_lighting_samples' in generic_material.custom_attributes:
+        new_surface_shader.parameters.append(AsParameter('back_lighting_samples', generic_material.custom_attributes['ms_back_lighting_samples']))
+
     return new_material
 
 
