@@ -201,6 +201,7 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.export_straight_alpha = export_straight_alpha_nAttr.create("export_straight_alpha", "export_straight", OpenMaya.MFnNumericData.kBoolean, True)
     ms_renderSettings.addAttribute(ms_renderSettings.export_straight_alpha)
 
+    # config ---------------------------------------------------
     # sampler
     sampler_enumAttr = OpenMaya.MFnEnumAttribute()
     ms_renderSettings.sampler = sampler_enumAttr.create("sampler", "sampler")
@@ -242,7 +243,6 @@ def ms_renderSettings_nodeInitializer():
     adaptive_quality_AttrFloat.setHidden(False)
     adaptive_quality_AttrFloat.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.adaptive_quality)
-
 
     # enable_ibl
     pt_iblnAttr = OpenMaya.MFnNumericAttribute()
