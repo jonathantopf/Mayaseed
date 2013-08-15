@@ -51,8 +51,6 @@ ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentf
 # attr name, data type, attribute type, default_value
 
 CUSTOM_ATTRIBUTES = [
-# generic attributes
-#['ms_render_layer', 'string', None, ''],
 
 # light / edf attributes
 ['ms_area_light_visibility', None, 'bool', False],
@@ -60,8 +58,9 @@ CUSTOM_ATTRIBUTES = [
 ['ms_importance_multiplier', None, 'long', 1],
 
 # material attributes
-['ms_front_lighting_samples', None, 'long', 1],
-['ms_back_lighting_samples', None, 'long', 1],
+['ms_front_lighting_samples', None, 'float', 1],
+['ms_back_lighting_samples', None, 'float', 1],
+['ms_double_sided_material', None, 'bool', True]
 ]
 
 #--------------------------------------------------------------------------------------------------

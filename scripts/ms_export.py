@@ -2267,6 +2267,10 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                 
                 mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'front', as_material.name))
 
+                if 'ms_double_sided_material' in maya_generic_material.custom_attributes:
+                    if maya_generic_material.custom_attributes['ms_double_sided_material']:
+                        mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', as_material.name))
+
             current_assembly.object_instances.append(mesh_instance)
 
 
