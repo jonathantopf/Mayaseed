@@ -292,6 +292,7 @@ def ms_renderSettings_nodeInitializer():
     pt_max_ray_intensity_AttrFloat.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.pt_max_ray_intensity)
 
+    # advanced ---------------------------------------------------
     # profile export
     profile_export_nAttr = OpenMaya.MFnNumericAttribute()
     ms_renderSettings.profile_export = profile_export_nAttr.create("profile_export", "profile_export", OpenMaya.MFnNumericData.kBoolean, False)
