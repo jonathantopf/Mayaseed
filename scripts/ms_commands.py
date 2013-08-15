@@ -289,7 +289,7 @@ def transform_is_renderable(node_name):
 #--------------------------------------------------------------------------------------------------
 
 def visible_in_hierarchy(parent):
-    parents = cmds.listRelatives(parent, ap=True)
+    parents = cmds.listRelatives(parent, ap=True, f=True)
     if parents is not None:
         if cmds.getAttr(parents[0] + '.visibility') == False:
             return False
