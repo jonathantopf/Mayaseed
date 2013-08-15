@@ -182,6 +182,7 @@ def get_maya_params(render_settings_node):
     params['pt_light_samples'] = cmds.getAttr(render_settings_node + '.pt_light_samples')
     params['pt_environment_samples'] = cmds.getAttr(render_settings_node + '.pt_environment_samples')
     params['pt_max_ray_intensity'] = cmds.getAttr(render_settings_node + '.pt_max_ray_intensity')
+    params['enable_importance_sampling'] = cmds.getAttr(render_settings_node + '.enable_importance_sampling')
 
     # Select obj exporter.
     if cmds.pluginInfo('ms_export_obj_' + str(int(mel.eval('getApplicationVersionAsFloat()'))), query=True, r=True):
@@ -1885,6 +1886,10 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         final_config.base = 'base_final'
 
         for config in [interactive_config, final_config]:
+            enable_importance_sampling_parameters = AsParameters('light_sampler')
+            enable_importance_sampling_parameters.parameters.append(AsParameter('enable_importance_sampling', params['enable_importance_sampling']))
+            config.parameters.append(enable_importance_sampling_parameters)
+            
             config.parameters.append(AsParameter('lighting_engine', 'pt'))
             config.parameters.append(AsParameter('pixel_renderer', params['sampler']))
 

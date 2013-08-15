@@ -292,6 +292,11 @@ def ms_renderSettings_nodeInitializer():
     pt_max_ray_intensity_AttrFloat.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.pt_max_ray_intensity)
 
+    # enable_importance_sampling
+    enable_importance_samplingnAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.enable_importance_sampling = enable_importance_samplingnAttr.create("enable_importance_sampling", "enable_importance_sampling", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.enable_importance_sampling)
+
     # advanced ---------------------------------------------------
     # profile export
     profile_export_nAttr = OpenMaya.MFnNumericAttribute()
