@@ -2430,6 +2430,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         root_assembly.surface_shaders.append(new_surface_shader)
         new_material.surface_shader = AsParameter('surface_shader', new_surface_shader.name)
 
+    # add material alpha texture
     if generic_material.alpha is not None:
         if generic_material.alpha.__class__.__name__ == 'MFile':
             alpha_texture, alpha_texture_instance = m_file_to_as_texture(params, generic_material.alpha, '_alpha', non_mb_sample_number)
