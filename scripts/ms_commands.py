@@ -839,8 +839,6 @@ def add_custom_attr(node, attr):
     else:
         cmds.addAttr(node, longName=attr, dt=attr_signature[1])
 
-    cmds.setAttr(node + '.' + attr, attr_signature[3])
-
 
 def remove_custom_attr(node, attr):
     cmds.deleteAttr(node, at=attr)
