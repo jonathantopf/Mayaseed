@@ -273,14 +273,14 @@ def ms_renderSettings_nodeInitializer():
 
     # pt_light_samples
     pt_light_samples_AttrFloat = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_light_samples = pt_light_samples_AttrFloat.create("pt_light_samples", "pt_light_samples", OpenMaya.MFnNumericData.kInt, 1)
+    ms_renderSettings.pt_light_samples = pt_light_samples_AttrFloat.create("pt_light_samples", "pt_light_samples", OpenMaya.MFnNumericData.kFloat, 1)
     pt_light_samples_AttrFloat.setHidden(False)
     pt_light_samples_AttrFloat.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.pt_light_samples)
 
     # pt_environment_samples
     pt_environment_samples_AttrFloat = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_environment_samples = pt_environment_samples_AttrFloat.create("pt_environment_samples", "pt_environment_samples", OpenMaya.MFnNumericData.kInt, 1)
+    ms_renderSettings.pt_environment_samples = pt_environment_samples_AttrFloat.create("pt_environment_samples", "pt_environment_samples", OpenMaya.MFnNumericData.kFloat, 1)
     pt_environment_samples_AttrFloat.setHidden(False)
     pt_environment_samples_AttrFloat.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.pt_environment_samples)
