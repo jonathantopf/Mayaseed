@@ -869,6 +869,17 @@ class MGenericMaterial():
             if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
                 self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
 
+        self.secondary_surface_shader = None
+
+        if 'ms_secondary_surface_shader' in self.custom_attributes:
+            if cmds.nodeType(self.custom_attributes['ms_secondary_surface_shader']) == 'ms_appleseed_shading_node':
+                if cmds.getAttr(self.custom_attributes['ms_secondary_surface_shader'] + '.node_type') is not 'surface_shader':
+                    self.secondary_surface_shader = MMsShadingNode(params, self.custom_attributes['ms_secondary_surface_shader'])
+                else:
+                    ms_commands.warning('{0} is not a surface_shader'.format(self.custom_attributes['ms_secondary_surface_shader']))
+            else:
+                ms_commands.warning('{0} is not an ms_appleseed_shading_node'.format(self.custom_attributes['ms_secondary_surface_shader']))
+
         # work out diffuse component
         if cmds.attributeQuery('color', node=self.name, exists=True):
             self.diffuse = MColorConnection(self.params, self.name + '.color')
@@ -1889,7 +1900,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
             enable_importance_sampling_parameters = AsParameters('light_sampler')
             enable_importance_sampling_parameters.parameters.append(AsParameter('enable_importance_sampling', params['enable_importance_sampling']))
             config.parameters.append(enable_importance_sampling_parameters)
-            
+
             config.parameters.append(AsParameter('lighting_engine', 'pt'))
             config.parameters.append(AsParameter('pixel_renderer', params['sampler']))
 
@@ -1930,6 +1941,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
             environment_edf = AsEnvironmentEdf()
             environment_edf.name = maya_environment.safe_name + '_edf'
             environment_edf.model = maya_environment.model
+            environment_edf.parameters.append(AsParameter('render_layer', maya_environment.safe_name))
 
             environment.environment_edf = AsParameter('environment_edf', environment_edf.name)
 
@@ -1992,6 +2004,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
                 environment_shader = AsEnvironmentShader()
                 environment_shader.name = maya_environment.safe_name + '_shader'
                 environment_shader.edf = AsParameter('environment_edf', environment_edf.name)
+                environment_shader.parameters.append(AsParameter('render_layer', maya_environment.safe_name))
                 environment.environment_shader = AsParameter('environment_shader', environment_shader.name)
                 as_project.scene.environment_shaders.append(environment_shader)
 
@@ -2398,11 +2411,9 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         new_material.edf = AsParameter('edf', new_edf.name)
 
         # add a constant surface shader
-        new_surface_shader = AsSurfaceShader()
-        new_surface_shader.name = generic_material.safe_name + '_surface_shader'
-        new_surface_shader.model = 'constant_surface_shader'
-        root_assembly.surface_shaders.append(new_surface_shader)
-        new_material.surface_shader = AsParameter('surface_shader', new_surface_shader.name)
+        primary_surface_shader = AsSurfaceShader()
+        primary_surface_shader.name = generic_material.safe_name + '_surface_shader'
+        primary_surface_shader.model = 'constant_surface_shader'
 
         if generic_material.incandescence.__class__.__name__ == 'MFile':
             edf_texture, edf_texture_instance = m_file_to_as_texture(params, generic_material.incandescence, '_edf', non_mb_sample_number)
@@ -2412,42 +2423,62 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
                 root_assembly.texture_instances.append(edf_texture_instance)
 
             # attach edf texture to surface_shader color
-            new_surface_shader.parameters.append(AsParameter('color', edf_texture_instance.name))
+            primary_surface_shader.parameters.append(AsParameter('color', edf_texture_instance.name))
         else:
             edf_color = m_color_connection_to_as_color(generic_material.incandescence, '_edf')
             new_edf.parameters.append(AsParameter('exitance', edf_color.name))
             root_assembly.colors.append(edf_color)
 
             # attach edf color to surface_shader color
-            new_surface_shader.parameters.append(AsParameter('color', edf_color.name))
+            primary_surface_shader.parameters.append(AsParameter('color', edf_color.name))
 
 
     else:
         # add a physical surface shader
-        new_surface_shader = AsSurfaceShader()
-        new_surface_shader.name = generic_material.safe_name + '_surface_shader'
-        new_surface_shader.model = 'physical_surface_shader'
-        root_assembly.surface_shaders.append(new_surface_shader)
-        new_material.surface_shader = AsParameter('surface_shader', new_surface_shader.name)
+        primary_surface_shader = AsSurfaceShader()
+        primary_surface_shader.name = generic_material.safe_name + '_surface_shader'
+        primary_surface_shader.model = 'physical_surface_shader'
+
+
+    if generic_material.secondary_surface_shader is not None:
+        main_surface_shader = AsSurfaceShader()
+        main_surface_shader.name = generic_material.safe_name + '_main_surface_shader'
+        main_surface_shader.model = 'surface_shader_collection'
+        secondary_surface_shader = build_as_shading_nodes(params, root_assembly,  generic_material.secondary_surface_shader, non_mb_sample_number)
+        primary_surface_shader.name = primary_surface_shader.name + '_primary'
+        secondary_surface_shader.name = secondary_surface_shader.name + '_secondary'
+
+        main_surface_shader.parameters.append(AsParameter('surface_shader1', primary_surface_shader.name))
+        main_surface_shader.parameters.append(AsParameter('surface_shader2', secondary_surface_shader.name))
+        
+        root_assembly.surface_shaders.append(primary_surface_shader)
+
+    else:
+        main_surface_shader = primary_surface_shader
+
+    root_assembly.surface_shaders.append(main_surface_shader)
+
+    # add surface_shader
+    new_material.surface_shader = AsParameter('surface_shader', main_surface_shader.name)
 
     # add material alpha texture
     if generic_material.alpha is not None:
         if generic_material.alpha.__class__.__name__ == 'MFile':
             alpha_texture, alpha_texture_instance = m_file_to_as_texture(params, generic_material.alpha, '_alpha', non_mb_sample_number)
-            new_surface_shader.parameters.append(AsParameter('exitance', alpha_texture_instance.name))
+            main_surface_shader.parameters.append(AsParameter('exitance', alpha_texture_instance.name))
             if not get_from_list(root_assembly.textures, alpha_texture.name):
                 root_assembly.textures.append(alpha_texture)
                 root_assembly.texture_instances.append(alpha_texture_instance)
         else:
             alpha_color = m_color_connection_to_as_color(generic_material.alpha)
-            new_surface_shader.parameters.append(AsParameter('exitance', alpha_color.name))
+            main_surface_shader.parameters.append(AsParameter('exitance', alpha_color.name))
             root_assembly.colors.append(alpha_color)
 
     # custom attributes
     if 'ms_front_lighting_samples' in generic_material.custom_attributes:
-        new_surface_shader.parameters.append(AsParameter('front_lighting_samples', generic_material.custom_attributes['ms_front_lighting_samples']))
+        main_surface_shader.parameters.append(AsParameter('front_lighting_samples', generic_material.custom_attributes['ms_front_lighting_samples']))
     if 'ms_back_lighting_samples' in generic_material.custom_attributes:
-        new_surface_shader.parameters.append(AsParameter('back_lighting_samples', generic_material.custom_attributes['ms_back_lighting_samples']))
+        main_surface_shader.parameters.append(AsParameter('back_lighting_samples', generic_material.custom_attributes['ms_back_lighting_samples']))
 
     return new_material
 

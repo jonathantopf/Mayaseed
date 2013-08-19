@@ -60,7 +60,8 @@ CUSTOM_ATTRIBUTES = [
 # material attributes
 ['ms_front_lighting_samples', None, 'float', 1],
 ['ms_back_lighting_samples', None, 'float', 1],
-['ms_double_sided_material', None, 'bool', True]
+['ms_double_sided_material', None, 'bool', True],
+['ms_secondary_surface_shader', 'string', None, True]
 ]
 
 #--------------------------------------------------------------------------------------------------
