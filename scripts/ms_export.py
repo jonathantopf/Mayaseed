@@ -2444,7 +2444,12 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         main_surface_shader = AsSurfaceShader()
         main_surface_shader.name = generic_material.safe_name + '_main_surface_shader'
         main_surface_shader.model = 'surface_shader_collection'
-        secondary_surface_shader = build_as_shading_nodes(params, root_assembly,  generic_material.secondary_surface_shader, non_mb_sample_number)
+        
+        secondary_surface_shader = get_from_list(root_assembly.surface_shaders, generic_material.secondary_surface_shader.name + '_secondary')
+
+        if secondary_surface_shader is None:
+            secondary_surface_shader = build_as_shading_nodes(params, root_assembly,  generic_material.secondary_surface_shader, non_mb_sample_number)
+
         primary_surface_shader.name = primary_surface_shader.name + '_primary'
         secondary_surface_shader.name = secondary_surface_shader.name + '_secondary'
 
