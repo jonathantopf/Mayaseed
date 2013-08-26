@@ -2439,6 +2439,10 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         root_assembly.edfs.append(new_edf)
         new_material.edf = AsParameter('edf', new_edf.name)
 
+        # check for 'cast indirect light' custom parameter
+        if 'ms_cast_indirect_light' in generic_material.custom_attributes:
+            new_edf.parameters.append(AsParameter('cast_indirect_light', generic_material.custom_attributes['ms_cast_indirect_light']))
+
         # add a constant surface shader
         primary_surface_shader = AsSurfaceShader()
         primary_surface_shader.name = generic_material.safe_name + '_surface_shader'
