@@ -326,6 +326,7 @@ def add_scene_sample(m_transform, transform_blur, deform_blur, camera_blur, curr
                 for texture in material.textures:
                     if texture.is_animated or initial_sample:
                         texture.add_image_sample(export_root, current_frame)
+                        
             for material in mesh.generic_materials:
                 for texture in material.textures:
                     if texture.is_animated or initial_sample:
@@ -877,6 +878,7 @@ class MGenericMaterial():
             if cmds.nodeType(self.custom_attributes['ms_secondary_surface_shader']) == 'ms_appleseed_shading_node':
                 if cmds.getAttr(self.custom_attributes['ms_secondary_surface_shader'] + '.node_type') is not 'surface_shader':
                     self.secondary_surface_shader = MMsShadingNode(params, self.custom_attributes['ms_secondary_surface_shader'])
+                    self.textures += self.secondary_surface_shader.textures
                 else:
                     ms_commands.warning('{0} is not a surface_shader'.format(self.custom_attributes['ms_secondary_surface_shader']))
             else:
