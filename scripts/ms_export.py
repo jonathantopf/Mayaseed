@@ -1318,10 +1318,13 @@ class AsEnvironmentShader():
     def __init__(self):
         self.name = None
         self.edf = None
+        self.parameters = []
 
     def emit_xml(self, doc):
         doc.start_element('environment_shader name="%s" model="edf_environment_shader"' % self.name)
         self.edf.emit_xml(doc)
+        for parameter in self.parameters:
+            parameter.emit_xml(doc)
         doc.end_element('environment_shader')
 
 
