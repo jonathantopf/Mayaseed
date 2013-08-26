@@ -860,6 +860,8 @@ class MGenericMaterial():
         self.incandescence = None
         self.glossiness = None
         self.specular_color = None
+        self.bump_map = None
+        self.bump_multiplier = None
 
         self.textures = []
 
@@ -953,6 +955,19 @@ class MGenericMaterial():
                 self.textures.append(self.incandescence)
             elif self.incandescence.is_black:
                 self.incandescence = None
+
+        # work out bump component
+        if cmds.attributeQuery('normalCamera', node=self.name, exists=True):
+            connected_bump_node = cmds.listConnections(self.name + '.normalCamera', s=True, type='bump2d')
+
+            if connected_bump_node is not None:
+                bump_node = connected_bump_node[0]
+                bump_tex_connected_node = cmds.listConnections(bump_node + '.bumpValue', s=True, type='file')
+                
+                if bump_tex_connected_node is not None:
+                    self.bump_multiplier = cmds.getAttr(bump_node + '.bumpDepth')
+                    self.bump_map = MFile(params, bump_tex_connected_node[0])
+                    self.textures.append(self.bump_map)
 
 
 #--------------------------------------------------------------------------------------------------
@@ -2326,6 +2341,15 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         else:
             # we invert the alpha color here to match the maya viewport behavior
             new_material.alpha_map = AsParameter('alpha_map', generic_material.alpha.color_value[0][0] * -1)
+
+    # bump_component
+    if generic_material.bump_multiplier is not None:
+        new_material.displacement_mode = AsParameter('displacement_method', 'bump')
+        new_material.bump_amplitude = AsParameter('bump_amplitude', generic_material.bump_multiplier)
+        bump_texture, bump_texture_instance = m_file_to_as_texture(params, generic_material.bump_map, '_bump_map', non_mb_sample_number)
+        new_material.displacement_map = AsParameter('displacement_map', bump_texture_instance.name)
+        root_assembly.textures.append(bump_texture)
+        root_assembly.texture_instances.append(bump_texture_instance)
 
     # only use phong mix if the specular color is > 0 or exists
     if (generic_material.specular_color is not None) and (generic_material.glossiness is not None):
