@@ -705,15 +705,17 @@ class MMsPhysicalEnvironment():
         elif self.model == 1:
             self.model = "preetham_environment_edf"
 
-        self.ground_albedo         = cmds.getAttr(self.name + '.ground_albedo')
-        self.horizon_shift         = cmds.getAttr(self.name + '.horizon_shift')
-        self.luminance_multiplier  = cmds.getAttr(self.name + '.luminance_multiplier')
-        self.saturation_multiplier = cmds.getAttr(self.name + '.saturation_multiplier')
-        self.luminance_gamma       = cmds.getAttr(self.name + '.luminance_gamma')
-        self.sun_phi               = cmds.getAttr(self.name + '.sun_phi')
-        self.sun_theta             = cmds.getAttr(self.name + '.sun_theta')
-        self.turbidity             = self.get_connections(self.name + '.turbidity')
-        self.turbidity_multiplier  = cmds.getAttr(self.name + '.turbidity_multiplier')
+        self.ground_albedo           = cmds.getAttr(self.name + '.ground_albedo')
+        self.horizon_shift           = cmds.getAttr(self.name + '.horizon_shift')
+        self.luminance_multiplier    = cmds.getAttr(self.name + '.luminance_multiplier')
+        self.saturation_multiplier   = cmds.getAttr(self.name + '.saturation_multiplier')
+        self.luminance_gamma         = cmds.getAttr(self.name + '.luminance_gamma')
+        self.sun_phi                 = cmds.getAttr(self.name + '.sun_phi')
+        self.sun_theta               = cmds.getAttr(self.name + '.sun_theta')
+        self.turbidity               = self.get_connections(self.name + '.turbidity')
+        self.turbidity_multiplier    = cmds.getAttr(self.name + '.turbidity_multiplier')
+        self.create_physical_sun     = cmds.getAttr(self.name + '.create_physical_sun') 
+        self.physical_sun_multiplier = cmds.getAttr(self.name + '.physical_sun_multiplier')
 
     def get_connections(self, attr_name):
         connection = MColorConnection(self.params, attr_name)
@@ -1500,15 +1502,20 @@ class AsLight():
         self.inner_angle = None
         self.outer_angle = None
         self.transform = None
+        self.parameters = []
 
     def emit_xml(self, doc):
         doc.start_element('light name="%s" model="%s"' % (self.name, self.model))
-        self.exitance.emit_xml(doc)
+        if self.exitance is not None:
+            self.exitance.emit_xml(doc)
         self.exitance_multiplier.emit_xml(doc)
         if self.model == 'spot_light':
             self.inner_angle.emit_xml(doc)
             self.outer_angle.emit_xml(doc)
-        self.transform.emit_xml(doc)
+        for param in self.parameters:
+            param.emit_xml(doc)
+        if self.transform is not None:
+            self.transform.emit_xml(doc)
         doc.end_element('light')
 
 
@@ -1544,6 +1551,11 @@ class AsAssembly():
 
     def emit_xml(self, doc):
         doc.start_element('assembly name="%s"' % self.name)
+
+        # ?? big hack!
+        disable_intersection = AsParameter('enable_intersection_filters', 'false')
+        disable_intersection.emit_xml(doc)
+        # ?? big hack!
 
         for color in self.colors:
             color.emit_xml(doc)
@@ -1952,6 +1964,9 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         # begin scene object
         as_project.scene = AsScene()
 
+        # define root assembly
+        root_assembly = AsAssembly()
+
         # if present add the environment
         if maya_environment is not None:
 
@@ -1962,7 +1977,6 @@ def translate_maya_scene(params, maya_scene, maya_environment):
             environment_edf.name = maya_environment.safe_name + '_edf'
             environment_edf.model = maya_environment.model
             environment_edf.parameters.append(AsParameter('render_layer', maya_environment.safe_name))
-
             environment.environment_edf = AsParameter('environment_edf', environment_edf.name)
 
             if maya_environment.__class__.__name__ == 'MMsPhysicalEnvironment':
@@ -1980,11 +1994,22 @@ def translate_maya_scene(params, maya_scene, maya_environment):
                     turbidity_file, turbidity_file_instance = m_file_to_as_texture(params, maya_environment.turbidity, '_texture', non_mb_sample_number)
                     as_project.scene.textures.append(turbidity_file)
                     as_project.scene.texture_instances.append(turbidity_file_instance)
-                    environment_edf.parameters.append(AsParameter('exitance', turbidity_file_instance.name))
+                    turbidity_param = AsParameter('exitance', turbidity_file_instance.name)
+                    environment_edf.parameters.append(turbidity_param)
                 else:
                     turbidity_color = m_color_connection_to_as_color(maya_environment.turbidity, '_turbidity')
-                    environment_edf.parameters.append(AsParameter('turbidity', turbidity_color.name))
+                    turbidity_param = AsParameter('turbidity', turbidity_color.name)
+                    environment_edf.parameters.append(turbidity_param)
                     as_project.scene.colors.append(turbidity_color)
+
+                if maya_environment.create_physical_sun:
+                    light = AsLight()
+                    light.name = 'physical_sun_light'
+                    light.model = 'sun_light'
+                    light.parameters.append(AsParameter('environment_edf', environment_edf.name))
+                    light.parameters.append(AsParameter('radiance_multiplier', maya_environment.physical_sun_multiplier))
+                    light.parameters.append(turbidity_param)
+                    root_assembly.lights.append(light)
 
             else:
                 # environment must be generic
@@ -2079,8 +2104,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         as_project.scene.camera = as_camera
 
         # construct assembly hierarchy
-        # start by creating a root assembly to hold all other assemblies
-        root_assembly = AsAssembly()
+        # root assembly is defined earlier to let the environment sun light have access to it
         root_assembly.name = 'root_assembly'
         as_project.scene.assemblies.append(root_assembly)
         root_assembly_instance = root_assembly.instantiate()
@@ -2378,7 +2402,10 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
                 root_assembly.textures.append(bsdf_reflectivity_texture)
                 root_assembly.texture_instances.append(bsdf_reflectivity_texture_instance)
         else:
-            new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', generic_material.reflectivity.color_value))
+            if generic_material.reflectivity is not None:
+                new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', generic_material.reflectivity.color_value))
+            else:
+                new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', '0'))
 
         new_material.bsdf = AsParameter('bsdf', new_bsdf_blend_bsdf.name)
 
