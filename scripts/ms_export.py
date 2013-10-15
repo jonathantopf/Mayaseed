@@ -872,7 +872,12 @@ class MGenericMaterial():
 
         for attribute in ms_commands.CUSTOM_ATTRIBUTES:
             if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
-                self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
+                if attribute[0] is not 'ms_secondary_surface_shader':
+                    self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
+                else:
+                    attribute_connections = cmds.listConnections(self.name + '.ms_secondary_surface_shader')
+                    if attribute_connections is not None:
+                        self.custom_attributes[attribute[0]] = attribute_connections[0]
 
         self.secondary_surface_shader = None
 
@@ -2495,13 +2500,11 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             # attach edf color to surface_shader color
             primary_surface_shader.parameters.append(AsParameter('color', edf_color.name))
 
-
     else:
         # add a physical surface shader
         primary_surface_shader = AsSurfaceShader()
         primary_surface_shader.name = generic_material.safe_name + '_surface_shader'
         primary_surface_shader.model = 'physical_surface_shader'
-
 
     if generic_material.secondary_surface_shader is not None:
         main_surface_shader = AsSurfaceShader()
