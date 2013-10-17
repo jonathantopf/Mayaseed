@@ -1557,11 +1557,6 @@ class AsAssembly():
     def emit_xml(self, doc):
         doc.start_element('assembly name="%s"' % self.name)
 
-        # ?? big hack!
-        disable_intersection = AsParameter('enable_intersection_filters', 'false')
-        disable_intersection.emit_xml(doc)
-        # ?? big hack!
-
         for color in self.colors:
             color.emit_xml(doc)
 
