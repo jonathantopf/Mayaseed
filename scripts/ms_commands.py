@@ -261,9 +261,16 @@ def transform_is_visible(node_name):
     if not cmds.getAttr(node_name + '.visibility'):
         return False
 
+    return True
+
+
+def mesh_is_renderable(mesh_name):
+
+    """ Returns the renderability state of a mesh, this value will not change over time """
+
     # check to see if it's an intermediate mesh
-    if cmds.attributeQuery('intermediateObject', node=node_name, exists=True):
-        if cmds.getAttr(node_name + '.intermediateObject'):
+    if cmds.attributeQuery('intermediateObject', node=mesh_name, exists=True):
+        if cmds.getAttr(mesh_name + '.intermediateObject'):
             return False
 
     return True

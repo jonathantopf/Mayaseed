@@ -404,9 +404,8 @@ class MTransform():
         if mesh_names is not None:
             self.has_children = True
             for mesh_name in mesh_names:
-                if ms_commands.transform_is_renderable(mesh_name):
-                    if ms_commands.transform_is_visible(mesh_name):
-                        self.child_meshes.append(MMesh(params, mesh_name, self))
+                if ms_commands.mesh_is_renderable(mesh_name):
+                    self.child_meshes.append(MMesh(params, mesh_name, self))
 
         light_names = cmds.listRelatives(self.name, type='light', fullPath=True)
         if light_names is not None:
@@ -425,7 +424,9 @@ class MTransform():
         if transform_names is not None:
             self.has_children = True
             for transform_name in transform_names:
-                self.child_transforms.append(MTransform(params, transform_name, self))
+                if ms_commands.transform_is_renderable(transform_name):
+                    if ms_commands.transform_is_visible(transform_name):
+                        self.child_transforms.append(MTransform(params, transform_name, self))
 
     def add_transform_sample(self):
         self.matrices.append(cmds.xform(self.name, query=True, matrix=True))
