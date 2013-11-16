@@ -220,6 +220,7 @@ global proc AEms_renderSettingsTemplate(string $nodeName) {
         editorTemplate -beginLayout "Environment Settings" -collapse true;
             editorTemplate -callCustom "AEcustomEnvironmentMenuCreate" "AEcustomEnvironmentMenuEdit" "environment";
             editorTemplate -addControl "render_sky";
+            editorTemplate -addControl "scene_ior";
         editorTemplate -endLayout;
 
         editorTemplate -beginLayout "Camera Settings" -collapse true;;

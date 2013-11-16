@@ -35,6 +35,7 @@ import ms_export_obj
 import time
 import inspect
 import shutil
+import copy
 
 INCH_TO_METER = 0.02539999983236
 GEO_DIR = '_geometry'
@@ -134,6 +135,7 @@ def get_maya_params(render_settings_node):
         params['environment'] = False
 
     params['render_sky'] = cmds.getAttr(render_settings_node + '.render_sky')
+    params['scene_ior'] = cmds.getAttr(render_settings_node + '.scene_index_of_refraction')
 
     # Cameras.
     # params['sceneCameraExportAllCameras'] = cmds.checkBox('ms_sceneCameraExportAllCameras', query=True, value=True)
@@ -745,11 +747,12 @@ class MColorConnection():
             self.color_value = cmds.getAttr(self.name)
 
             if self.color_value.__class__.__name__ == 'float':
-                self.normalized_color = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[:3]
-                self.multiplier = ms_commands.normalizeRGB((self.color_value, self.color_value, self.color_value))[3]
+                self.color_value = (self.color_value, self.color_value, self.color_value)
             else:
-                self.normalized_color = ms_commands.normalizeRGB(self.color_value[0])[:3]
-                self.multiplier = ms_commands.normalizeRGB(self.color_value[0])[3]
+                self.color_value = self.color_value[0]
+
+            self.normalized_color = ms_commands.normalizeRGB(self.color_value)[:3]
+            self.multiplier = ms_commands.normalizeRGB(self.color_value)[3]
 
             self.is_black = self.normalized_color == (0,0,0)
             self.connected_node = ms_commands.get_connected_node(self.name)
@@ -859,13 +862,17 @@ class MGenericMaterial():
         self.safe_name = ms_commands.legalize_name(self.name)
         self.type = cmds.nodeType(maya_material_name)
 
-        self.diffuse = None
-        self.alpha = None
+        self.color = None
+        self.alpha = None # translated to material alpha
+        self.transparency = None # translated to mix between reflectivity and transmission
         self.incandescence = None
         self.glossiness = None
-        self.specular_color = None
+        self.reflectivity = None
         self.bump_map = None
         self.bump_multiplier = None
+        self.refractive_index = None
+        self.translucence = None
+        self.reflected_color = None
 
         self.textures = []
 
@@ -892,36 +899,29 @@ class MGenericMaterial():
             else:
                 ms_commands.warning('{0} is not an ms_appleseed_shading_node'.format(self.custom_attributes['ms_secondary_surface_shader']))
 
-        # work out diffuse component
+        # work out color component
         if cmds.attributeQuery('color', node=self.name, exists=True):
-            self.diffuse = MColorConnection(self.params, self.name + '.color')
-            if self.diffuse.connected_node is not None:
-                self.diffuse = m_file_from_color_connection(self.params, self.diffuse)
-                self.textures.append(self.diffuse)
+            self.color = MColorConnection(self.params, self.name + '.color')
+            if self.color.connected_node is not None:
+                self.color = m_file_from_color_connection(self.params, self.color)
+                self.textures.append(self.color)
 
         elif cmds.attributeQuery('outColor', node=self.name, exists=True):
-            self.diffuse = MColorConnection(self.params, self.name + '.outColor')
-            if self.diffuse.connected_node is not None:
-                self.diffuse = m_file_from_color_connection(self.params, self.diffuse)
-                self.textures.append(self.diffuse)
+            self.color = MColorConnection(self.params, self.name + '.outColor')
+            if self.color.connected_node is not None:
+                self.color = m_file_from_color_connection(self.params, self.color)
+                self.textures.append(self.color)
 
         # work out specular components
         if cmds.attributeQuery('cosinePower', node=self.name, exists=True):
             self.glossiness = MColorConnection(self.params, self.name + '.cosinePower')
-            self.glossiness.multiplier = ((self.glossiness.multiplier - 2) / 98) * -1 +1
+            self.glossiness.multiplier = self.glossiness.multiplier * 0.01
+
             if self.glossiness.connected_node is not None:
                 self.glossiness = m_file_from_color_connection(self.params, self.glossiness)
                 self.textures.append(self.glossiness)
             elif self.glossiness.is_black:
                 self.glossiness = None
-
-        if cmds.attributeQuery('specularColor', node=self.name, exists=True):
-            self.specular_color = MColorConnection(self.params, self.name + '.specularColor')
-            if self.specular_color.connected_node is not None:
-                self.specular_color = m_file_from_color_connection(self.params, self.specular_color)
-                self.textures.append(self.specular_color)
-            elif self.specular_color.is_black:
-                self.specular_color = None
 
         if cmds.attributeQuery('reflectivity', node=self.name, exists=True):
             self.reflectivity = MColorConnection(self.params, self.name + '.reflectivity')
@@ -931,40 +931,51 @@ class MGenericMaterial():
             elif self.reflectivity.is_black:
                 self.reflectivity = None
 
-        # work out alpha component
+        if cmds.attributeQuery('reflectedColor', node=self.name, exists=True):
+            self.reflected_color = MColorConnection(self.params, self.name + '.reflectedColor')
+            if self.reflected_color.connected_node is not None:
+                self.reflected_color = m_file_from_color_connection(self.params, self.reflectivity)
+                self.textures.append(self.reflectivity)
+            elif self.reflected_color.is_black:
+                self.reflected_color = None
+
+        # work out alpha / transparrency component
         if cmds.attributeQuery('transparency', node=self.name, exists=True):
-            self.alpha = MColorConnection(self.params, self.name + '.transparency')
-            if self.alpha.connected_node is not None:
-                self.alpha = m_file_from_color_connection(self.params, self.alpha)
+            self.transparency = MColorConnection(self.params, self.name + '.transparency')
+            if self.transparency.connected_node is not None:
+                self.transparency = m_file_from_color_connection(self.params, self.transparency)
                 self.textures.append(self.alpha)
-            elif self.alpha.is_black:
-                self.alpha = None
+            elif self.transparency.is_black:
+                self.transparency = None
 
-
-        elif cmds.attributeQuery('outTransparency', node=self.name, exists=True):
-            self.alpha = MColorConnection(self.params, self.name + '.outTransparency')
-            if self.alpha.connected_node is not None:
-                self.alpha = m_file_from_color_connection(self.params, self.alpha)
-                self.textures.append(self.alpha)
-            elif self.alpha.is_black:
-                self.alpha = None
+            if 'ms_transparency_is_material_alpha' in self.custom_attributes:
+                if self.custom_attributes['ms_transparency_is_material_alpha']:
+                    self.alpha = self.transparency
+                    self.transparency = None
 
         # work out incandescence component
-        if cmds.attributeQuery('incandescence', node=self.name, exists=True):
-            self.incandescence = MColorConnection(self.params, self.name + '.incandescence')
-            if self.incandescence.connected_node is not None:
-                self.incandescence = m_file_from_color_connection(self.params, self.incandescence)
-                self.textures.append(self.incandescence)
-            elif self.incandescence.is_black:
-                self.incandescence = None
+        emit_light = True
 
-        elif cmds.attributeQuery('outColor', node=self.name, exists=True):
-            self.incandescence = MColorConnection(self.params, self.name + '.outColor')
-            if self.incandescence.connected_node is not None:
-                self.incandescence = m_file_from_color_connection(self.params, self.incandescence)
-                self.textures.append(self.incandescence)
-            elif self.incandescence.is_black:
-                self.incandescence = None
+        if 'ms_emit_light' in self.custom_attributes:
+            if self.custom_attributes['ms_emit_light'] == False:
+                emit_light = False
+
+        if emit_light:
+            if cmds.attributeQuery('incandescence', node=self.name, exists=True):
+                self.incandescence = MColorConnection(self.params, self.name + '.incandescence')
+                if self.incandescence.connected_node is not None:
+                    self.incandescence = m_file_from_color_connection(self.params, self.incandescence)
+                    self.textures.append(self.incandescence)
+                elif self.incandescence.is_black:
+                    self.incandescence = None
+
+            elif cmds.attributeQuery('outColor', node=self.name, exists=True):
+                self.incandescence = MColorConnection(self.params, self.name + '.outColor')
+                if self.incandescence.connected_node is not None:
+                    self.incandescence = m_file_from_color_connection(self.params, self.incandescence)
+                    self.textures.append(self.incandescence)
+                elif self.incandescence.is_black:
+                    self.incandescence = None
 
         # work out bump component
         if cmds.attributeQuery('normalCamera', node=self.name, exists=True):
@@ -979,6 +990,18 @@ class MGenericMaterial():
                     self.bump_map = MFile(params, bump_tex_connected_node[0])
                     self.textures.append(self.bump_map)
 
+        # work out refractive index component
+        if cmds.attributeQuery('refractiveIndex', node=self.name, exists=True):
+            self.refractive_index = cmds.getAttr(self.name + '.refractiveIndex')
+
+        # work out translucense component
+        if cmds.attributeQuery('translucence', node=self.name, exists=True):
+            self.translucence = MColorConnection(self.params, self.name + '.translucence')
+            if self.translucence.connected_node is not None:
+                self.translucence = m_file_from_color_connection(self.params, self.translucence)
+                self.textures.append(self.reflectivity)
+            elif self.translucence.is_black:
+                self.translucence = None
 
 #--------------------------------------------------------------------------------------------------
 # MMsShadingNode class.
@@ -993,7 +1016,7 @@ class MMsShadingNode():
         self.name = maya_ms_shading_node_name
         self.safe_name = ms_commands.legalize_name(self.name)
 
-        self.type = cmds.getAttr(self.name + '.node_type')    # bsdf, edf etc.
+        self.type = cmds.getAttr(self.name + '.node_type')    # diffuse_component, edf etc.
         self.model = cmds.getAttr(self.name + '.node_model')  # lambertian etc.
         self.render_layer = None
 
@@ -2284,6 +2307,9 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
             new_mesh.name_in_obj = mesh.short_name
             new_mesh.has_deformation = mesh.has_deformation
 
+            print '???1', maya_transform.name
+            print '???2', mesh.name
+
             if not object_blur or not new_mesh.has_deformation:
                 # If the mesh has no deformation there will only be one sample so always take the first sample.
                 if new_mesh.has_deformation:
@@ -2321,18 +2347,12 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
             for maya_generic_material in mesh.generic_materials:
 
-                as_material = convert_maya_generic_material(params, root_assembly, maya_generic_material, non_mb_sample_number)
+                front_as_material, back_as_material = convert_maya_generic_material(params, root_assembly, maya_generic_material, non_mb_sample_number)
 
-                
-                # only apply surface shaders to front of object
-                if maya_generic_material.type != 'surfaceShader':
-                    mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', as_material.name))
-                
-                mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'front', as_material.name))
+                mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'front', front_as_material.name))
 
-                if 'ms_double_sided_material' in maya_generic_material.custom_attributes:
-                    if maya_generic_material.custom_attributes['ms_double_sided_material']:
-                        mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', as_material.name))
+                if back_as_material is not None:
+                    mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', back_as_material.name))
 
             current_assembly.object_instances.append(mesh_instance)
 
@@ -2343,158 +2363,111 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
 def convert_maya_generic_material(params, root_assembly, generic_material, non_mb_sample_number):
 
-    # check if material already exits in the root assembly
-    new_material = get_from_list(root_assembly.materials, generic_material.safe_name)
-    if new_material is not None:
-        return new_material
+    front_material = None
+    back_material = None
 
-    new_material = AsMaterial()
-    new_material.name = generic_material.safe_name
-    root_assembly.materials.append(new_material)
+    double_sided = True
+    single_material = True
 
-    new_lambertian_bsdf = AsBsdf()
-    new_lambertian_bsdf.name = generic_material.safe_name + '_lambertian_bsdf'
-    new_lambertian_bsdf.model = 'lambertian_brdf'
-    root_assembly.bsdfs.append(new_lambertian_bsdf)
+    # determin if the material is double sided and if it uses the same material on front and back
+    if generic_material.type == 'surfaceShader':
+        double_sided = False
 
-    # material transparency
-    if generic_material.alpha is not None:
-        if generic_material.alpha.__class__.__name__ == 'MFile':
-            alpha_texture, alpha_texture_instance = m_file_to_as_texture(params, generic_material.alpha, '_alpha', non_mb_sample_number)
-            new_material.alpha_map = AsParameter('alpha_map', alpha_texture_instance.name)
-            if not get_from_list(root_assembly.textures, alpha_texture.name):
-                root_assembly.textures.append(alpha_texture)
-                root_assembly.texture_instances.append(alpha_texture_instance)
-        else:
-            # we invert the alpha color here to match the maya viewport behavior
-            new_material.alpha_map = AsParameter('alpha_map', generic_material.alpha.color_value[0][0] * -1)
+    if 'ms_double_sided_material' in generic_material.custom_attributes:
+        double_sided = generic_material.custom_attributes['ms_double_sided_material']
 
-    # bump_component
+    if (generic_material.transparency is not None) and double_sided:
+        single_material = False
+
+    # check if material already exits in the root
+    if not double_sided:
+        front_material = get_from_list(root_assembly.materials, generic_material.safe_name)
+    elif single_material:
+        front_material = get_from_list(root_assembly.materials, generic_material.safe_name)
+        back_material = get_from_list(root_assembly.materials, generic_material.safe_name)
+    else:
+        front_material = get_from_list(root_assembly.materials, generic_material.safe_name + '_front')
+        back_material = get_from_list(root_assembly.materials, generic_material.safe_name + '_back')
+
+    if front_material is not None:
+        return front_material, back_material
+
+
+    # conver relivant as entities from generic material attributes to as attributes
+    material_attribs = {'color'            : generic_material.color,
+                        'alpha'            : generic_material.alpha,
+                        'transparrency'    : generic_material.transparency,
+                        'incandescence'    : generic_material.incandescence,
+                        'glossiness'       : generic_material.glossiness,
+                        'reflectivity'     : generic_material.reflectivity,
+                        'bump_map'         : generic_material.bump_map,
+                        'bump_multiplier'  : generic_material.bump_multiplier,
+                        'translucence'     : generic_material.translucence,
+                        'reflected_color'  : generic_material.reflected_color}
+
+    for key in material_attribs.keys():
+        if material_attribs[key] is not None:
+            if material_attribs[key].__class__.__name__ == 'MFile':
+                texture, texture_instance = m_file_to_as_texture(params, material_attribs[key], '_' + key + '_file', non_mb_sample_number)
+                material_attribs[key] = texture_instance.name
+                if not get_from_list(root_assembly.textures, texture.name):
+                    root_assembly.textures.append(texture)
+                    root_assembly.texture_instances.append(texture_instance)
+                
+            else:
+                if isinstance(material_attribs[key], (int, long, float, complex)):
+                    pass
+                elif material_attribs[key].is_grey:
+                    material_attribs[key] = material_attribs[key].normalized_color[0] * material_attribs[key].multiplier
+
+                else:
+                    color = m_color_connection_to_as_color(material_attribs[key], '_' + key + '_color')    
+                    if not get_from_list(root_assembly.colors, color.name):
+                        material_attribs[key] = color.name
+                        root_assembly.colors.append(color)
+
+
+    # create front and back materials
+    front_material = AsMaterial()
+    front_material.name = generic_material.safe_name
+    root_assembly.materials.append(front_material)
+
+    if double_sided and single_material:
+        back_material = front_material
+
+    elif double_sided:
+        front_material.name = front_material.name + '_front'
+
+        back_material = AsMaterial()
+        back_material.name = generic_material.safe_name + '_back'
+        root_assembly.materials.append(back_material)
+
+
+    # material alpha component
+    if material_attribs['alpha'] is not None:
+        front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'])
+        if double_sided and (single_material == False):
+            back_material.alpha_map = front_material.alpha_map
+
+
+    # material displacement component
     if generic_material.bump_multiplier is not None:
-        new_material.displacement_mode = AsParameter('displacement_method', 'bump')
-        new_material.bump_amplitude = AsParameter('bump_amplitude', generic_material.bump_multiplier)
-        bump_texture, bump_texture_instance = m_file_to_as_texture(params, generic_material.bump_map, '_bump_map', non_mb_sample_number)
-        new_material.displacement_map = AsParameter('displacement_map', bump_texture_instance.name)
-        root_assembly.textures.append(bump_texture)
-        root_assembly.texture_instances.append(bump_texture_instance)
+        front_material.displacement_mode = AsParameter('displacement_method', 'bump')
+        front_material.bump_amplitude = AsParameter('bump_amplitude', material_attribs['bump_multiplier'])
+        front_material.displacement_map = AsParameter('displacement_map', material_attribs['bump_map'])
+        if double_sided and (single_material == False):
+            back_material.displacement_map = front_material.displacement_map
 
-    # only use phong mix if the specular color is > 0 or exists
-    if (generic_material.specular_color is not None) and (generic_material.glossiness is not None):
 
-        new_microfacet_bsdf = AsBsdf()
-        new_microfacet_bsdf.name = generic_material.safe_name + '_microfacet_brdf'
-        new_microfacet_bsdf.model = 'microfacet_brdf'
-        new_microfacet_bsdf.parameters.append(AsParameter('mdf', 'blinn'))
-        root_assembly.bsdfs.append(new_microfacet_bsdf)
-
-        new_bsdf_blend_bsdf = AsBsdf()
-        new_bsdf_blend_bsdf.name = generic_material.safe_name + '_bsdf_blend_bsdf'
-        new_bsdf_blend_bsdf.model = 'bsdf_blend'
-        root_assembly.bsdfs.append(new_bsdf_blend_bsdf)
-
-        new_bsdf_blend_bsdf.parameters.append(AsParameter('bsdf0', new_microfacet_bsdf.name))
-        new_bsdf_blend_bsdf.parameters.append(AsParameter('bsdf1', new_lambertian_bsdf.name))
-
-        if generic_material.reflectivity.__class__.__name__ == 'MFile':
-            bsdf_reflectivity_texture, bsdf_reflectivity_texture_instance = m_file_to_as_texture(params, generic_material.reflectivity, '_reflectivity', non_mb_sample_number)
-            new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', bsdf_reflectivity_texture_instance.name))
-
-            if not get_from_list(root_assembly.textures, bsdf_reflectivity_texture.name):
-                root_assembly.textures.append(bsdf_reflectivity_texture)
-                root_assembly.texture_instances.append(bsdf_reflectivity_texture_instance)
-        else:
-            if generic_material.reflectivity is not None:
-                new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', generic_material.reflectivity.color_value))
-            else:
-                new_bsdf_blend_bsdf.parameters.append(AsParameter('weight', '0'))
-
-        new_material.bsdf = AsParameter('bsdf', new_bsdf_blend_bsdf.name)
-
-        # glossiness parameter
-        if generic_material.glossiness.__class__.__name__ == 'MFile':
-            bsdf_glossiness_texture, bsdf_glossiness_texture_instance = m_file_to_as_texture(params, generic_material.glossiness, '_file', non_mb_sample_number)
-            new_microfacet_bsdf.parameters.append(AsParameter('glossiness', bsdf_glossiness_texture_instance.name))
-            if not get_from_list(root_assembly.textures, bsdf_glossiness_texture.name):
-                root_assembly.textures.append(bsdf_glossiness_texture)
-                root_assembly.texture_instances.append(bsdf_glossiness_texture_instance)
-        else:
-            if generic_material.glossiness.is_grey:
-                new_microfacet_bsdf.parameters.append(AsParameter('glossiness', (generic_material.glossiness.color_value / 100) * 1.3))
-            else:
-                bsdf_glossiness_color = m_color_connection_to_as_color(generic_material.glossiness, '_color')
-                bsdf_glossiness_color.multiplier.value *= 1.3
-                new_microfacet_bsdf.parameters.append(AsParameter('glossiness', bsdf_glossiness_color.name))
-                root_assembly.colors.append(bsdf_glossiness_color)
-
-        if generic_material.specular_color.__class__.__name__ == 'MFile':
-            bsdf_specular_color_texture, bsdf_specular_color_texture_instance = m_file_to_as_texture(params, generic_material.specular_color, '_file', non_mb_sample_number)
-            new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_texture_instance.name))
-            if not get_from_list(root_assembly.textures, bsdf_specular_color_texture.name):
-                root_assembly.textures.append(bsdf_specular_color_texture)
-                root_assembly.texture_instances.append(bsdf_specular_color_texture_instance)
-        else:
-            if generic_material.specular_color.is_grey:
-                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', generic_material.specular_color.color_value[0][0]))
-            else:
-                bsdf_specular_color_color = m_color_connection_to_as_color(generic_material.specular_color, '_color')
-                if bsdf_specular_color_color.multiplier.value > 1 : bsdf_specular_color_color.multiplier.value = 1
-                new_microfacet_bsdf.parameters.append(AsParameter('reflectance', bsdf_specular_color_color.name))
-                root_assembly.colors.append(bsdf_specular_color_color)
-
-    else:
-        new_material.bsdf = AsParameter('bsdf', new_lambertian_bsdf.name)
-
-    # reflectance parameter
-    if generic_material.diffuse.__class__.__name__ == 'MFile':
-        bsdf_texture, bsdf_texture_instance = m_file_to_as_texture(params, generic_material.diffuse, '_file', non_mb_sample_number)
-        new_lambertian_bsdf.parameters.append(AsParameter('reflectance', bsdf_texture_instance.name))
-
-        if not get_from_list(root_assembly.textures, bsdf_texture.name):
-            root_assembly.textures.append(bsdf_texture)
-            root_assembly.texture_instances.append(bsdf_texture_instance)
-    else:
-        bsdf_color = m_color_connection_to_as_color(generic_material.diffuse, '_color')
-        if bsdf_color.multiplier.value > 1 : bsdf_color.multiplier.value = 1
-        new_lambertian_bsdf.parameters.append(AsParameter('reflectance', bsdf_color.name))
-        root_assembly.colors.append(bsdf_color)
-
-    # incandescence component
+    # surface shader component
     if generic_material.incandescence is not None:
-        new_edf = AsEdf()
-        new_edf.name = generic_material.safe_name + '_edf'
-        new_edf.model = 'diffuse_edf'
-        new_edf.parameters.append(AsParameter('render_layer', generic_material.safe_name + '_layer'))
-        root_assembly.edfs.append(new_edf)
-        new_material.edf = AsParameter('edf', new_edf.name)
-
-        # check for 'cast indirect light' custom parameter
-        if 'ms_cast_indirect_light' in generic_material.custom_attributes:
-            new_edf.parameters.append(AsParameter('cast_indirect_light', generic_material.custom_attributes['ms_cast_indirect_light']))
-
-        if 'ms_importance_multiplier' in generic_material.custom_attributes:
-            new_edf.parameters.append(AsParameter('importance_multiplier', generic_material.custom_attributes['ms_importance_multiplier']))
-
         # add a constant surface shader
         primary_surface_shader = AsSurfaceShader()
         primary_surface_shader.name = generic_material.safe_name + '_surface_shader'
         primary_surface_shader.model = 'constant_surface_shader'
-
-        if generic_material.incandescence.__class__.__name__ == 'MFile':
-            edf_texture, edf_texture_instance = m_file_to_as_texture(params, generic_material.incandescence, '_edf', non_mb_sample_number)
-            new_edf.parameters.append(AsParameter('exitance', edf_texture_instance.name))
-            if not get_from_list(root_assembly.textures, edf_texture.name):
-                root_assembly.textures.append(edf_texture)
-                root_assembly.texture_instances.append(edf_texture_instance)
-
-            # attach edf texture to surface_shader color
-            primary_surface_shader.parameters.append(AsParameter('color', edf_texture_instance.name))
-        else:
-            edf_color = m_color_connection_to_as_color(generic_material.incandescence, '_edf')
-            new_edf.parameters.append(AsParameter('exitance', edf_color.name))
-            root_assembly.colors.append(edf_color)
-
-            # attach edf color to surface_shader color
-            primary_surface_shader.parameters.append(AsParameter('color', edf_color.name))
+        primary_surface_shader.parameters.append(AsParameter('color', material_attribs['incandescence']))
+        primary_surface_shader.parameters.append(AsParameter('color', material_attribs['incandescence']))
+        primary_surface_shader.parameters.append(AsParameter('render_layer', generic_material.safe_name + 'light_emission'))
 
     else:
         # add a physical surface shader
@@ -2502,11 +2475,12 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         primary_surface_shader.name = generic_material.safe_name + '_surface_shader'
         primary_surface_shader.model = 'physical_surface_shader'
 
+
+    # secondary surface shader component
     if generic_material.secondary_surface_shader is not None:
         main_surface_shader = AsSurfaceShader()
         main_surface_shader.name = generic_material.safe_name + '_main_surface_shader'
         main_surface_shader.model = 'surface_shader_collection'
-        
         secondary_surface_shader = get_from_list(root_assembly.surface_shaders, generic_material.secondary_surface_shader.name + '_secondary')
 
         if secondary_surface_shader is None:
@@ -2515,7 +2489,6 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             secondary_surface_shader.name = secondary_surface_shader.name + '_secondary'
 
         primary_surface_shader.name = primary_surface_shader.name + '_primary'
-
         main_surface_shader.parameters.append(AsParameter('surface_shader1', primary_surface_shader.name))
         main_surface_shader.parameters.append(AsParameter('surface_shader2', secondary_surface_shader.name))
         
@@ -2526,29 +2499,195 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
     root_assembly.surface_shaders.append(main_surface_shader)
 
-    # add surface_shader
-    new_material.surface_shader = AsParameter('surface_shader', main_surface_shader.name)
+    # connect main surface shader to material
+    front_material.surface_shader = AsParameter('surface_shader', main_surface_shader.name)
 
-    # add material alpha texture
-    if generic_material.alpha is not None:
-        if generic_material.alpha.__class__.__name__ == 'MFile':
-            alpha_texture, alpha_texture_instance = m_file_to_as_texture(params, generic_material.alpha, '_alpha', non_mb_sample_number)
-            main_surface_shader.parameters.append(AsParameter('exitance', alpha_texture_instance.name))
-            if not get_from_list(root_assembly.textures, alpha_texture.name):
-                root_assembly.textures.append(alpha_texture)
-                root_assembly.texture_instances.append(alpha_texture_instance)
-        else:
-            alpha_color = m_color_connection_to_as_color(generic_material.alpha)
-            main_surface_shader.parameters.append(AsParameter('exitance', alpha_color.name))
-            root_assembly.colors.append(alpha_color)
+    if double_sided and (single_material == False):
+        back_material.surface_shader = front_material.surface_shader
 
-    # custom attributes
-    if 'ms_front_lighting_samples' in generic_material.custom_attributes:
-        main_surface_shader.parameters.append(AsParameter('front_lighting_samples', generic_material.custom_attributes['ms_front_lighting_samples']))
-    if 'ms_back_lighting_samples' in generic_material.custom_attributes:
-        main_surface_shader.parameters.append(AsParameter('back_lighting_samples', generic_material.custom_attributes['ms_back_lighting_samples']))
 
-    return new_material
+    # edf component
+    if generic_material.incandescence is not None:
+        edf = AsEdf()
+        edf.name = generic_material.safe_name + '_edf'
+        edf.model = 'diffuse_edf'
+        edf.parameters.append(AsParameter('radiance', material_attribs['incandescence']))
+        edf.parameters.append(AsParameter('render_layer', generic_material.safe_name + 'light_emission'))
+        root_assembly.edfs.append(edf)
+
+        if 'ms_cast_indirect_light' in generic_material.custom_attributes:
+            if generic_material.custom_attributes['ms_cast_indirect_light'] is False:
+                edf.parameters.append(AsParameter('cast_indirect_light', 'false'))
+
+        if 'ms_importance_multiplier' in generic_material.custom_attributes:
+            edf.parameters.append(AsParameter('importance_multiplier', generic_material.custom_attributes['ms_importance_multiplier']))
+
+        front_material.edf = AsParameter('edf', edf.name)
+
+    # color_component component
+    if (generic_material.incandescence is None) and (generic_material.color is not None):
+
+        color_component = None
+        reflective_component = None
+        diffuse_component = None
+        specular_component = None
+        front_transmission_component = None
+        back_transmission_component = None
+        front_bsdf = None
+        back_bsdf = None
+
+        # reflective component
+        if generic_material.color:
+
+            # 'diffuse' component
+            if generic_material.color is not None:
+                diffuse_component = AsBsdf()
+                diffuse_component.name = generic_material.safe_name + '_diffuse_component'
+                diffuse_component.model = 'lambertian_brdf'
+                root_assembly.bsdfs.append(diffuse_component)
+                diffuse_component.parameters.append(AsParameter('reflectance', material_attribs['color']))
+
+            # 'specular' component
+            if generic_material.glossiness:
+                specular_component = AsBsdf()
+                specular_component.name = generic_material.safe_name + '_specular_component'
+                specular_component.model = 'microfacet_brdf'
+                specular_component.parameters.append(AsParameter('mdf', 'blinn'))
+                root_assembly.bsdfs.append(specular_component)
+                specular_component.parameters.append(AsParameter('glossiness', material_attribs['glossiness']))
+                if generic_material.reflectivity:
+                    specular_component.parameters.append(AsParameter('reflectance', material_attribs['reflectivity']))
+                else:
+                    specular_component.parameters.append(AsParameter('reflectance', 0))
+
+        # transmission component
+        if generic_material.transparency:
+            front_transmission_component = AsBsdf()
+            front_transmission_component.name = generic_material.safe_name + '_front_transmission_component'
+            front_transmission_component.model = 'specular_btdf'
+            root_assembly.bsdfs.append(front_transmission_component)
+
+            # reflectance parameter
+            if generic_material.reflectivity:
+                front_transmission_component.parameters.append(AsParameter('reflectance', material_attribs['reflectivity']))
+            else:
+                front_transmission_component.parameters.append(AsParameter('reflectance', 0))
+
+            # transmittance parameter
+            if generic_material.color:
+                front_transmission_component.parameters.append(AsParameter('transmittance', material_attribs['color']))
+
+            if generic_material.refractive_index:
+                front_transmission_component.parameters.append(AsParameter('from_ior', params['scene_ior']))
+                front_transmission_component.parameters.append(AsParameter('to_ior', generic_material.refractive_index))
+            else:
+                front_transmission_component.parameters.append(AsParameter('from_ior', params['scene_ior']))
+                front_transmission_component.parameters.append(AsParameter('to_ior', params['scene_ior']))
+
+            if double_sided and (single_material == False):
+                back_transmission_component = AsBsdf()
+                back_transmission_component.name = generic_material.safe_name + '_back_transmission_component'
+                back_transmission_component.model = 'specular_btdf'
+                root_assembly.bsdfs.append(back_transmission_component)
+
+                # reflectance parameter
+                if generic_material.reflectivity:
+                    back_transmission_component.parameters.append(AsParameter('reflectance', material_attribs['reflectivity']))
+                else:
+                    back_transmission_component.parameters.append(AsParameter('reflectance', 0))
+
+                # transmittance parameter
+                if generic_material.color:
+                    back_transmission_component.parameters.append(AsParameter('transmittance', material_attribs['color']))
+
+                if generic_material.refractive_index:
+                    back_transmission_component.parameters.append(AsParameter('from_ior', generic_material.refractive_index))
+                    back_transmission_component.parameters.append(AsParameter('to_ior', params['scene_ior']))
+                else:
+                    back_transmission_component.parameters.append(AsParameter('from_ior', params['scene_ior']))
+                    back_transmission_component.parameters.append(AsParameter('to_ior', params['scene_ior']))
+
+
+        # connect up the appleseed shading networks
+        # reflective component
+        if (diffuse_component is not None) and (specular_component is not None) and (not material_attribs['reflectivity'] is None):
+            reflective_component = AsBsdf()
+            reflective_component.name = generic_material.safe_name + '_reflective_component'
+            reflective_component.model = 'bsdf_blend'
+            root_assembly.bsdfs.append(reflective_component)
+
+            reflective_component.parameters.append(AsParameter('bsdf0', specular_component.name))
+            reflective_component.parameters.append(AsParameter('bsdf1', diffuse_component.name))
+
+            reflective_component.parameters.append(AsParameter('weight', material_attribs['reflectivity']))
+
+
+        elif diffuse_component is not None:
+            reflective_component = diffuse_component
+
+        elif specular_component is not None:
+            reflective_component = specular_component
+
+        # main bsdf component
+        # create bsdf mix if reflcetive component and transmission component are present
+        if (reflective_component is not None) and (front_transmission_component is not None):
+            front_bsdf = AsBsdf()
+            front_bsdf.name = generic_material.safe_name + '_front_bsdf'
+            front_bsdf.model = 'bsdf_blend'
+            root_assembly.bsdfs.append(front_bsdf)
+
+            if isinstance(material_attribs['transparrency'], (int, long, float, complex)):
+                front_bsdf.parameters.append(AsParameter('weight', (material_attribs['transparrency'] * -1 )+ 1))
+            else:
+                front_bsdf.parameters.append(AsParameter('weight', material_attribs['transparrency']))
+
+            front_bsdf.parameters.append(AsParameter('bsdf0', reflective_component.name))
+            front_bsdf.parameters.append(AsParameter('bsdf1', front_transmission_component.name))
+
+            # before the ior is defined duplicate the parts that should be identical
+            if double_sided and (single_material == False):
+                back_bsdf = AsBsdf()
+                back_bsdf.name = generic_material.safe_name + '_back_bsdf'
+                back_bsdf.model = 'bsdf_blend'
+                root_assembly.bsdfs.append(back_bsdf)
+
+                if isinstance(material_attribs['transparrency'], (int, long, float, complex)):
+                    back_bsdf.parameters.append(AsParameter('weight', (material_attribs['transparrency'] * -1 )+ 1))
+                else:
+                    back_bsdf.parameters.append(AsParameter('weight', material_attribs['transparrency']))
+
+                back_bsdf.parameters.append(AsParameter('bsdf0', reflective_component.name))
+                back_bsdf.parameters.append(AsParameter('bsdf1', back_transmission_component.name))
+
+
+        if front_bsdf is None:
+            if reflective_component is not None:
+                front_bsdf = reflective_component
+            else:
+                front_bsdf = front_transmission_component
+
+        if front_bsdf is not None:
+            front_material.bsdf = AsParameter('bsdf', front_bsdf.name)
+
+        if double_sided and (single_material == False):
+            if back_bsdf is None:
+                if reflective_component is not None:
+                    back_bsdf = reflective_component
+                else:
+                    back_bsdf = back_transmission_component
+
+            if back_bsdf is not None:
+                back_material.bsdf = AsParameter('bsdf', back_bsdf.name)
+
+    # return relivent combination of front and back materials
+    if double_sided and (single_material == False):
+        return front_material, back_material
+
+    elif double_sided:
+        return front_material, front_material
+
+    else: 
+        return front_material, None
 
 
 #--------------------------------------------------------------------------------------------------

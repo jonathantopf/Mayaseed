@@ -161,6 +161,13 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.render_sky = render_skynAttr.create("render_sky", "render_sky", OpenMaya.MFnNumericData.kBoolean, True)
     ms_renderSettings.addAttribute(ms_renderSettings.render_sky)
 
+    # scene index of refraction
+    scene_ior_AttrFloat = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.scene_ior = scene_ior_AttrFloat.create("scene_index_of_refraction", "scene_ior", OpenMaya.MFnNumericData.kFloat, 1)
+    scene_ior_AttrFloat.setHidden(False)
+    scene_ior_AttrFloat.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.scene_ior)
+
     # cameras --------------------------------------------------
     # export all cameras as thin lens bool attribute
     export_all_cameras_as_thin_lens_nAttr = OpenMaya.MFnNumericAttribute()

@@ -61,7 +61,9 @@ CUSTOM_ATTRIBUTES = [
 ['ms_front_lighting_samples', None, 'float', 1],
 ['ms_back_lighting_samples', None, 'float', 1],
 ['ms_double_sided_material', None, 'bool', True],
-['ms_secondary_surface_shader', None, 'message', True]
+['ms_transparency_is_material_alpha', None, 'bool', False],
+['ms_secondary_surface_shader', None, 'message', True],
+['ms_emit_light', None, 'bool', True]
 ]
 
 #--------------------------------------------------------------------------------------------------
