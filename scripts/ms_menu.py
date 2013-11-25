@@ -96,14 +96,26 @@ def buildMenu():
     cmds.menuItem(divider=True, parent='ms_menu')
 
     cmds.menuItem('menu_add_attr', subMenu=True, to=True, label='Add Custom Attribute', parent='ms_menu')
-    for item in ms_commands.CUSTOM_ATTRIBUTES:
-        command = 'import ms_commands\nms_commands.selection_add_custom_attr_to_selection("' + item[0] + '")'
-        cmds.menuItem(label=item[0], parent='menu_add_attr', command='import ms_commands; ms_commands.selection_add_custom_attr("{0}")'.format(item[0]))
+    cmds.menuItem(label='- Lights -', parent='menu_add_attr', bld=True)
+    for item in ms_commands.CUSTOM_LIGHT_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_add_custom_light_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_add_attr', command=command)
+    cmds.menuItem(label='- Materials -', parent='menu_add_attr', bld=True)
+    for item in ms_commands.CUSTOM_MATERIAL_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_add_custom_material_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_add_attr', command=command)
+
 
     cmds.menuItem('menu_remove_attr', subMenu=True, to=True, label='Remove Custom Attribute', parent='ms_menu')
-    for item in ms_commands.CUSTOM_ATTRIBUTES:
-        command = 'import ms_commands\nms_commands.selection_remove_custom_attr("' + item[0] + '")'
-        cmds.menuItem(label=item[0], parent='menu_remove_attr', command='import ms_commands; ms_commands.selection_remove_custom_attr("{0}")'.format(item[0]))
+    cmds.menuItem(label='- Lights -', parent='menu_remove_attr', bld=True)
+    for item in ms_commands.CUSTOM_LIGHT_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_remove_custom_light_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_remove_attr', command=command)
+    cmds.menuItem(label='- Materials -', parent='menu_remove_attr', bld=True)    
+    for item in ms_commands.CUSTOM_MATERIAL_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_remove_custom_material_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_remove_attr', command=command)
+
 
     # convert materials
     cmds.menuItem(divider=True, parent='ms_menu')

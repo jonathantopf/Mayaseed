@@ -455,7 +455,7 @@ class MTransformChild():
 
         self.custom_attributes = {}
 
-        for attribute in ms_commands.CUSTOM_ATTRIBUTES:
+        for attribute in ms_commands.CUSTOM_LIGHT_ATTRIBUTES:
             if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
                 self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
 
@@ -878,7 +878,7 @@ class MGenericMaterial():
 
         self.custom_attributes = {}
 
-        for attribute in ms_commands.CUSTOM_ATTRIBUTES:
+        for attribute in ms_commands.CUSTOM_MATERIAL_ATTRIBUTES:
             if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
                 if attribute[0] is not 'ms_secondary_surface_shader':
                     self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
@@ -2307,9 +2307,6 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
             new_mesh.name_in_obj = mesh.short_name
             new_mesh.has_deformation = mesh.has_deformation
 
-            print '???1', maya_transform.name
-            print '???2', mesh.name
-
             if not object_blur or not new_mesh.has_deformation:
                 # If the mesh has no deformation there will only be one sample so always take the first sample.
                 if new_mesh.has_deformation:
@@ -2445,7 +2442,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
     # material alpha component
     if material_attribs['alpha'] is not None:
-        front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'])
+        front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'] * -1)
         if double_sided and (single_material == False):
             back_material.alpha_map = front_material.alpha_map
 
@@ -2561,7 +2558,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
                     specular_component.parameters.append(AsParameter('reflectance', 0))
 
         # transmission component
-        if generic_material.transparency:
+        if generic_material.transparency and (not generic_material.alpha):
             front_transmission_component = AsBsdf()
             front_transmission_component.name = generic_material.safe_name + '_front_transmission_component'
             front_transmission_component.model = 'specular_btdf'

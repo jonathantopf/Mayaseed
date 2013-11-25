@@ -50,20 +50,21 @@ ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentf
 
 # attr name, data type, attribute type, default_value
 
-CUSTOM_ATTRIBUTES = [
-
-# light / edf attributes
+CUSTOM_LIGHT_ATTRIBUTES = [
 ['ms_area_light_visibility', None, 'bool', False],
 ['ms_cast_indirect_light', None, 'bool', False],
 ['ms_importance_multiplier', None, 'float', 1],
+]
 
-# material attributes
+CUSTOM_MATERIAL_ATTRIBUTES = [
+['ms_cast_indirect_light', None, 'bool', False],
+['ms_importance_multiplier', None, 'float', 1],
 ['ms_front_lighting_samples', None, 'float', 1],
 ['ms_back_lighting_samples', None, 'float', 1],
 ['ms_double_sided_material', None, 'bool', True],
 ['ms_transparency_is_material_alpha', None, 'bool', False],
 ['ms_secondary_surface_shader', None, 'message', True],
-['ms_emit_light', None, 'bool', True]
+['ms_emit_light', None, 'bool', True],
 ]
 
 #--------------------------------------------------------------------------------------------------
@@ -832,7 +833,7 @@ def normalize_path(path):
 def add_custom_attr(node, attr):
     attr_signature = None
 
-    for item in CUSTOM_ATTRIBUTES:
+    for item in CUSTOM_LIGHT_ATTRIBUTES + CUSTOM_MATERIAL_ATTRIBUTES:
         if item[0] == attr:
             attr_signature = item
 
@@ -858,20 +859,77 @@ def remove_custom_attr(node, attr):
 # Add/remove custom attributes to selection.
 #--------------------------------------------------------------------------------------------------
 
-def get_selection():
+
+def is_light(node):
+    node_type = cmds.nodeType(node, i=True)
+    if len(node_type) > 5:
+        if node_type[4] == 'light':
+            return True
+    return False
+
+def is_transform(node):
+    if cmds.nodeType(node) == 'transform':
+        return True
+    return False
+
+
+def is_material(node):
+    node_type = cmds.nodeType(node, i=True)
+    if node_type[0] == 'shadingDependNode':
+        return True
+    return False
+
+def shape_from_transform(transform):
     selection = cmds.ls(sl=True)
     for i in range(len(selection)):
             relatives = cmds.listRelatives(selection[i])
             if relatives is not None:
-                selection[i] = relatives[0]
-    return selection
+                return relatives[0]
+    return None
 
-def selection_add_custom_attr(attr):
-    for item in get_selection():
-        add_custom_attr(item, attr)
 
-def selection_remove_custom_attr(attr):
-    for item in get_selection():
-        remove_custom_attr(item, attr)
+def selection_add_custom_light_attr(attr):
+    for item in cmds.ls(sl=True):
+        if is_light(item):
+            add_custom_attr(item, attr)
+        elif is_transform(item):
+            shape = shape_from_transform(item)
+            if is_light(shape):
+                add_custom_attr(shape, attr)
+
+def selection_remove_custom_light_attr(attr):
+    for item in cmds.ls(sl=True):
+        if is_light(item):
+            remove_custom_attr(item, attr)
+        elif is_transform(item):
+            shape = shape_from_transform(item)
+            if is_light(shape):
+                remove_custom_attr(shape, attr)
+
+
+def selection_add_custom_material_attr(attr):
+    for item in cmds.ls(sl=True):
+        if is_material(item):
+            add_custom_attr(item, attr)
+        elif is_transform(item):
+            shape = shape_from_transform(item)
+            if shape:
+                material = has_shader_connected(shape)
+                if material:
+                    add_custom_attr(material, attr)
+
+
+def selection_remove_custom_material_attr(attr):
+    for item in cmds.ls(sl=True):
+        if is_material(item):
+            remove_custom_attr(item, attr)
+        elif is_transform(item):
+            shape = shape_from_transform(item)
+            if shape:
+                material = has_shader_connected(shape)
+                if material:
+                    remove_custom_attr(material, attr)
+
+
 
 
