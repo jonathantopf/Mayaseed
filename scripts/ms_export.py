@@ -30,7 +30,7 @@ import re
 import subprocess
 import sys
 import ms_commands
-reload(ms_commands)
+reload(ms_commands) # hack to avoid reloading modules after each edit during dev
 import ms_export_obj
 import time
 import inspect
