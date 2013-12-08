@@ -694,13 +694,23 @@ def convert_phong_blinn_material(material):
 
     # glossy component
     glossy_brdf = create_shading_node('microfacet_brdf', name=(material + '_blinn_brdf'))
-    cmds.setAttr(glossy_brdf + '.glossiness', 'blinn', type='string')
+    cmds.setAttr(glossy_brdf + '.mdf', 'blinn', type='string')
     if cmds.nodeType(material) == 'phong':
         glossy_param = ((cmds.getAttr(material + '.cosinePower') - 2) / 98) * -1 + 1
     else:
         glossy_param = 0.5
-    cmds.setAttr(glossy_brdf + '.mdf_parameter', glossy_param, glossy_param, glossy_param, type='float3')
+    cmds.setAttr(glossy_brdf + '.glossiness', glossy_param, glossy_param, glossy_param, type='float3')
     assign_connection_or_color(glossy_brdf + '.reflectance', material + '.specularColor', material + '.specularColor')
+
+    # bump component
+    bump_node = cmds.listConnections( material + '.normalCamera')
+    if bump_node is not None:
+        if len(bump_node) > 0:
+            bump_tex = cmds.listConnections(bump_node[0] + '.bumpValue')
+            cmds.setAttr(converted_material + '.bump_amplitude', cmds.getAttr(bump_node[0] + '.bumpDepth'))
+            if bump_tex is not None:
+                cmds.connectAttr(bump_tex[0] + '.outColor', converted_material + '.displacement_map_front')
+                cmds.connectAttr(bump_tex[0] + '.outColor', converted_material + '.displacement_map_back')
 
     # mix diffuse and glossy
     mix_brdf = create_shading_node('bsdf_mix', name=(material + '_bsdf_mix'))
