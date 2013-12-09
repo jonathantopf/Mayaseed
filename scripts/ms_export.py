@@ -2442,7 +2442,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
     # material alpha component
     if material_attribs['alpha'] is not None:
-        front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'] * -1)
+        front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'] * -1 + 1)
         if double_sided and (single_material == False):
             back_material.alpha_map = front_material.alpha_map
 
