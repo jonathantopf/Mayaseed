@@ -704,13 +704,12 @@ def convert_phong_blinn_material(material):
 
     # bump component
     bump_node = cmds.listConnections( material + '.normalCamera')
-    if bump_node is not None:
-        if len(bump_node) > 0:
-            bump_tex = cmds.listConnections(bump_node[0] + '.bumpValue')
-            cmds.setAttr(converted_material + '.bump_amplitude', cmds.getAttr(bump_node[0] + '.bumpDepth'))
-            if bump_tex is not None:
-                cmds.connectAttr(bump_tex[0] + '.outColor', converted_material + '.displacement_map_front')
-                cmds.connectAttr(bump_tex[0] + '.outColor', converted_material + '.displacement_map_back')
+    if bump_node is not None and len(bump_node) > 0:
+        bump_tex = cmds.listConnections(bump_node[0] + '.bumpValue')
+        cmds.setAttr(converted_material + '.bump_amplitude', cmds.getAttr(bump_node[0] + '.bumpDepth'))
+        if bump_tex is not None:
+            cmds.connectAttr(bump_tex[0] + '.outColor', converted_material + '.displacement_map_front')
+            cmds.connectAttr(bump_tex[0] + '.outColor', converted_material + '.displacement_map_back')
 
     # mix diffuse and glossy
     mix_brdf = create_shading_node('bsdf_mix', name=(material + '_bsdf_mix'))
