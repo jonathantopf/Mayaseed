@@ -41,6 +41,13 @@ def createMenu():
 def buildMenu():
     cmds.menu('ms_menu', edit=True, deleteAllItems=True, pmc=('import ms_menu\nms_menu.buildMenu()'))
 
+    # Export
+    cmds.menuItem(divider=True, parent='ms_menu')
+    cmds.menuItem('menu_export', subMenu=True, label='Export', to=True, parent='ms_menu')
+    for render_settings_node in cmds.ls(type='ms_renderSettings'):
+        cmds.menuItem(label=render_settings_node, parent='menu_export', command=('import ms_export \nreload(ms_export)\nms_export.export("{0}")'.format(render_settings_node)))
+    cmds.menuItem(divider=True, parent='ms_menu')
+
     # Add/Select Render Settings Node
     cmds.menuItem(label='Add Render Settings Node', parent='ms_menu', command='import maya.cmds\nmaya.cmds.createNode("ms_renderSettings")')
     cmds.menuItem('menu_select_render_settings', subMenu=True, label='Select Render Settings Node', to=True, parent='ms_menu')
@@ -85,18 +92,37 @@ def buildMenu():
             command = 'import ms_commands\nms_commands.create_shading_node("' + entity_key + '")'
             cmds.menuItem(label=entity_key, parent='menu_create_surface_shader', command=command)
 
+    # add / remove custom attribs
+    cmds.menuItem(divider=True, parent='ms_menu')
+
+    cmds.menuItem('menu_add_attr', subMenu=True, to=True, label='Add Custom Attribute', parent='ms_menu')
+    cmds.menuItem(label='- Lights -', parent='menu_add_attr', bld=True)
+    for item in ms_commands.CUSTOM_LIGHT_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_add_custom_light_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_add_attr', command=command)
+    cmds.menuItem(label='- Materials -', parent='menu_add_attr', bld=True)
+    for item in ms_commands.CUSTOM_MATERIAL_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_add_custom_material_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_add_attr', command=command)
+
+
+    cmds.menuItem('menu_remove_attr', subMenu=True, to=True, label='Remove Custom Attribute', parent='ms_menu')
+    cmds.menuItem(label='- Lights -', parent='menu_remove_attr', bld=True)
+    for item in ms_commands.CUSTOM_LIGHT_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_remove_custom_light_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_remove_attr', command=command)
+    cmds.menuItem(label='- Materials -', parent='menu_remove_attr', bld=True)    
+    for item in ms_commands.CUSTOM_MATERIAL_ATTRIBUTES:
+        command = 'import ms_commands\nms_commands.selection_remove_custom_material_attr("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_remove_attr', command=command)
+
+
     # convert materials
     cmds.menuItem(divider=True, parent='ms_menu')
     cmds.menuItem('menu_convert_maya_materials', subMenu=True, label='Convert Maya Materials', to=True, parent='ms_menu')
 
     cmds.menuItem(label='Selected Materials', parent='menu_convert_maya_materials', command='import ms_commands\nms_commands.convert_selected_materials()')
     cmds.menuItem(label='All Materials', parent='menu_convert_maya_materials', command='import ms_commands\nms_commands.convert_all_materials()')
-
-    # Export
-    cmds.menuItem(divider=True, parent='ms_menu')
-    cmds.menuItem('menu_export', subMenu=True, label='Export', to=True, parent='ms_menu')
-    for render_settings_node in cmds.ls(type='ms_renderSettings'):
-        cmds.menuItem(label=render_settings_node, parent='menu_export', command=('import ms_export \nreload(ms_export)\nms_export.export("{0}")'.format(render_settings_node)))
 
     # About
     cmds.menuItem(divider=True, parent='ms_menu')
