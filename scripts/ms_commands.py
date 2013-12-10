@@ -38,7 +38,7 @@ import math
 # Constants.
 #--------------------------------------------------------------------------------------------------
 
-MAYASEED_VERSION = '0.6.0'
+MAYASEED_VERSION = '0.6.1'
 MAYASEED_URL = 'https://github.com/jupiter-jazz/mayaseed'
 APPLESEED_URL = 'http://appleseedhq.net/'
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
@@ -881,7 +881,7 @@ def is_transform(node):
 
 def is_material(node):
     node_type = cmds.nodeType(node, i=True)
-    return node_type[0] == 'shadingDependNode':
+    return node_type[0] == 'shadingDependNode'
 
 def shape_from_transform(transform):
     selection = cmds.ls(sl=True)
