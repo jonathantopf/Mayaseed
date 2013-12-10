@@ -58,7 +58,7 @@ def install():
         module_file_path = os.path.join(modules_path, 'mayaseed.module')
         
         if os.path.exists(module_file_path):
-            continue_return_value = cmds.confirmDialog(m='A mayaseed module file already exists from a previous instalation, would you like to overwrite it?', button=['yes','no'])
+            continue_return_value = cmds.confirmDialog(m='A mayaseed module file already exists from a previous installation, would you like to overwrite it?', button=['yes','no'])
             if continue_return_value == 'no':
                 return False
         

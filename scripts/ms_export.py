@@ -963,19 +963,14 @@ class MGenericMaterial():
         if emit_light:
             if cmds.attributeQuery('incandescence', node=self.name, exists=True):
                 self.incandescence = MColorConnection(self.params, self.name + '.incandescence')
-                if self.incandescence.connected_node is not None:
-                    self.incandescence = m_file_from_color_connection(self.params, self.incandescence)
-                    self.textures.append(self.incandescence)
-                elif self.incandescence.is_black:
-                    self.incandescence = None
-
             elif cmds.attributeQuery('outColor', node=self.name, exists=True):
                 self.incandescence = MColorConnection(self.params, self.name + '.outColor')
-                if self.incandescence.connected_node is not None:
-                    self.incandescence = m_file_from_color_connection(self.params, self.incandescence)
-                    self.textures.append(self.incandescence)
-                elif self.incandescence.is_black:
-                    self.incandescence = None
+
+            if self.incandescence.connected_node is not None:
+                self.incandescence = m_file_from_color_connection(self.params, self.incandescence)
+                self.textures.append(self.incandescence)
+            elif self.incandescence.is_black:
+                self.incandescence = None
 
         # work out bump component
         if cmds.attributeQuery('normalCamera', node=self.name, exists=True):
@@ -2376,7 +2371,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
     if (generic_material.transparency is not None) and double_sided:
         single_material = False
 
-    # check if material already exits in the root
+    # check if material already exists in the root
     if not double_sided:
         front_material = get_from_list(root_assembly.materials, generic_material.safe_name)
     elif single_material:
@@ -2390,7 +2385,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         return front_material, back_material
 
 
-    # conver relivant as entities from generic material attributes to as attributes
+    # conver relevant as entities from generic material attributes to as attributes
     material_attribs = {'color'            : generic_material.color,
                         'alpha'            : generic_material.alpha,
                         'transparrency'    : generic_material.transparency,
@@ -2483,9 +2478,9 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         if secondary_surface_shader is None:
             secondary_surface_shader = build_as_shading_nodes(params, root_assembly,  generic_material.secondary_surface_shader, non_mb_sample_number)
         else:
-            secondary_surface_shader.name = secondary_surface_shader.name + '_secondary'
+            secondary_surface_shader.name += '_secondary'
 
-        primary_surface_shader.name = primary_surface_shader.name + '_primary'
+        primary_surface_shader.name += '_primary'
         main_surface_shader.parameters.append(AsParameter('surface_shader1', primary_surface_shader.name))
         main_surface_shader.parameters.append(AsParameter('surface_shader2', secondary_surface_shader.name))
         
@@ -2626,7 +2621,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             reflective_component = specular_component
 
         # main bsdf component
-        # create bsdf mix if reflcetive component and transmission component are present
+        # create bsdf mix if reflective component and transmission component are present
         if (reflective_component is not None) and (front_transmission_component is not None):
             front_bsdf = AsBsdf()
             front_bsdf.name = generic_material.safe_name + '_front_bsdf'
@@ -2676,7 +2671,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             if back_bsdf is not None:
                 back_material.bsdf = AsParameter('bsdf', back_bsdf.name)
 
-    # return relivent combination of front and back materials
+    # return relevent combination of front and back materials
     if double_sided and (single_material == False):
         return front_material, back_material
 
