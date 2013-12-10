@@ -881,7 +881,7 @@ def is_transform(node):
 
 def is_material(node):
     node_type = cmds.nodeType(node, i=True)
-    return node_type[0] == 'shadingDependNode':
+    return node_type[0] == 'shadingDependNode'
 
 def shape_from_transform(transform):
     selection = cmds.ls(sl=True)
