@@ -453,11 +453,11 @@ class MTransformChild():
         self.safe_short_name = ms_commands.legalize_name(self.short_name)
         self.transform = MTransform_object
 
-        self.custom_attributes = {}
+        self.export_modifiers = {}
 
-        for attribute in ms_commands.CUSTOM_LIGHT_ATTRIBUTES:
+        for attribute in ms_commands.LIGHT_EXPORT_MODIFIERS:
             if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
-                self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
+                self.export_modifiers[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
 
 
 #--------------------------------------------------------------------------------------------------
@@ -876,28 +876,28 @@ class MGenericMaterial():
 
         self.textures = []
 
-        self.custom_attributes = {}
+        self.export_modifiers = {}
 
-        for attribute in ms_commands.CUSTOM_MATERIAL_ATTRIBUTES:
+        for attribute in ms_commands.MATERIAL_EXPORT_MODIFIERS:
             if cmds.attributeQuery(attribute[0], n=self.name, ex=True):
                 if attribute[0] is not 'ms_secondary_surface_shader':
-                    self.custom_attributes[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
+                    self.export_modifiers[attribute[0]] = cmds.getAttr('{0}.{1}'.format(self.name, attribute[0]))
                 else:
                     attribute_connections = cmds.listConnections(self.name + '.ms_secondary_surface_shader')
                     if attribute_connections is not None:
-                        self.custom_attributes[attribute[0]] = attribute_connections[0]
+                        self.export_modifiers[attribute[0]] = attribute_connections[0]
 
         self.secondary_surface_shader = None
 
-        if 'ms_secondary_surface_shader' in self.custom_attributes:
-            if cmds.nodeType(self.custom_attributes['ms_secondary_surface_shader']) == 'ms_appleseed_shading_node':
-                if cmds.getAttr(self.custom_attributes['ms_secondary_surface_shader'] + '.node_type') is not 'surface_shader':
-                    self.secondary_surface_shader = MMsShadingNode(params, self.custom_attributes['ms_secondary_surface_shader'])
+        if 'ms_secondary_surface_shader' in self.export_modifiers:
+            if cmds.nodeType(self.export_modifiers['ms_secondary_surface_shader']) == 'ms_appleseed_shading_node':
+                if cmds.getAttr(self.export_modifiers['ms_secondary_surface_shader'] + '.node_type') is not 'surface_shader':
+                    self.secondary_surface_shader = MMsShadingNode(params, self.export_modifiers['ms_secondary_surface_shader'])
                     self.textures += self.secondary_surface_shader.textures
                 else:
-                    ms_commands.warning('{0} is not a surface_shader'.format(self.custom_attributes['ms_secondary_surface_shader']))
+                    ms_commands.warning('{0} is not a surface_shader'.format(self.export_modifiers['ms_secondary_surface_shader']))
             else:
-                ms_commands.warning('{0} is not an ms_appleseed_shading_node'.format(self.custom_attributes['ms_secondary_surface_shader']))
+                ms_commands.warning('{0} is not an ms_appleseed_shading_node'.format(self.export_modifiers['ms_secondary_surface_shader']))
 
         # work out color component
         if cmds.attributeQuery('color', node=self.name, exists=True):
@@ -948,16 +948,16 @@ class MGenericMaterial():
             elif self.transparency.is_black:
                 self.transparency = None
 
-            if 'ms_transparency_is_material_alpha' in self.custom_attributes:
-                if self.custom_attributes['ms_transparency_is_material_alpha']:
+            if 'ms_transparency_is_material_alpha' in self.export_modifiers:
+                if self.export_modifiers['ms_transparency_is_material_alpha']:
                     self.alpha = self.transparency
                     self.transparency = None
 
         # work out incandescence component
         emit_light = True
 
-        if 'ms_emit_light' in self.custom_attributes:
-            if self.custom_attributes['ms_emit_light'] == False:
+        if 'ms_emit_light' in self.export_modifiers:
+            if self.export_modifiers['ms_emit_light'] == False:
                 emit_light = False
 
         if emit_light:
@@ -2247,12 +2247,12 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                 light_edf.parameters.append(AsParameter('radiance', light_color.name))
                 light_edf.parameters.append(AsParameter('radiance_multiplier', light.multiplier))
 
-                if 'ms_cast_indirect_light' in light.custom_attributes:
-                    if light.custom_attributes['ms_cast_indirect_light'] is False:
+                if 'ms_cast_indirect_light' in light.export_modifiers:
+                    if light.export_modifiers['ms_cast_indirect_light'] is False:
                         light_edf.parameters.append(AsParameter('cast_indirect_light', 'false'))
 
-                if 'ms_importance_multiplier' in light.custom_attributes:
-                    light_edf.parameters.append(AsParameter('importance_multiplier', light.custom_attributes['ms_importance_multiplier']))
+                if 'ms_importance_multiplier' in light.export_modifiers:
+                    light_edf.parameters.append(AsParameter('importance_multiplier', light.export_modifiers['ms_importance_multiplier']))
 
                 current_assembly.edfs.append(light_edf)
 
@@ -2260,8 +2260,8 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                 light_material.alpha_map = AsParameter('alpha_map', '0')
 
                 # in this case simpler to set the surface shader and reset it as its not a simple if else situation
-                if 'ms_area_light_visibility' in light.custom_attributes:
-                    if light.custom_attributes['ms_area_light_visibility'] is True:
+                if 'ms_area_light_visibility' in light.export_modifiers:
+                    if light.export_modifiers['ms_area_light_visibility'] is True:
                         light_material.surface_shader = AsParameter('surface_shader', 'as_default_physical_surface_shader')
                         light_material.alpha_map = None
 
@@ -2365,8 +2365,8 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
     if generic_material.type == 'surfaceShader':
         double_sided = False
 
-    if 'ms_double_sided_material' in generic_material.custom_attributes:
-        double_sided = generic_material.custom_attributes['ms_double_sided_material']
+    if 'ms_double_sided_material' in generic_material.export_modifiers:
+        double_sided = generic_material.export_modifiers['ms_double_sided_material']
 
     if (generic_material.transparency is not None) and double_sided:
         single_material = False
@@ -2507,12 +2507,12 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         edf.parameters.append(AsParameter('render_layer', generic_material.safe_name + 'light_emission'))
         root_assembly.edfs.append(edf)
 
-        if 'ms_cast_indirect_light' in generic_material.custom_attributes:
-            if generic_material.custom_attributes['ms_cast_indirect_light'] is False:
+        if 'ms_cast_indirect_light' in generic_material.export_modifiers:
+            if generic_material.export_modifiers['ms_cast_indirect_light'] is False:
                 edf.parameters.append(AsParameter('cast_indirect_light', 'false'))
 
-        if 'ms_importance_multiplier' in generic_material.custom_attributes:
-            edf.parameters.append(AsParameter('importance_multiplier', generic_material.custom_attributes['ms_importance_multiplier']))
+        if 'ms_importance_multiplier' in generic_material.export_modifiers:
+            edf.parameters.append(AsParameter('importance_multiplier', generic_material.export_modifiers['ms_importance_multiplier']))
 
         front_material.edf = AsParameter('edf', edf.name)
 
