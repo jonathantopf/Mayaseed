@@ -2214,85 +2214,87 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
         for light in maya_transform.child_lights:
 
-            # create colour entites
-            if light.color.__class__.__name__ == 'MFile':
-                light_color_file, light_color =  m_file_to_as_texture(params, light.color, '_light_color', non_mb_sample_number)
-                current_assembly.textures.append(light_color_file)
-                current_assembly.texture_instances.append(light_color)
-            else:
-                light_color = m_color_connection_to_as_color(light.color, '_light_color')
-                current_assembly.colors.append(light_color)
+            if light.multiplier > 0:
 
-            if light.model == 'areaLight':
-                
-                # create new light mesh instance and material
-                light_mesh = AsObject()
-                light_mesh.name = light.safe_name
-                light_mesh.file_names = AsParameter('filename', GEO_DIR + '/maya_area_light.obj')
-
-                light_mesh_transform = AsTransform()
-                if current_matrix_stack is not []:
-                    light_mesh_transform.matrices = current_matrix_stack
-
-                light_mesh_instance = light_mesh.instantiate()
-                light_mesh_instance.transforms.append(light_mesh_transform)
-
-                light_material = AsMaterial()
-                light_material.name = light.safe_name + '_material'
-
-                light_edf = AsEdf()
-                light_edf.name = light.safe_name + '_edf'
-                light_edf.model = 'diffuse_edf'
-                light_edf.render_layer = AsParameter('render_layer', light.safe_name)
-                light_edf.parameters.append(AsParameter('radiance', light_color.name))
-                light_edf.parameters.append(AsParameter('radiance_multiplier', light.multiplier))
-
-                if 'ms_cast_indirect_light' in light.export_modifiers:
-                    if light.export_modifiers['ms_cast_indirect_light'] is False:
-                        light_edf.parameters.append(AsParameter('cast_indirect_light', 'false'))
-
-                if 'ms_importance_multiplier' in light.export_modifiers:
-                    light_edf.parameters.append(AsParameter('importance_multiplier', light.export_modifiers['ms_importance_multiplier']))
-
-                current_assembly.edfs.append(light_edf)
-
-                light_material.surface_shader = AsParameter('surface_shader', 'as_default_clear_surface_shader')
-                light_material.alpha_map = AsParameter('alpha_map', '0')
-
-                # in this case simpler to set the surface shader and reset it as its not a simple if else situation
-                if 'ms_area_light_visibility' in light.export_modifiers:
-                    if light.export_modifiers['ms_area_light_visibility'] is True:
-                        light_material.surface_shader = AsParameter('surface_shader', 'as_default_physical_surface_shader')
-                        light_material.alpha_map = None
-
-                light_material.edf = AsParameter('edf', light_edf.name)
-                current_assembly.materials.append(light_material)
-
-                light_mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment('0', 'front', light_material.name))
-                light_mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment('0', 'back', 'as_default_invisible_material'))
-
-                current_assembly.objects.append(light_mesh)
-                current_assembly.object_instances.append(light_mesh_instance)
-
-            else:
-                new_light = AsLight()
-                new_light.name = light.safe_name
-                
-                new_light.exitance_multiplier.value = light.multiplier
-
-                new_light.exitance = AsParameter('exitance', light_color.name)
-                new_light.transform = AsTransform()
-                if current_matrix_stack is not []:
-                    new_light.transform.matrices = current_matrix_stack
-
-                if light.model == 'spotLight':
-                    new_light.model = 'spot_light'
-                    new_light.inner_angle = AsParameter('inner_angle', light.inner_angle)
-                    new_light.outer_angle = AsParameter('outer_angle', light.outer_angle)
+                # create colour entites
+                if light.color.__class__.__name__ == 'MFile':
+                    light_color_file, light_color =  m_file_to_as_texture(params, light.color, '_light_color', non_mb_sample_number)
+                    current_assembly.textures.append(light_color_file)
+                    current_assembly.texture_instances.append(light_color)
                 else:
-                    new_light.model = 'point_light'
+                    light_color = m_color_connection_to_as_color(light.color, '_light_color')
+                    current_assembly.colors.append(light_color)
 
-                current_assembly.lights.append(new_light)
+                if light.model == 'areaLight':
+                    
+                    # create new light mesh instance and material
+                    light_mesh = AsObject()
+                    light_mesh.name = light.safe_name
+                    light_mesh.file_names = AsParameter('filename', GEO_DIR + '/maya_area_light.obj')
+
+                    light_mesh_transform = AsTransform()
+                    if current_matrix_stack is not []:
+                        light_mesh_transform.matrices = current_matrix_stack
+
+                    light_mesh_instance = light_mesh.instantiate()
+                    light_mesh_instance.transforms.append(light_mesh_transform)
+
+                    light_material = AsMaterial()
+                    light_material.name = light.safe_name + '_material'
+
+                    light_edf = AsEdf()
+                    light_edf.name = light.safe_name + '_edf'
+                    light_edf.model = 'diffuse_edf'
+                    light_edf.render_layer = AsParameter('render_layer', light.safe_name)
+                    light_edf.parameters.append(AsParameter('radiance', light_color.name))
+                    light_edf.parameters.append(AsParameter('radiance_multiplier', light.multiplier))
+
+                    if 'ms_cast_indirect_light' in light.export_modifiers:
+                        if light.export_modifiers['ms_cast_indirect_light'] is False:
+                            light_edf.parameters.append(AsParameter('cast_indirect_light', 'false'))
+
+                    if 'ms_importance_multiplier' in light.export_modifiers:
+                        light_edf.parameters.append(AsParameter('importance_multiplier', light.export_modifiers['ms_importance_multiplier']))
+
+                    current_assembly.edfs.append(light_edf)
+
+                    light_material.surface_shader = AsParameter('surface_shader', 'as_default_clear_surface_shader')
+                    light_material.alpha_map = AsParameter('alpha_map', '0')
+
+                    # in this case simpler to set the surface shader and reset it as its not a simple if else situation
+                    if 'ms_area_light_visibility' in light.export_modifiers:
+                        if light.export_modifiers['ms_area_light_visibility'] is True:
+                            light_material.surface_shader = AsParameter('surface_shader', 'as_default_physical_surface_shader')
+                            light_material.alpha_map = None
+
+                    light_material.edf = AsParameter('edf', light_edf.name)
+                    current_assembly.materials.append(light_material)
+
+                    light_mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment('0', 'front', light_material.name))
+                    light_mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment('0', 'back', 'as_default_invisible_material'))
+
+                    current_assembly.objects.append(light_mesh)
+                    current_assembly.object_instances.append(light_mesh_instance)
+
+                else:
+                    new_light = AsLight()
+                    new_light.name = light.safe_name
+                    
+                    new_light.exitance_multiplier.value = light.multiplier
+
+                    new_light.exitance = AsParameter('exitance', light_color.name)
+                    new_light.transform = AsTransform()
+                    if current_matrix_stack is not []:
+                        new_light.transform.matrices = current_matrix_stack
+
+                    if light.model == 'spotLight':
+                        new_light.model = 'spot_light'
+                        new_light.inner_angle = AsParameter('inner_angle', light.inner_angle)
+                        new_light.outer_angle = AsParameter('outer_angle', light.outer_angle)
+                    else:
+                        new_light.model = 'point_light'
+
+                    current_assembly.lights.append(new_light)
 
         for mesh in maya_transform.child_meshes:
             # For now we won't be supporting instantiating objects. When the time comes I will add a function call here
