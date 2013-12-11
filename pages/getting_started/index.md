@@ -3,10 +3,10 @@ layout: default
 title: Getting started
 ---
 
-The Mayaseed menu
+The mayaseed menu
 -----------------
 
-The Mayaseed menu will appear when the plugin is correctly installed, if you can't see it make sure the plugin installed correctly and is enabled from the Maya plug-in manager `Window > Settings/Preferences > PLug-in Manager`. You only need to enable `mayaseed.py` and `ms_obj_export_<your maya version>` from the plugin-manager, ther other plugins will be loaded automatically.
+The Mayaseed menu will appear when the plugin is correctly installed, if you can't see it make sure the plugin installed correctly and is enabled from the Maya plug-in manager `Window > Settings/Preferences > PLug-in Manager`. You only need to enable `mayaseed.py` and `ms_obj_export_<your Maya version>` from the plugin-manager, the other plugins will be loaded automatically.
 
 [![Mayaseed in the plug-in manager](/images/plug-in_manager.png)](/images/plug-in_manager.png)
 
@@ -26,9 +26,9 @@ Your first export
 
 To export a scene you first need to create a render settings node, to do this choose `mayaseed > Add Render Settings Node`, then chose `Mayaseed > Export > your rendersettings node`.
 
-Your exports will be sent to a directory named *Mayaseed* in your Maya project. Of course there many customizations available in the `ms_rendersettings_node`.
+Your exports will be sent to a directory named *Mayaseed* in your Maya project. Of course there many customisation's available in the `ms_rendersettings_node`.
 
 Materials
 ---------
 
-Mayaseed will do a buest guess translation of Maya Phong/Blinn/Lambert/SurfaceShader materials so you should be able to export out of the box. You can also customise the buest guess translation with Export Modifiers or use native mayaseed shading nodes via ms\_materials.
+Mayaseed will do a Best guess translation of Maya Phong/Blinn/Lambert/SurfaceShader materials so you should be able to export out of the box. You can also customise the Best guess translation with Export Modifiers or use native mayaseed shading nodes via ms\_materials.

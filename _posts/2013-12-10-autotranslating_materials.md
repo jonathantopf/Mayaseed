@@ -5,7 +5,7 @@ tags:
 - docs
 ---
 
-When mayaseed encounters a Maya Phong, Blinn, Lambert or SurfaceShader it will translate the material as best as possible. Knowing a little bit about how mayaseed will interpert the material can help a lot in getting the desired result. 
+When mayaseed encounters a Maya Phong, Blinn, Lambert or SurfaceShader it will translate the material as best as possible. Knowing a little bit about how mayaseed will interpret the material can help a lot in getting the desired result. 
 
 Internally mayaseed will convert the material into a temporary "generic material" in the following pattern:
 
@@ -47,7 +47,7 @@ Internally mayaseed will convert the material into a temporary "generic material
     Maya Lambert.translucence --|
 
 
->Note: This interpretation may be modified by export modifiers such as ms_transparrency_is_alpha, this will cause Maya material transparrency to be interpreted as alpha rather than transparrency.
+>Note: This interpretation may be modified by export modifiers such as ms_transparency_is_alpha, this will cause Maya material transparency to be interpreted as alpha rather than transparency.
 
 
 mayaseed will then translate these attributes to an appleseed material network that looks like this:
@@ -83,7 +83,7 @@ mayaseed will map the generic material attributes like this:
 Reference
 ---------
 
-Below is a set of images I created to help when creating mataerials in maya. Each plots various attributes of a maya Phong against another material attribute. 
+Below is a set of images I created to help when creating materials in Maya. Each plots various attributes of a Maya Phong against another material attribute. 
 
 [![Reflectivity x Transparency](/images/reflectivity_transparency.jpg)](/images/reflectivity_transparency.jpg)
 

@@ -1,6 +1,6 @@
 ---
 layout: default
-title: applseed scene files
+title: appleseed scene files
 tags:
 - docs
 ---
@@ -11,7 +11,7 @@ Some of the more important entities defined in the appleseed scene file are as f
 
 `<project>`
 
-The project element contains all informatino on the appleseed project, surprisingly.
+The project element contains all information on the appleseed project, surprisingly.
 
 `<scene>`
 
@@ -23,8 +23,8 @@ Inside the scene element you have, amongst other things, `<assembly>` and `<asse
 
 The output element contains info on the output format of your render, things like color space, resolution etc.
 
-`<configuratinos>`
+`<configurations>`
 
-Thie configurations elememnt contains the main parameters that affect how the renderer peforms; sample count, lighting engine etc.
+The configurations element contains the main parameters that affect how the renderer performs; sample count, lighting engine etc.
 
-You can find a mucn more detailed overview of the appleseed scene file structure on the [appleseedhq site](http://appleseedhq.net/).
+You can find a much more detailed overview of the appleseed scene file structure on the [appleseedhq site](http://appleseedhq.net/).
