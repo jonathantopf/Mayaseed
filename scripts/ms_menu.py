@@ -92,29 +92,29 @@ def buildMenu():
             command = 'import ms_commands\nms_commands.create_shading_node("' + entity_key + '")'
             cmds.menuItem(label=entity_key, parent='menu_create_surface_shader', command=command)
 
-    # add / remove custom attribs
+    # add / remove export modifiers
     cmds.menuItem(divider=True, parent='ms_menu')
 
-    cmds.menuItem('menu_add_attr', subMenu=True, to=True, label='Add Custom Attribute', parent='ms_menu')
-    cmds.menuItem(label='- Lights -', parent='menu_add_attr', bld=True)
-    for item in ms_commands.CUSTOM_LIGHT_ATTRIBUTES:
-        command = 'import ms_commands\nms_commands.selection_add_custom_light_attr("' + item[0] + '")'
-        cmds.menuItem(label=item[0], parent='menu_add_attr', command=command)
-    cmds.menuItem(label='- Materials -', parent='menu_add_attr', bld=True)
-    for item in ms_commands.CUSTOM_MATERIAL_ATTRIBUTES:
-        command = 'import ms_commands\nms_commands.selection_add_custom_material_attr("' + item[0] + '")'
-        cmds.menuItem(label=item[0], parent='menu_add_attr', command=command)
+    cmds.menuItem('menu_add_export_modifier', subMenu=True, to=True, label='Add Export Modifier', parent='ms_menu')
+    cmds.menuItem(label='- Lights -', parent='menu_add_export_modifier', bld=True)
+    for item in ms_commands.LIGHT_EXPORT_MODIFIERS:
+        command = 'import ms_commands\nms_commands.selection_add_light_export_modifier("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_add_export_modifier', command=command)
+    cmds.menuItem(label='- Materials -', parent='menu_add_export_modifier', bld=True)
+    for item in ms_commands.MATERIAL_EXPORT_MODIFIERS:
+        command = 'import ms_commands\nms_commands.selection_add_material_export_modifier("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_add_export_modifier', command=command)
 
 
-    cmds.menuItem('menu_remove_attr', subMenu=True, to=True, label='Remove Custom Attribute', parent='ms_menu')
-    cmds.menuItem(label='- Lights -', parent='menu_remove_attr', bld=True)
-    for item in ms_commands.CUSTOM_LIGHT_ATTRIBUTES:
-        command = 'import ms_commands\nms_commands.selection_remove_custom_light_attr("' + item[0] + '")'
-        cmds.menuItem(label=item[0], parent='menu_remove_attr', command=command)
-    cmds.menuItem(label='- Materials -', parent='menu_remove_attr', bld=True)    
-    for item in ms_commands.CUSTOM_MATERIAL_ATTRIBUTES:
-        command = 'import ms_commands\nms_commands.selection_remove_custom_material_attr("' + item[0] + '")'
-        cmds.menuItem(label=item[0], parent='menu_remove_attr', command=command)
+    cmds.menuItem('menu_remove_export_modifier', subMenu=True, to=True, label='Remove Export Modifier', parent='ms_menu')
+    cmds.menuItem(label='- Lights -', parent='menu_remove_export_modifier', bld=True)
+    for item in ms_commands.LIGHT_EXPORT_MODIFIERS:
+        command = 'import ms_commands\nms_commands.selection_remove_light_export_modifier("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_remove_export_modifier', command=command)
+    cmds.menuItem(label='- Materials -', parent='menu_remove_export_modifier', bld=True)    
+    for item in ms_commands.MATERIAL_EXPORT_MODIFIERS:
+        command = 'import ms_commands\nms_commands.selection_remove_material_export_modifier("' + item[0] + '")'
+        cmds.menuItem(label=item[0], parent='menu_remove_export_modifier', command=command)
 
 
     # convert materials

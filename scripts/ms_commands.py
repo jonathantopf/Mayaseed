@@ -45,18 +45,18 @@ ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentf
 
 
 #--------------------------------------------------------------------------------------------------
-# Custom attributes.
+# Export modifiers.
 #--------------------------------------------------------------------------------------------------
 
 # attr name, data type, attribute type, default_value
 
-CUSTOM_LIGHT_ATTRIBUTES = [
+LIGHT_EXPORT_MODIFIERS = [
 ['ms_area_light_visibility', None, 'bool', False],
 ['ms_cast_indirect_light', None, 'bool', False],
 ['ms_importance_multiplier', None, 'float', 1],
 ]
 
-CUSTOM_MATERIAL_ATTRIBUTES = [
+MATERIAL_EXPORT_MODIFIERS = [
 ['ms_cast_indirect_light', None, 'bool', False],
 ['ms_importance_multiplier', None, 'float', 1],
 ['ms_front_lighting_samples', None, 'float', 1],
@@ -836,13 +836,13 @@ def normalize_path(path):
 
 
 #--------------------------------------------------------------------------------------------------
-# Add/remove custom attributes.
+# Add/remove export modifier.
 #--------------------------------------------------------------------------------------------------
 
-def add_custom_attr(node, attr):
+def add_export_modifier(node, attr):
     attr_signature = None
 
-    for item in CUSTOM_LIGHT_ATTRIBUTES + CUSTOM_MATERIAL_ATTRIBUTES:
+    for item in LIGHT_EXPORT_MODIFIERS + MATERIAL_EXPORT_MODIFIERS:
         if item[0] == attr:
             attr_signature = item
 
@@ -860,7 +860,7 @@ def add_custom_attr(node, attr):
         cmds.addAttr(node, longName=attr, dt=attr_signature[1])
 
 
-def remove_custom_attr(node, attr):
+def remove_export_modifier(node, attr):
     cmds.deleteAttr(node, at=attr)
 
 
@@ -892,47 +892,47 @@ def shape_from_transform(transform):
     return None
 
 
-def selection_add_custom_light_attr(attr):
+def selection_add_light_export_modifier(attr):
     for item in cmds.ls(sl=True):
         if is_light(item):
-            add_custom_attr(item, attr)
+            add_export_modifier(item, attr)
         elif is_transform(item):
             shape = shape_from_transform(item)
             if is_light(shape):
-                add_custom_attr(shape, attr)
+                add_export_modifier(shape, attr)
 
-def selection_remove_custom_light_attr(attr):
+def selection_remove_light_export_modifier(attr):
     for item in cmds.ls(sl=True):
         if is_light(item):
-            remove_custom_attr(item, attr)
+            remove_export_modifier(item, attr)
         elif is_transform(item):
             shape = shape_from_transform(item)
             if is_light(shape):
-                remove_custom_attr(shape, attr)
+                remove_export_modifier(shape, attr)
 
 
-def selection_add_custom_material_attr(attr):
+def selection_add_material_export_modifier(attr):
     for item in cmds.ls(sl=True):
         if is_material(item):
-            add_custom_attr(item, attr)
+            add_export_modifier(item, attr)
         elif is_transform(item):
             shape = shape_from_transform(item)
             if shape:
                 material = has_shader_connected(shape)
                 if material:
-                    add_custom_attr(material, attr)
+                    add_export_modifier(material, attr)
 
 
-def selection_remove_custom_material_attr(attr):
+def selection_remove_material_export_modifier(attr):
     for item in cmds.ls(sl=True):
         if is_material(item):
-            remove_custom_attr(item, attr)
+            remove_export_modifier(item, attr)
         elif is_transform(item):
             shape = shape_from_transform(item)
             if shape:
                 material = has_shader_connected(shape)
                 if material:
-                    remove_custom_attr(material, attr)
+                    remove_export_modifier(material, attr)
 
 
 
