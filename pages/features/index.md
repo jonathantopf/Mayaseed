@@ -1,0 +1,14 @@
+---
+layout: default
+title: Features
+---
+
+Mayaseed does a bunch of stuff but here are some of the highlites. 
+
++ Automatic conversion of maya lambertian, phong and surface shaders
++ Spot light, point light and area light translation
++ All native appleseed materials
++ Environment & physical environment creation
++ Auto-conversion of textures to .exr
++ Transformation, deformation and camera blur export
++ Automatic installer 
