@@ -5,4 +5,10 @@ tags:
 - docs
 ---
 
-Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+When exporting mayaseed will output files to a to a specific directory structure. Paths in the .appleseed file are relative so you can move the outputted files wherever you like as long as any dependencies stay in the same relative location to the .appleseed scene file.
+
+    shot_directory/geometry/geometry_files ...
+               |
+               -- /textures/texture_files ...
+               |
+               -- /scene_file.appleseed

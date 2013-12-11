@@ -24,9 +24,9 @@ The ms\_renderSettings (render settings) node is the workhorse of Mayaseed, it c
 Your first export
 -----------------
 
-To export a scene you first need to create a render settings node, to do this choose `mayaseed > Add Render Settings Node`.
+To export a scene you first need to create a render settings node, to do this choose `mayaseed > Add Render Settings Node`, then chose `Mayaseed > Export > your rendersettings node`.
 
-With the latest release of Mayaseed this is all you need to do, your exports will be sent to a directory named *Mayaseed* in your Maya project. Of course there many customizations available in the *ms\_rendersettings\_node* but I'll leave you to explore them…
+Your exports will be sent to a directory named *Mayaseed* in your Maya project. Of course there many customizations available in the `ms_rendersettings_node`.
 
 Materials
 ---------

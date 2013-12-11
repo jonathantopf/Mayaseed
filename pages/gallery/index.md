@@ -16,6 +16,12 @@ All work in this video © BBC 2013
 Fetch
 -----
 
-Fetch is the second animated film financed by the appleseed team directed by François Gilliot based on a story by Kim Uittenhove, François Beaune and François Gilliot. The film is still in production but heres a sneak peak. 
+Fetch is the second animated film financed by the appleseed team, directed by François Gilliot and based on a story by Kim Uittenhove, François Beaune and François Gilliot. The film is still in production but heres a sneak peak. 
 
 <iframe src="//player.vimeo.com/video/66799467?title=0&amp;byline=0&amp;portrait=0&amp;color=ffffff" width="1000" height="563" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen></iframe>
+
+
+More render tests
+-----------------
+
+![James Max](/images/little guy render test 4.png)
