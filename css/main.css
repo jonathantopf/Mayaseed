@@ -101,6 +101,23 @@ blockquote {
     font-size: 12px;
 }
 
+#nav #nav_sublinks a{
+    display: block;
+    color: #666;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding-bottom: 3px;
+}
+
+#nav #nav_sublinks a:hover{
+    color: #888;
+}
+
+#nav #by_jon{
+    position: absolute;
+    bottom: 25px;
+}
+
 #content {
     background: #fff;
     position: absolute;
