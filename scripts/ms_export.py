@@ -303,7 +303,6 @@ def get_maya_scene(params):
 
 #--------------------------------------------------------------------------------------------------
 # add_scene_sample function.
-# TODO: needs mechanism to sample frames for camera and transforms on whole frame numbers for non mb scenes
 #--------------------------------------------------------------------------------------------------
 
 def add_scene_sample(m_transform, transform_blur, deform_blur, camera_blur, current_frame, start_frame, frame_sample_number, initial_sample, export_root):
