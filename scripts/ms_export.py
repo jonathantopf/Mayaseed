@@ -1726,6 +1726,7 @@ class AsScene():
         self.configurations = None
         self.assemblies = []
         self.assembly_instances = []
+        self.parameters = []
 
     def emit_xml(self, doc):
         doc.start_element('scene')
@@ -1761,6 +1762,9 @@ class AsScene():
 
         for assembly_instance in self.assembly_instances:
             assembly_instance.emit_xml(doc)
+
+        for parameter in self.parameters:
+            parameter.emit_xml(doc)
 
         doc.end_element('scene')
 
@@ -1973,6 +1977,19 @@ def translate_maya_scene(params, maya_scene, maya_environment):
 
         # begin scene object
         as_project.scene = AsScene()
+
+        # create bouding box scene parameter
+
+        bounding_box = cmds.exactWorldBoundingBox(cmds.ls(type='mesh'))
+
+        if len(bounding_box) > 1:
+            bounding_box_string = str(bounding_box[0])
+
+            for item in bounding_box[1:]:
+                bounding_box_string += ' %.15f' % item
+
+            as_project.scene.parameters.append(AsParameter('bounding_box', bounding_box_string))
+
 
         # define root assembly
         root_assembly = AsAssembly()
