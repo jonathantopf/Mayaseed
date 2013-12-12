@@ -27,10 +27,6 @@ import maya.OpenMaya as OpenMaya
 import maya.OpenMayaMPx as OpenMayaMPx
 import maya.OpenMayaRender as OpenMayaRender
 import maya.OpenMayaUI as OpenMayaUI
-import maya.cmds as cmds
-import inspect
-import os
-import os.path
 
 #--------------------------------------------------------------------------------------------------
 # ms_environment node.
