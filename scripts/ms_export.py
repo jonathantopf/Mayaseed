@@ -872,7 +872,6 @@ class MGenericMaterial():
         self.bump_multiplier = None
         self.refractive_index = None
         self.translucence = None
-        self.reflected_color = None
 
         self.textures = []
 
@@ -930,14 +929,6 @@ class MGenericMaterial():
                 self.textures.append(self.reflectivity)
             elif self.reflectivity.is_black:
                 self.reflectivity = None
-
-        if cmds.attributeQuery('reflectedColor', node=self.name, exists=True):
-            self.reflected_color = MColorConnection(self.params, self.name + '.reflectedColor')
-            if self.reflected_color.connected_node is not None:
-                self.reflected_color = m_file_from_color_connection(self.params, self.reflectivity)
-                self.textures.append(self.reflectivity)
-            elif self.reflected_color.is_black:
-                self.reflected_color = None
 
         # work out alpha / transparrency component
         if cmds.attributeQuery('transparency', node=self.name, exists=True):
@@ -2396,8 +2387,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
                         'reflectivity'     : generic_material.reflectivity,
                         'bump_map'         : generic_material.bump_map,
                         'bump_multiplier'  : generic_material.bump_multiplier,
-                        'translucence'     : generic_material.translucence,
-                        'reflected_color'  : generic_material.reflected_color}
+                        'translucence'     : generic_material.translucence}
 
     for key in material_attribs.keys():
         if material_attribs[key] is not None:
