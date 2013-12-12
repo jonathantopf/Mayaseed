@@ -33,7 +33,7 @@ import maya.OpenMayaUI as OpenMayaUI
 #--------------------------------------------------------------------------------------------------
 
 ms_physical_environment_nodeTypeName = "ms_physical_environment"
-ms_physical_environment_nodeTypeId = OpenMaya.MTypeId(0x00336)
+ms_physical_environment_nodeTypeId = OpenMaya.MTypeId(0x00337)
 
 glRenderer = OpenMayaRender.MHardwareRenderer.theRenderer()
 glFT = glRenderer.glFunctionTable()

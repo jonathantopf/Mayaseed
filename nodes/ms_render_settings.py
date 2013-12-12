@@ -34,7 +34,7 @@ import os.path
 #--------------------------------------------------------------------------------------------------
 
 ms_renderSettings_nodeTypeName = "ms_renderSettings"
-ms_renderSettings_nodeTypeId = OpenMaya.MTypeId(0x00333)
+ms_renderSettings_nodeTypeId = OpenMaya.MTypeId(0x00338)
 
 class ms_renderSettings(OpenMayaMPx.MPxNode):
     def __init__(self):
