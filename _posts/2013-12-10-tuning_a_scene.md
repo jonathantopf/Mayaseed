@@ -64,6 +64,14 @@ As a cheat one thing you can do is add an `ms_cast_indirect_light` export modifi
 ![Window optimisation - after](/images/window_optimisation_after.png)
 
 
+Delete your history!
+--------------------
+
+When mayaseed exports a frame with deformation blur or exports animation it will check to see if a mesh has deformation, if so it will export a copy of the mesh for every frame otherwise it will only export the mesh once. Unfortunately it's deceptively hard to be 100% sure that an object has no deformation in a Maya scene so when exporting animation you often end up exporting many copies of a mesh that are exactly the same which is a waste of export time and disk space. To avoid exporting geometry that has no deformation delete the history of that object.
+
+
+
+
 
 
 
