@@ -2191,7 +2191,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
 
 def construct_transform_descendents(params, root_assembly, parent_assembly, matrix_stack, maya_transform, mb_sample_number_list, non_mb_sample_number, camera_blur, transformation_blur, object_blur):
 
-    """ this function recursively builds an appleseed object hierarchy from a Maya scene """
+    """ this function recursively builds an appleseed object hierarchy from a MTransform """
 
     current_assembly = parent_assembly
     current_matrix_stack = matrix_stack + [maya_transform.matrices[non_mb_sample_number]]
