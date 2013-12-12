@@ -51,11 +51,11 @@ def initializePlugin(obj):
         import ms_appleseed_shading_node
         ms_appleseed_shading_node.initializePlugin(obj)
         
-        import ms_environment_node
-        ms_environment_node.initializePlugin(obj)
+        import ms_environment
+        ms_environment.initializePlugin(obj)
         
-        import ms_physical_environment_node
-        ms_physical_environment_node.initializePlugin(obj)
+        import ms_physical_environment
+        ms_physical_environment.initializePlugin(obj)
 
         import ms_render_settings
         ms_render_settings.initializePlugin(obj)
@@ -75,11 +75,11 @@ def uninitializePlugin(obj):
         import ms_appleseed_shading_node
         ms_appleseed_shading_node.uninitializePlugin(obj)
         
-        import ms_environment_node
-        ms_environment_node.uninitializePlugin(obj)
+        import ms_environment
+        ms_environment.uninitializePlugin(obj)
         
-        import ms_physical_environment_node
-        ms_physical_environment_node.uninitializePlugin(obj)
+        import ms_physical_environment
+        ms_physical_environment.uninitializePlugin(obj)
 
         import ms_render_settings
         ms_render_settings.uninitializePlugin(obj)
