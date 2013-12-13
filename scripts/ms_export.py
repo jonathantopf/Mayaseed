@@ -381,6 +381,7 @@ class MTransform():
         self.child_cameras = []
         self.child_meshes = []
         self.child_lights = []
+        self.child_ms_appleseed_scenes = []
         self.child_transforms = []
 
         self.has_children = False
@@ -420,6 +421,12 @@ class MTransform():
             self.has_children = True
             for camera_name in camera_names:
                 self.child_cameras.append(MCamera(params, camera_name, self))
+
+        ms_appleseed_scene_names = cmds.listRelatives(self.name, type='ms_appleseed_scene', fullPath=True)
+        if ms_appleseed_scene_names is not None:
+            self.has_children = True
+            for ms_appleseed_scene_name in ms_appleseed_scene_names:
+                self.child_ms_appleseed_scenes.append(MMsAppleseedScene(params, ms_appleseed_scene_name, self))
 
         transform_names = cmds.listRelatives(self.name, type='transform', fullPath=True)
         if transform_names is not None:
@@ -572,6 +579,20 @@ class MCamera(MTransformChild):
 
     def add_focal_distance_sample(self):
         self.focal_distance_values.append(cmds.getAttr(self.name + '.focusDistance'))
+
+
+#--------------------------------------------------------------------------------------------------
+# MMsAppleseedScene class.
+#--------------------------------------------------------------------------------------------------
+
+class MMsAppleseedScene(MTransformChild):
+
+    """ Lightweight class representing Maya ms_appleseed_scene nodes """
+
+    def __init__(self, params, ms_appleseed_scene_node_name, MTransform_object):
+        MTransformChild.__init__(self, params, ms_appleseed_scene_node_name, MTransform_object)
+
+        self.scene_filepath = cmds.getAttr(self.name + '.appleseed_file')
 
 
 #--------------------------------------------------------------------------------------------------
@@ -1556,6 +1577,8 @@ class AsAssembly():
         self.assemblies = []
         self.assembly_instances = []
 
+        self.raw_xml = ''
+
         self.instances = []
 
     def instantiate(self):
@@ -1601,6 +1624,10 @@ class AsAssembly():
 
         for assembly_instance in self.assembly_instances:
             assembly_instance.emit_xml(doc)
+
+        if not self.raw_xml == '':
+            for line in self.raw_xml.split('\n'):
+                doc.append_line(line)
 
         doc.end_element('assembly')
 
@@ -2356,6 +2383,33 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                     mesh_instance.material_assignments.append(AsObjectInstanceMaterialAssignment(maya_generic_material.name, 'back', back_as_material.name))
 
             current_assembly.object_instances.append(mesh_instance)
+
+
+        for ms_appleseed_scene in maya_transform.child_ms_appleseed_scenes:
+
+            new_assembly = AsAssembly()
+            new_assembly.name = os.path.split(ms_appleseed_scene.scene_filepath)[1]
+            new_assembly_instance = new_assembly.instantiate()
+
+            assembly_transform = AsTransform()
+            if current_matrix_stack is not []:
+                assembly_transform.matrices = current_matrix_stack
+            new_assembly_instance.transforms.append(assembly_transform)
+
+            parent_assembly.assemblies.append(new_assembly)
+            parent_assembly.assembly_instances.append(new_assembly_instance)
+
+            if os.path.exists(ms_appleseed_scene.scene_filepath):
+                path = ms_appleseed_scene.scene_filepath
+            elif os.path.exists(os.path.join(cmds.workspace(q=True, rd=True), ms_appleseed_scene.scene_filepath)):
+                path = os.path.join(cmds.workspace(q=True, rd=True), ms_appleseed_scene.scene_filepath)
+            else:
+                path = None
+
+            if path is None:
+                ms_commands.warning('{0} does not exist, skipping archive output'.format(ms_appleseed_scene.scene_filepath))
+            else:
+                new_assembly.raw_xml += ms_commands.strip_scene_xml(path, params['output_directory'], GEO_DIR, TEXTURE_DIR)
 
 
 #--------------------------------------------------------------------------------------------------
