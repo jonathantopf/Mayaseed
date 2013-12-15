@@ -1757,6 +1757,9 @@ class AsScene():
     def emit_xml(self, doc):
         doc.start_element('scene')
 
+        # for parameter in self.parameters:
+        #     parameter.emit_xml(doc)
+
         self.camera.emit_xml(doc)
 
         for color in self.colors:
@@ -1788,9 +1791,6 @@ class AsScene():
 
         for assembly_instance in self.assembly_instances:
             assembly_instance.emit_xml(doc)
-
-        for parameter in self.parameters:
-            parameter.emit_xml(doc)
 
         doc.end_element('scene')
 
