@@ -2010,7 +2010,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
 
         if len(bb) > 1:
 
-            bounding_box = cmds.exactWorldBoundingBox()
+            bounding_box = cmds.exactWorldBoundingBox(bb)
 
             bounding_box_string = str(bounding_box[0])
 
