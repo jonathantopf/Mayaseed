@@ -942,7 +942,7 @@ def selection_remove_material_export_modifier(attr):
 #--------------------------------------------------------------------------------------------------
 
 
-def move_dependency(base_name, source_path, file_dir, export_dir, geo_dir, texture_dir):
+def move_dependency(base_name, source_path, file_dir, export_dir, relative_geo_dir, relative_texture_dir):
     
     if os.path.exists(source_path):
         resolved_source_path = source_path
@@ -952,35 +952,33 @@ def move_dependency(base_name, source_path, file_dir, export_dir, geo_dir, textu
         warning('File not found: {0}'.format(source_path))
         return
 
-
-
     if os.path.splitext(resolved_source_path)[1] == '.exr':
-        dest_path = os.path.join(export_dir, texture_dir, os.path.split(resolved_source_path)[1])
+        relative_dest_path = os.path.join(texture_dir, os.path.split(resolved_source_path)[1])
     else:
-        dest_path = os.path.join(export_dir, geo_dir, os.path.split(resolved_source_path)[1])
+        relative_dest_path = os.path.join(geo_dir, os.path.split(resolved_source_path)[1])
 
-    print resolved_source_path
-
-    print dest_path
+    dest_path = os.path.join(export_dir, relative_dest_path)
 
     shutil.copy(resolved_source_path, dest_path)
     
-    return dest_path
+    return relative_dest_path
 
 
-def package_dependencies(base_name, element, file_dir, export_dir, geo_dir, texture_dir):
+def package_dependencies(base_name, element, file_dir, export_dir, relative_geo_dir, relative_texture_dir):
     for param in element.getElementsByTagName('parameter'):
         if param.getAttribute('name') == 'filename':
-            param.setAttribute('value', move_dependency(base_name, param.getAttribute('value'), file_dir, export_dir, geo_dir, texture_dir))
+            param.setAttribute('value', move_dependency(base_name, param.getAttribute('value'), file_dir, export_dir, relative_geo_dir, relative_texture_dir))
             
 def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
     base_name = os.path.split(xml_file_path)[1]
     file_dir = os.path.split(xml_file_path)[0]
 
-    geo_dir = os.path.join(export_dir, geo_dir, base_name)
-    texture_dir = os.path.join(export_dir, texture_dir, base_name)
+    relative_geo_dir = os.path.join(geo_dir, base_name)
 
-    for directory in [geo_dir, texture_dir]:
+    relative_texture_dir = os.path.join(texture_dir, base_name)
+
+
+    for directory in [relative_geo_dir, relative_texture_dir]:
         if not os.path.exists(directory):
             os.makedirs(directory)
 
@@ -994,12 +992,12 @@ def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
 
     for scene in dom.getElementsByTagName('scene'):
         for assembly in scene.getElementsByTagName('assembly'):
-            package_dependencies(base_name, assembly, file_dir, export_dir, geo_dir, texture_dir)
+            package_dependencies(base_name, assembly, file_dir, export_dir, relative_geo_dir, relative_texture_dir)
             
             stripped_xml += assembly.toprettyxml('    ', '\n')
 
         for assembly_instance in scene.getElementsByTagName('assembly_instance'):
-            package_dependencies(base_name, assembly_instance, file_dir, export_dir, geo_dir, texture_dir)
+            package_dependencies(base_name, assembly_instance, file_dir, export_dir, relative_geo_dir, relative_texture_dir)
             
             stripped_xml += assembly_instance.toprettyxml('    ', '\n')
 
