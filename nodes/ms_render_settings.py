@@ -203,7 +203,7 @@ def ms_renderSettings_nodeInitializer():
     # config ---------------------------------------------------
     # sampler
     sampler_enumAttr = OpenMaya.MFnEnumAttribute()
-    ms_renderSettings.sampler = sampler_enumAttr.create("sampler", "sampler")
+    ms_renderSettings.sampler = sampler_enumAttr.create("sampler", "sampler", 1)
     sampler_enumAttr.addField("Adaptive", 0)
     sampler_enumAttr.addField("Uniform", 1)
     ms_renderSettings.addAttribute(ms_renderSettings.sampler)
@@ -272,7 +272,7 @@ def ms_renderSettings_nodeInitializer():
 
     # pt_light_samples
     pt_light_samples_AttrFloat = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.pt_light_samples = pt_light_samples_AttrFloat.create("pt_light_samples", "pt_light_samples", OpenMaya.MFnNumericData.kFloat, 1)
+    ms_renderSettings.pt_light_samples = pt_light_samples_AttrFloat.create("pt_light_samples", "pt_light_samples", OpenMaya.MFnNumericData.kFloat, 6)
     pt_light_samples_AttrFloat.setHidden(False)
     pt_light_samples_AttrFloat.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.pt_light_samples)
