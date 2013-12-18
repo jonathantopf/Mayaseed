@@ -969,14 +969,13 @@ def package_dependencies(base_name, element, file_dir, export_dir, relative_geo_
         if param.getAttribute('name') == 'filename':
             param.setAttribute('value', move_dependency(base_name, param.getAttribute('value'), file_dir, export_dir, relative_geo_dir, relative_texture_dir))
             
+            
 def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
     base_name = os.path.split(xml_file_path)[1]
     file_dir = os.path.split(xml_file_path)[0]
 
     relative_geo_dir = os.path.join(geo_dir, base_name)
-
     relative_texture_dir = os.path.join(texture_dir, base_name)
-
 
     for directory in [relative_geo_dir, relative_texture_dir]:
         if not os.path.exists(directory):
@@ -1001,8 +1000,6 @@ def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
             
             stripped_xml += assembly_instance.toprettyxml('    ', '\n')
 
-    print stripped_xml
-
     # modify name attributes to avoid conflicts
     names_to_replace = []
     name_attribute_re = re.compile('(?<!parameter) name="(.*?)"')
@@ -1012,7 +1009,6 @@ def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
             names_to_replace.append(name)
 
     for name in names_to_replace:
-        print name
         stripped_xml = stripped_xml.replace('{0}'.format(name), '{0}_{1}'.format(base_name, name))
 
     return stripped_xml
