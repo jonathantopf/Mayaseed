@@ -953,13 +953,13 @@ def move_dependency(base_name, source_path, file_dir, export_dir, relative_geo_d
         return
 
     if os.path.splitext(resolved_source_path)[1] == '.exr':
-        relative_dest_path = os.path.join(texture_dir, os.path.split(resolved_source_path)[1])
+        relative_dest_path = os.path.join(relative_texture_dir, os.path.split(resolved_source_path)[1])
     else:
-        relative_dest_path = os.path.join(geo_dir, os.path.split(resolved_source_path)[1])
+        relative_dest_path = os.path.join(relative_geo_dir, os.path.split(resolved_source_path)[1])
 
-    dest_path = os.path.join(export_dir, relative_dest_path)
+    resolved_dest_path = os.path.join(export_dir, relative_dest_path)
 
-    shutil.copy(resolved_source_path, dest_path)
+    shutil.copy(resolved_source_path, resolved_dest_path)
     
     return relative_dest_path
 
@@ -978,8 +978,9 @@ def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
     relative_texture_dir = os.path.join(texture_dir, base_name)
 
     for directory in [relative_geo_dir, relative_texture_dir]:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+        resolved_dir = os.path.join(export_dir, directory)
+        if not os.path.exists(resolved_dir):
+            os.makedirs(resolved_dir)
 
     file = open(xml_file_path, 'r')
     data = file.read()
