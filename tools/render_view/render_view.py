@@ -127,6 +127,7 @@ class AppController():
         self.render_thread = None
         self.main_window = main_window
 
+        # tile callback methods
         self.tile_callback = TileCallback()
         self.tile_callback.post_render_methods.append(self.update_view)
         self.tile_callback.post_render_methods.append(self.main_window.viewport.update)
