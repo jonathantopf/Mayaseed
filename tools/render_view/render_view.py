@@ -115,7 +115,7 @@ class RendererController(appleseed.IRendererController):
 
 
 #----------------------------------------------------------------------------------
-# Controller
+# AppController
 #----------------------------------------------------------------------------------
 
 class AppController():
@@ -176,7 +176,6 @@ class AppController():
             for y in range(properties.tile_count_y):
                 tile = self.project.get_frame().image().tile(x, y)
                 self.update_tile(x, y, properties.tile_width, properties.tile_height, tile)
-
 
 
 #----------------------------------------------------------------------------------
@@ -246,7 +245,6 @@ class ViewportWidget(QtGui.QWidget):
         
 def map_float_to_int(float):
     return min(255, int(float * 256))
-    # return float
 
 
 #----------------------------------------------------------------------------------
