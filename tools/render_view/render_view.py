@@ -37,7 +37,6 @@ import array
 
 sys.path.append('/projects/appleseed/sandbox/bin/Ship')
 
-scene_path = '/Users/jonathantopf/Desktop/test.appleseed'
 appleseed_schema_path = '/projects/appleseed/sandbox/schemas/Project.xsd'
 
 import appleseed
