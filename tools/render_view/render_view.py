@@ -136,8 +136,10 @@ class TileCallback(appleseed.ITileCallback):
         self.post_render_tile_methods = []
         self.post_render_methods = []
 
+
     def pre_render(self, x, y, width, height):
         pass
+
 
     def post_render_tile(self, frame, tile_x, tile_y):
         for method in self.post_render_tile_methods:
@@ -158,29 +160,36 @@ class RendererController(appleseed.IRendererController):
         self.terminate = False
         self.progress_methods = []
 
+
     def __signal_handler(self, signal, frame):
         print "Ctrl+C, aborting."
         self.__abort = True
+
 
     # This method is called before rendering begins.
     def on_rendering_begin(self):
         print 'starting render'
 
+
     # This method is called after rendering has succeeded.
     def on_rendering_success(self):
         pass
+
 
     # This method is called after rendering was aborted.
     def on_rendering_abort(self):
         pass
 
+
     # This method is called before rendering a single frame.
     def on_frame_begin(self):
         pass
 
+
     # This method is called after rendering a single frame.
     def on_frame_end(self):
         pass
+
 
     def on_progress(self):
         
@@ -219,7 +228,6 @@ class AppController():
 
 
     def load_project(self, file_path):
-
         if os.path.exists(file_path):
             reader = appleseed.ProjectFileReader()
             self.project = reader.read(str(file_path), appleseed_schema_path)
@@ -228,9 +236,9 @@ class AppController():
 
             self.main_window.viewport.set_size(self.project.get_frame().image().properties().canvas_width,
                   self.project.get_frame().image().properties().canvas_height)
-
         else:
             print 'Path is not valid'
+
 
     def start_render(self):
         if self.project is not None:
@@ -242,9 +250,9 @@ class AppController():
             # Render the frame.
             self.render_thread = appleseed.RenderThread(self.renderer)
             self.render_thread.start()      
-
         else:
             print 'No project loaded'
+
 
     def stop_render(self):
         print 'Stopping render'
@@ -252,9 +260,11 @@ class AppController():
         if self.render_thread is not None:
             self.render_thread.join()
 
+
     def update_tile(self, tx, ty, w, h, tile):
         self.main_window.viewport.update_tile(tx, ty, w, h, tile, self.project.get_frame().image().properties().channel_count)
     
+
     def update_view(self):
 
         properties = self.project.get_frame().image().properties()        
@@ -275,6 +285,7 @@ class RenderView(QtGui.QWidget):
         super(RenderView, self).__init__()
         self.initUI()
 
+
     def initUI(self):
         self.width = 300
         self.height = 200
@@ -292,14 +303,17 @@ class RenderView(QtGui.QWidget):
         self.setMaximumHeight(height)
         self.setMinimumHeight(height)
 
+
     def paintEvent(self, e):
         qp = QtGui.QPainter()
         qp.begin(self)
         self.drawWidget(qp)
         qp.end()
 
+
     def drawWidget(self, qp):
         qp.drawImage(QtCore.QPoint(0,0), self.image)
+
 
     def update_tile(self, tx, ty, w, h, tile, channel_count):
 
@@ -503,6 +517,7 @@ def main():
     main_window.show()
 
     sys.exit(app.exec_())
+
 
 if __name__ == '__main__':
     main()
