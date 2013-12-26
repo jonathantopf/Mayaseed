@@ -484,19 +484,19 @@ class RenderSequenceWindow(QtGui.QMainWindow):
 
 
     def console_submit(self):
-        pass
+        self.app_controller.submit_command(self.console_in.text())
 
     
     def console_info(self, msg):
-        pass
+        self.console_out.append('<font color=#f9f9f9>{0}</font>'.format(msg))
 
 
     def console_warning(self, msg):
-        pass
+        self.console_out.append('<font color=#ffec1c>{0}</font>'.format(msg))
 
 
     def console_error(self, msg):
-        pass
+        self.console_out.append('<font color=#ff5757>{0}</font>'.format(msg))
 
 
 #----------------------------------------------------------------------------------
