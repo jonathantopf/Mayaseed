@@ -34,12 +34,95 @@ import subprocess
 import re
 import signal
 import array
+import inspect
 
 sys.path.append('/projects/appleseed/sandbox/bin/Ship')
 
-appleseed_schema_path = '/projects/appleseed/sandbox/schemas/Project.xsd'
+current_script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+
+appleseed_schema_path = os.path.join(current_script_path, 'project.xsd')
 
 import appleseed
+
+#----------------------------------------------------------------------------------
+# Utilities
+#----------------------------------------------------------------------------------
+
+def map_float_to_int(float):
+    return min(255, int(float * 256))
+
+
+#----------------------------------------------------------------------------------
+# Set style function
+#----------------------------------------------------------------------------------
+
+def set_style(app):
+    # set base style
+    app.setStyle('cleanlooks')
+    
+    palette = QtGui.QPalette()
+
+    # set palette
+    shadow     = QtGui.QColor(30, 30, 30 )
+    background = QtGui.QColor(40, 40, 40 )
+    mid        = QtGui.QColor(45 ,45, 45 )
+    mid_light  = QtGui.QColor(50 ,50 ,50 )
+    light      = QtGui.QColor(90,90,90)
+    highlight  = QtGui.QColor(120,180,200)
+    text       = QtGui.QColor(220,220,220)
+
+    palette.setBrush(QtGui.QPalette.Window, background)
+    palette.setBrush(QtGui.QPalette.WindowText, text)
+    palette.setBrush(QtGui.QPalette.Base, background)
+    palette.setBrush(QtGui.QPalette.AlternateBase, mid)  
+    palette.setBrush(QtGui.QPalette.ToolTipBase, light)  
+    palette.setBrush(QtGui.QPalette.ToolTipText, text)  
+    palette.setBrush(QtGui.QPalette.Text, text)
+    palette.setBrush(QtGui.QPalette.Button, background)
+    palette.setBrush(QtGui.QPalette.ButtonText, text)
+    palette.setBrush(QtGui.QPalette.BrightText, background)
+    palette.setBrush(QtGui.QPalette.Light, light)
+    palette.setBrush(QtGui.QPalette.Midlight, light)
+    palette.setBrush(QtGui.QPalette.Dark, background)
+    palette.setBrush(QtGui.QPalette.Mid, light)
+    palette.setBrush(QtGui.QPalette.Shadow, background)
+
+    app.setPalette(palette)
+
+    # set stylesheet
+    stylesheet = open('style.qss', 'r')
+    style = stylesheet.read()
+
+    style_replacement_patterns = [
+        ('TEXT',       text.name()),
+        ('SHADOW',     shadow.name()),
+        ('BACKGROUND', background.name()),
+        ('MID_LIGHT',  mid_light.name()),
+        ('MID',        mid.name()),
+        ('HIGHLIGHT',  highlight.name()),
+        ('LIGHT',      light.name())
+    ]
+
+    for pattern in style_replacement_patterns:
+        style = style.replace(pattern[0], pattern[1])
+
+    app.setStyleSheet(style)
+
+
+#----------------------------------------------------------------------------------
+# Appleseed scene edition functions
+#----------------------------------------------------------------------------------
+
+def update_color_entity(color_container, color_name, values, multiplier):
+
+    color = color_container.get_by_name(color_name)
+
+    params = color.get_parameters()
+    params['multiplier'] = multiplier
+
+    color_container.remove(color)
+
+    color_container.insert(appleseed.ColorEntity(color_name, params, values))
 
 
 #----------------------------------------------------------------------------------
@@ -81,11 +164,11 @@ class RendererController(appleseed.IRendererController):
 
     # This method is called before rendering begins.
     def on_rendering_begin(self):
-        print 'start render'
+        print 'starting render'
 
     # This method is called after rendering has succeeded.
     def on_rendering_success(self):
-        print 'success'
+        pass
 
     # This method is called after rendering was aborted.
     def on_rendering_abort(self):
@@ -136,6 +219,7 @@ class AppController():
 
 
     def load_project(self, file_path):
+
         if os.path.exists(file_path):
             reader = appleseed.ProjectFileReader()
             self.project = reader.read(str(file_path), appleseed_schema_path)
@@ -165,6 +249,8 @@ class AppController():
     def stop_render(self):
         print 'Stopping render'
         self.renderer_controller.terminate = True
+        if self.render_thread is not None:
+            self.render_thread.join()
 
     def update_tile(self, tx, ty, w, h, tile):
         self.main_window.viewport.update_tile(tx, ty, w, h, tile, self.project.get_frame().image().properties().channel_count)
@@ -179,14 +265,14 @@ class AppController():
 
 
 #----------------------------------------------------------------------------------
-# ViewpotWidget
+# RenderView Widget
 #----------------------------------------------------------------------------------
 
-class ViewportWidget(QtGui.QWidget):
+class RenderView(QtGui.QWidget):
 
 
     def __init__(self):      
-        super(ViewportWidget, self).__init__()
+        super(RenderView, self).__init__()
         self.initUI()
 
     def initUI(self):
@@ -243,65 +329,115 @@ class ViewportWidget(QtGui.QWidget):
         painter.drawImage(tile_start, tile_image)
 
         
-def map_float_to_int(float):
-    return min(255, int(float * 256))
+#----------------------------------------------------------------------------------
+# Initialize UI
+#----------------------------------------------------------------------------------
 
+def init_ui(window, console):
+
+    gui = {}
+    # get UI objects
+    # toolbar
+    giu['tool_bar']            = window.findChildren(QtGui.QWidget, 'tool_bar')[0]
+    giu['action_open_project'] = window.findChildren(QtGui.QAction, 'action_open_project')[0]
+    giu['action_start_render'] = window.findChildren(QtGui.QAction, 'action_start_render')[0]
+    giu['action_stop_render']  = window.findChildren(QtGui.QAction, 'action_stop_render')[0]
+    giu['action_quit']         = window.findChildren(QtGui.QAction, 'action_quit')[0]
+    giu['action_test_button']  = window.findChildren(QtGui.QAction, 'action_test')[0]
+    # render view
+    giu['render_view_layout']  = window.findChildren(QtGui.QVBoxLayout, 'render_view_layout')[0]
+    # console
+    giu['console_dock']        = window.findChildren(QtGui.QDockWidget, 'console_dock')[0]
+    giu['console_splitter']    = console.findChildren(QtGui.QSplitter, 'console_splitter')[0]
+    giu['console_in']          = console_splitter.findChildren(QtGui.QPlainTextEdit, 'console_in')[0]
+    giu['console_out']         = console_splitter.findChildren(QtGui.QTextEdit, 'console_out')[0]
+
+    # construct render_view
+    render_view_layout.addStretch()
+    giu['render_view'] = RenderView()
+    render_view_layout.addWidget(giu['render_view'])
+    render_view_layout.addStretch()
+
+    return gui
 
 #----------------------------------------------------------------------------------
 # MainWindow
 #----------------------------------------------------------------------------------
 
-class RenderSequenceWindow(QtGui.QWidget):
+class RenderSequenceWindow(QtGui.QMainWindow):
     def __init__(self):
         super(RenderSequenceWindow, self).__init__()
         self.initUI()
         self.app_controller = None
+
 
     def initUI(self):
 
         self.setGeometry(100, 100, 700, 500)
         self.setWindowTitle('Render View')
 
-        main_layout = QtGui.QVBoxLayout()
-        self.setLayout(main_layout)
 
-        # toolbar 
-        toolbar = QtGui.QWidget()
-        toolbar.setFixedHeight(40)
-        toolbar_layout = QtGui.QHBoxLayout(toolbar)
-        main_layout.addWidget(toolbar)
+        window = QtGui.QWidget()
+        self.setCentralWidget(window)
 
-        interactive_render_button = QtGui.QPushButton('start interactive render', self)
-        toolbar_layout.addWidget(interactive_render_button)
+        self.main_layout = QtGui.QVBoxLayout()
+        window.setLayout(self.main_layout)
 
-        stop_render_button = QtGui.QPushButton('stop render', self)
-        toolbar_layout.addWidget(stop_render_button)
 
-        toolbar_layout.addStretch()
+        # toolbar
+        self.toolbar = QtGui.QToolBar(self)
+        self.addToolBar(self.toolbar)
+        self.open_action = QtGui.QAction('open', self)
+        self.toolbar.addAction(self.open_action)
 
-        load_button = QtGui.QPushButton('Load', self)
-        toolbar_layout.addWidget(load_button)
+        self.start_interactive_render_action = QtGui.QAction('start interactive render', self)
+        self.toolbar.addAction(self.start_interactive_render_action)
 
-        test_button = QtGui.QPushButton('Test', self)
-        toolbar_layout.addWidget(test_button)
+        self.stop_render_action = QtGui.QAction('stop render', self)
+        self.toolbar.addAction(self.stop_render_action)
 
-        # viewport 
-        main_layout.addStretch()
+        self.test_action = QtGui.QAction('test', self)
+        self.toolbar.addAction(self.test_action)
 
-        viewport_layout = QtGui.QHBoxLayout()
-        main_layout.addLayout(viewport_layout)
+        # splitter
+        self.console_splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
+        self.main_layout.addWidget(self.console_splitter)
 
-        self.viewport = ViewportWidget()
-        viewport_layout.addWidget(self.viewport)
-        main_layout.addStretch()
+        # viewport
+        self.viewport_widget = QtGui.QWidget()
+        self.viewport_layout = QtGui.QHBoxLayout()
+        self.viewport_scroll_area = QtGui.QScrollArea()
+        self.viewport_scroll_area.setWidgetResizable(True)
+        self.viewport_scroll_area_widget = QtGui.QWidget()
+        self.viewport_scroll_area_layout = QtGui.QHBoxLayout()
+        self.viewport = RenderView()
+
+        self.console_splitter.addWidget(self.viewport_widget)    
+        self.viewport_widget.setLayout(self.viewport_layout)
+        self.viewport_layout.addWidget(self.viewport_scroll_area)
+        self.viewport_scroll_area.setWidget(self.viewport_scroll_area_widget)
+        self.viewport_scroll_area_widget.setLayout(self.viewport_scroll_area_layout)
+        self.viewport_scroll_area_layout.addStretch()
+        self.viewport_scroll_area_layout.addWidget(self.viewport)
+        self.viewport_scroll_area_layout.addStretch()
+
+        # console
+        self.console_widget = QtGui.QWidget()
+        self.console_layout = QtGui.QVBoxLayout()
+        self.console_widget.setLayout(self.console_layout)
+        self.console_in = QtGui.QLineEdit()
+        self.console_out = QtGui.QTextEdit()
+        self.console_layout.addWidget(self.console_in)
+        self.console_layout.addWidget(self.console_out)
+        self.console_splitter.addWidget(self.console_widget)
 
         # connections
-        load_button.clicked.connect(self.load_project)
-        interactive_render_button.clicked.connect(self.interactive_render)
-        stop_render_button.clicked.connect(self.stop_render)
-        test_button.clicked.connect(self.test)
+        self.open_action.triggered.connect(self.load_project)
+        self.start_interactive_render_action.triggered.connect(self.interactive_render)
+        self.stop_render_action.triggered.connect(self.stop_render)
+        self.test_action.triggered.connect(self.test)
+        self.console_in.returnPressed.connect(self.console_submit)
 
-        self.show()
 
     def load_project(self):
         file_name = QtGui.QFileDialog.getOpenFileName(self, caption="Open .appleseed file", filter="*.appleseed")
@@ -309,22 +445,44 @@ class RenderSequenceWindow(QtGui.QWidget):
         if file_name[0] != '':
             self.app_controller.load_project(file_name[0])
 
+
     def interactive_render(self):
         self.app_controller.start_render()
 
-    def test(self):
-        print 'test'
-        if self.app_controller is not None:
-            foo = self.app_controller.project.get_scene().assemblies()['assembly'].colors().get_by_name('light_radiance')
 
-            self.app_controller.project.get_scene().assemblies()['assembly'].colors().remove(foo)
+    def test(self):
+        print 'Test'
+        if self.app_controller is not None:
+            color_container = self.app_controller.project.get_scene().assemblies()['assembly'].colors()
+            self.stop_render()
+            update_color_entity(color_container, 'light_radiance', [1,0,0], 30)
+            self.interactive_render()
+
 
     def stop_render(self):
-        self.app_controller.stop_render()
+        if self.app_controller is not None:
+            self.app_controller.stop_render()
+
 
     def closeEvent(self, event):
         self.stop_render()
         event.accept()
+
+
+    def console_submit(self):
+        pass
+
+    
+    def console_info(self, msg):
+        pass
+
+
+    def console_warning(self, msg):
+        pass
+
+
+    def console_error(self, msg):
+        pass
 
 
 #----------------------------------------------------------------------------------
@@ -337,33 +495,15 @@ def main():
     # appleseed.global_logger().add_target(log_target)
 
     app = QtGui.QApplication(sys.argv)
-
-    stylesheet = open('style.qss', 'r')
-    style = stylesheet.read()
-
-    style_replacement_patterns = [
-        ('TEXT',               '#ccc'),
-        ('BACKGROUND_COLOR',   '#222'),
-        ('BACKGROUND_HILIGHT', '#333'),
-        ('BACKGROUND_HOVER',   '#444'),
-        ('BACKGROUND_PRESSED', '#aac4ce')
-    ]
-
-    for pattern in style_replacement_patterns:
-        style = style.replace(pattern[0], pattern[1])
-
-    app.setStyleSheet(style)
+    set_style(app)
 
     main_window = RenderSequenceWindow()
     app_controller = AppController(main_window)
     main_window.app_controller = app_controller
+    main_window.show()
 
     sys.exit(app.exec_())
 
 if __name__ == '__main__':
     main()
-
-
-
-
 

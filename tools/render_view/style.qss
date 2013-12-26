@@ -1,13 +1,80 @@
+QWidget#render_view {
+    background-color: SHADOW;
+}
+
+QToolTip {
+    background-color: HIGHLIGHT;
+    border: 0px;
+    padding: 2px;
+}
+
+QDockWidget {
+    border: 1px solid SHADOW;
+}
+
+QDockWidget::title {
+    border: 0px;
+    border-bottom: 1px solid SHADOW;
+    border-top: 1px solid SHADOW;
+    padding: 5px;
+}
+
+QDockWidget::close-button,
+QDockWidget::float-button
+{
+    border: 0px;
+    border-radius: 4px;
+}
+
+QDockWidget::close-button,
+QDockWidget::float-button:hover
+{
+    background-color: MID_LIGHT;
+}
 
 QWidget {
     color: TEXT;
-    background-color: BACKGROUND_COLOR;
+    background-color: BACKGROUND;
     margin: 0px;
 }
 
+QToolBar {
+    padding: 5px;
+    background-color: BACKGROUND;
+    border: 0px;
+    border-bottom: 1px solid SHADOW;
+
+}
+
+
+QToolBar::separator {
+    width: 1px;
+    background-color: SHADOW;
+    margin: 4px;
+}
+
+
+QToolButton {
+    margin-left: 2px;
+    margin-right: 2px;
+    border: 0px;
+    height: 15px;
+    border-radius: 4px;
+    background-color: MID_LIGHT;
+}
+
+QToolButton:hover {
+    background-color: LIGHT;
+}
+
+QToolButton:pressed {
+    background-color: HIGHLIGHT;
+}
+
 QPushButton {
-    background-color: BACKGROUND_HILIGHT;
+    background-color: MID;
     border-radius: 3;
+    border-width: 0px;
     padding: 3px;
     font-size: 13px;
     padding-left: 7px;
@@ -17,9 +84,13 @@ QPushButton {
 }
 
 QPushButton::hover {
-    background-color: BACKGROUND_HOVER;
+    background-color: MID_LIGHT;
 }
 
 QPushButton::pressed {
-    background-color: BACKGROUND_PRESSED;
+    background-color: LIGHT;
+}
+
+QTextEdit, QLineEdit, QPlainTextEdit{
+    background-color: MID;
 }
