@@ -7,7 +7,7 @@ tags:
 
 The `ms_render_settings` node contains most of the information on how your scene will be translated. Most attributes are self explanatory but this page is an overview of the most important ones.
 
-To create a render settings node chose `Mayaseed > Add Render Settings Node`. 
+To create a render settings node chose `mayaseed > Add Render Settings Node`. 
 
 Export Settings
 ---------------
@@ -16,19 +16,19 @@ Export Settings
 
 `Output Directory`
 
-This attribute sets where your scene will be exported to. Any occurrence of `<ProjectDir>` will be replaced with the path to your current project and `<SceneName>` will be replaces with the name of the scene being exported.
+This attribute sets where your scene will be exported to. Any occurrence of `<ProjectDir>` will be replaced with the path to your current project and `<SceneName>` will be replaced with the name of the scene being exported.
 
 `Output File`
 
-This attribute sets the name of the .appleseed scene file that will be created, `<SceneName>` will be replaced by the current scene name and `#` will be replaces with the frame number padded to 4 characters.
+This attribute sets the name of the .appleseed scene file that will be created, `<SceneName>` will be replaced by the current scene name and `#` will be replaced with the frame number padded to 4 characters.
 
 `Convert Textures to OpenExr`
 
-When turned on this attribute will cause mayaseed to convert any textures to OpenExr using the `imf_copy` utility that comes bundled with Maya. This is on by default as appleseed only reads .exr and .png files currently.
+When turned on, this attribute will cause mayaseed to convert any textures to OpenExr using the `imf_copy` utility that comes bundled with Maya. This is on by default as appleseed only reads .exr and .png files currently.
 
 `Overwrite Existing Texture Files`
 
-While this attribute is checked all textures will be re-converted for each export. In some scenes this can be a lengthily process so it can be desirable to turn this off when no textures have changed.
+While this attribute is checked, all textures will be re-converted for each export. In some scenes this can be a lengthly process, so it can be desirable to turn this off when no textures have changed.
 
 `Overwrite Existing Geometry Files`
 
