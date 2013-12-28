@@ -265,11 +265,11 @@ class AppController():
             self.render_thread = appleseed.RenderThread(self.renderer)
             self.render_thread.start()      
         else:
-            print 'No project loaded'
+            self.main_window.console_error('No project loaded')
 
 
     def stop_render(self):
-        print 'Stopping render'
+        self.main_window.console_info('Stopping render')
         self.renderer_controller.terminate = True
         if self.render_thread is not None:
             self.render_thread.join()
