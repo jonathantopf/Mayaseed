@@ -288,6 +288,32 @@ class AppController():
                 self.update_tile(x, y, properties.tile_width, properties.tile_height, tile)
 
 
+    def submit_command(self, command):
+        # try:
+        exec command
+        # except:
+        #     self.main_window.console_error('There was an error processing the command')
+
+
+    def update_color(self, assembly_path, color_name, values, multiplier):
+        if self.project is not None:
+            assembly = get_assembly(self.project.get_scene().assemblies(), assembly_path)
+            if assembly is not None:
+                color_container = assembly.colors()
+                self.stop_render()
+                update_color_entity(assembly.colors(), color_name, values, multiplier)
+                self.start_render()
+            else:
+                self.main_window.console_error('Bad assembly path')
+        else: 
+           
+            self.main_window.console_error('No project loaded')
+
+
+    def test(self):
+        print 'testing'
+
+
 #----------------------------------------------------------------------------------
 # RenderView Widget
 #----------------------------------------------------------------------------------
