@@ -240,12 +240,20 @@ class AppController():
             reader = appleseed.ProjectFileReader()
             self.project = reader.read(str(file_path), appleseed_schema_path)
 
-            print 'Loaded project:', self.project.get_name()
+            self.main_window.console_info('Loaded project: {0}'.format(self.project.get_name()))
+
+            frame_params = self.project.get_frame().get_parameters()
+
+            if (not 'pixel_format' in frame_params) or (frame_params['pixel_format'] != 'float'):
+                self.main_window.console_warning('Pixel format not supported, converting to float')
+                frame_params['pixel_format'] = 'float'
+                new_frame = appleseed.Frame('beauty', frame_params)
+                self.project.set_frame(new_frame)
 
             self.main_window.viewport.set_size(self.project.get_frame().image().properties().canvas_width,
                   self.project.get_frame().image().properties().canvas_height)
         else:
-            print 'Path is not valid'
+            self.main_window.console_error('Path is not valid')
 
 
     def start_render(self):
