@@ -32,7 +32,7 @@ While this attribute is checked, all textures will be re-converted for each expo
 
 `Overwrite Existing Geometry Files`
 
-If geometry has been deformed in your scene it is desirable to keep this attribute checked. In some cases when geometry has only been transformed rather than deformed you can turn this off to speed up the export.
+If geometry has been deformed in your scene, it is desirable to keep this attribute checked. In some cases when geometry has only been transformed rather than deformed you can turn this off to speed up the export.
 
 `Motion Samples`
 
@@ -50,7 +50,7 @@ This is where you set the camera you want to use in your export
 
 `Frame width` and `Frame Height`
 
-Sets the resolution of your render. Its worth noting that this attribute isn't integrated from the Maya render settings so you need to set the two individually.
+Sets the resolution of your render. It's worth noting that this attribute isn't integrated from the Maya render settings so you need to set the two individually.
 
 
 Environment Settings
@@ -60,15 +60,15 @@ Environment Settings
 
 `Environment`
 
-Use this attribute to select the Environment node you with to use in your export.
+Use this attribute to select the Environment node you wish to use in your export.
 
 `Render Sky`
 
-With this check box checked the sky will be rendered i your scene, otherwise the background will be rendered transparent black.
+With this check box checked, the sky will be rendered in your scene, otherwise the background will be rendered transparent black.
 
 `Scene Index Of Refraction`
 
-For refractive objects appleseed requires a bsdf to have an `in` index of refraction and an `out` index of refraction. Because of this when material auto translation happens the `in` index of refraction on the front surface will always be the `Scene Index Of Refraction` and the `out` index of refraction on the back surface will also be the `Scene Index Of Refraction`.
+For refractive objects appleseed requires a bsdf to have an `in` index of refraction and an `out` index of refraction. Because of this, when material auto translation happens, the `in` index of refraction on the front surface will always be the `Scene Index Of Refraction` and the `out` index of refraction on the back surface will also be the `Scene Index Of Refraction`.
 
 
 Camera Settings
@@ -76,7 +76,7 @@ Camera Settings
 
 `Export All Cameras As Thin Lens`
 
-In appleseed Heinlein's camera's will render slightly faster but wont show any depth of field.
+In appleseed, Heinlein's camera's will render slightly faster but wont show any depth of field.
 
 
 Configuration Settings
@@ -86,7 +86,7 @@ Configuration Settings
 
 `Sampler`
 
-Here you chose whether to render using `Uniform sampling` or `Adaptive sampling`. Uniform is usually desirable.
+Here you choose whether to render using `Uniform sampling` or `Adaptive sampling`. Uniform is usually desirable.
 
 `Pt Light Samples`
 
@@ -109,19 +109,19 @@ Advanced Settings
 
 `Profile Export` 
 
-This causes the export to run wrapped in a python CProfile function. profiling information will be printed to the script editor. 
+This causes the export to run wrapped in a python `CProfile` function. Profiling information will be printed to the script editor. 
 
 `Auto detect Alpha`
 
-This option will cause textures to have an auto detect alpha flag set in the appleseed scene meaning appleseed will guess whether to use the image luminance or alpha channel as an alpha value as an input for shading nodes.
+This option will cause textures to have an auto detect alpha flag set in the appleseed scene, meaning appleseed will guess whether to use the image luminance or alpha channel as an alpha value as an input for shading nodes.
 
 `Force Linear Texture Interpretation`
 
-mayaseed currently does not respect Maya color management, because of this its sometimes desirable to set all textures in the scene to linear space, otherwise all textures are assumed to be sRGB,
+Mayaseed currently does not respect Maya color management. Because of this, it's sometimes desirable to set all textures in the scene to linear space, otherwise all textures are assumed to be sRGB.
 
 `Force Linear Color Interpretation`
 
-mayaseed interprets color attributes as sRGB color space by default, checking this box turns the default interpretation to linear.
+Mayaseed interprets color attributes as sRGB color space by default. Cecking this box turns the default interpretation to linear.
 
 
 

@@ -93,8 +93,3 @@ Below is a set of images I created to help when creating materials in Maya. Each
 
 [![ior x Diffuse](/images/ior_diffuse.jpg)](/images/ior_diffuse.jpg)
 
-
-
-
-
-

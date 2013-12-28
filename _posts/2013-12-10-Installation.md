@@ -25,3 +25,4 @@ You then want to put that file in one of the following locations:
     Windows Vista and higher: C:\Users\<username>\Documents\maya\<maya version>\scripts (you may have My Documents instead of Documents)
     Windows XP and lower: C:\Documents and Settings\username\My Documents\maya\<maya version>\scripts
     Linux: /usr/aw/userconfig/maya/<maya version>/scripts
+    

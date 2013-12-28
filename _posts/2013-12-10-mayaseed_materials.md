@@ -21,7 +21,8 @@ Below is a typical shading network using an ms_material.
 
 ![Example shading network](/images/example_ms_shadin_network.png)
 
->Note: Maya has a limitation with render nodes that have attributes generated at runtime. This means that when you graph a node's connections you may not see the whole hierarchy. As a work-around, graph the connections of a node, then select all the connections that are shown and graph connections again. Keep doing this until you can see all the nodes in the hierarchy.
+>Note: Maya has a limitation with render nodes that have attributes generated at runtime. This means that when you graph a node's connections you may not see the whole hierarchy. As a work-around, graph the connections of a node, then select all the connections that are shown and graph connections again. K
+eep doing this until you can see all the nodes in the hierarchy.
 
 Known issues
 ------------
