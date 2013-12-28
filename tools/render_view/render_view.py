@@ -52,6 +52,14 @@ def map_float_to_int(float):
     return min(255, int(float * 256))
 
 
+def get_assembly(assembly_container, assembly_path):
+    assembly = assembly_container.get_by_name(assembly_path[0])
+    if not len(assembly_path) > 1:
+        return assembly
+    else:
+        return get_assembly(assembly.assemblies() ,assembly_path[1:])
+
+
 #----------------------------------------------------------------------------------
 # Set style function
 #----------------------------------------------------------------------------------
