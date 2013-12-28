@@ -127,9 +127,7 @@ def update_color_entity(color_container, color_name, values, multiplier):
 
     params = color.get_parameters()
     params['multiplier'] = multiplier
-
     color_container.remove(color)
-
     color_container.insert(appleseed.ColorEntity(color_name, params, values))
 
 
