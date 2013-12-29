@@ -1,6 +1,8 @@
-QWidget#render_view {
+QWidget#viewport_scroll_area {
+    border: 0px;
     background-color: SHADOW;
 }
+
 
 QToolTip {
     background-color: HIGHLIGHT;
@@ -83,14 +85,56 @@ QPushButton {
     margin-right: 2px;
 }
 
+
 QPushButton::hover {
     background-color: MID_LIGHT;
 }
+
 
 QPushButton::pressed {
     background-color: LIGHT;
 }
 
+
 QTextEdit, QLineEdit, QPlainTextEdit{
     background-color: MID;
+    border: 1px;
+    border-top: 1px solid SHADOW;
+    padding: 2px;
 }
+
+QStatusBar {
+    border: 0px;
+    border-top: 1px solid SHADOW;
+}
+
+
+
+QScrollBar {
+    border: 0px solid SHADOW;
+    background: SHADOW;
+}
+
+QScrollBar::handle{
+    background-color: LIGHT;
+    border-radius: 4px;
+    margin: 2px;
+}
+
+QScrollBar:add-page, QScrollBar:sub-page, QScrollBar:right-arrow, QScrollBar:left-arrow, QScrollBar:up-arrow, QScrollBar:down-arrow  {
+    background: SHADOW;
+    width: 0px;
+    height:0px;
+}
+
+
+QSplitter:handle  {
+    background: LIGHT;
+    border-radius: 4px;
+    width: 3px;
+    height: 3px;
+}
+ 
+
+
+

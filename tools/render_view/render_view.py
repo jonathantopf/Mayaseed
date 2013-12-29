@@ -66,7 +66,6 @@ def get_assembly(assembly_container, assembly_path):
 
 def set_style(app):
     # set base style
-    app.setStyle('cleanlooks')
     
     palette = QtGui.QPalette()
 
@@ -89,7 +88,7 @@ def set_style(app):
     palette.setBrush(QtGui.QPalette.Button, background)
     palette.setBrush(QtGui.QPalette.ButtonText, text)
     palette.setBrush(QtGui.QPalette.BrightText, background)
-    palette.setBrush(QtGui.QPalette.Light, light)
+    palette.setBrush(QtGui.QPalette.Light, background)
     palette.setBrush(QtGui.QPalette.Midlight, light)
     palette.setBrush(QtGui.QPalette.Dark, background)
     palette.setBrush(QtGui.QPalette.Mid, light)
@@ -435,6 +434,7 @@ class RenderSequenceWindow(QtGui.QMainWindow):
         self.setCentralWidget(window)
 
         self.main_layout = QtGui.QVBoxLayout()
+        self.main_layout.setContentsMargins(0,0,0,0)
         window.setLayout(self.main_layout)
 
 
@@ -460,13 +460,15 @@ class RenderSequenceWindow(QtGui.QMainWindow):
         # viewport
         self.viewport_widget = QtGui.QWidget()
         self.viewport_layout = QtGui.QHBoxLayout()
+        self.viewport_layout.setContentsMargins(0,0,0,0)
         self.viewport_scroll_area = QtGui.QScrollArea()
+        self.viewport_scroll_area.setObjectName('viewport_scroll_area')
         self.viewport_scroll_area.setWidgetResizable(True)
         self.viewport_scroll_area_widget = QtGui.QWidget()
         self.viewport_scroll_area_layout = QtGui.QHBoxLayout()
         self.viewport = RenderView()
 
-        self.console_splitter.addWidget(self.viewport_widget)    
+        self.console_splitter.addWidget(self.viewport_widget)
         self.viewport_widget.setLayout(self.viewport_layout)
         self.viewport_layout.addWidget(self.viewport_scroll_area)
         self.viewport_scroll_area.setWidget(self.viewport_scroll_area_widget)
