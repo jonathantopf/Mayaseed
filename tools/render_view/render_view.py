@@ -49,7 +49,8 @@ import appleseed
 #----------------------------------------------------------------------------------
 
 def map_float_to_int(float):
-    return min(255, int(float * 256))
+    # return min(255, int(float * 256))
+    return min(255, float * 255)
 
 
 def get_assembly(assembly_container, assembly_path):
