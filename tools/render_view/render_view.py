@@ -213,6 +213,45 @@ class RendererController(appleseed.IRendererController):
 
 
 #----------------------------------------------------------------------------------
+# TcpTonnectionThread
+#----------------------------------------------------------------------------------
+
+class TcpTonnectionThread (QtCore.QThread):
+    def __init__(self, parent, port):
+        QtCore.QThread.__init__(self, parent)
+        self.exiting = False
+
+        self.app_controller = parent
+        host_name = 'localhost'
+        socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        socket_connection.bind((host_name, port))
+        socket_connection.listen(1)
+        socket_connection.setblocking(0)
+        self.socket_connection, self.addr = socket_connection.accept()
+
+    def run(self):
+
+
+        while(True):
+            # check for shutdown flag
+            if self.exiting:
+                break
+
+            # listen for commands
+            data = self.socket_connection.recv(1024)
+            if data:
+                self.app_controller.main_window.console_info('Received_data --------------------')
+                for line in data.split('\n'):
+                    if line != '':
+                        self.app_controller.main_window.console_info(line)
+                        self.app_controller.submit_command(line)
+
+            print 'looping'
+
+        print 'cleanup'
+
+
+#----------------------------------------------------------------------------------
 # AppController
 #----------------------------------------------------------------------------------
 
