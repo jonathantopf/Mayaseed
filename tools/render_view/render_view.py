@@ -515,6 +515,8 @@ class RenderViewWindow(QtGui.QMainWindow):
 
 
     def initUI(self):
+        # keep window on top
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
         self.setGeometry(100, 100, 700, 500)
         self.setWindowTitle('Render View')
