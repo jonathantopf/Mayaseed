@@ -421,37 +421,9 @@ class RenderView(QtGui.QWidget):
         painter = QtGui.QPainter(self.image)
         painter.drawImage(tile_start, tile_image)
 
-        
 #----------------------------------------------------------------------------------
-# Initialize UI
 #----------------------------------------------------------------------------------
 
-def init_ui(window, console):
-
-    gui = {}
-    # get UI objects
-    # toolbar
-    giu['tool_bar']            = window.findChildren(QtGui.QWidget, 'tool_bar')[0]
-    giu['action_open_project'] = window.findChildren(QtGui.QAction, 'action_open_project')[0]
-    giu['action_start_render'] = window.findChildren(QtGui.QAction, 'action_start_render')[0]
-    giu['action_stop_render']  = window.findChildren(QtGui.QAction, 'action_stop_render')[0]
-    giu['action_quit']         = window.findChildren(QtGui.QAction, 'action_quit')[0]
-    giu['action_test_button']  = window.findChildren(QtGui.QAction, 'action_test')[0]
-    # render view
-    giu['render_view_layout']  = window.findChildren(QtGui.QVBoxLayout, 'render_view_layout')[0]
-    # console
-    giu['console_dock']        = window.findChildren(QtGui.QDockWidget, 'console_dock')[0]
-    giu['console_splitter']    = console.findChildren(QtGui.QSplitter, 'console_splitter')[0]
-    giu['console_in']          = console_splitter.findChildren(QtGui.QPlainTextEdit, 'console_in')[0]
-    giu['console_out']         = console_splitter.findChildren(QtGui.QTextEdit, 'console_out')[0]
-
-    # construct render_view
-    render_view_layout.addStretch()
-    giu['render_view'] = RenderView()
-    render_view_layout.addWidget(giu['render_view'])
-    render_view_layout.addStretch()
-
-    return gui
 
 #----------------------------------------------------------------------------------
 # MainWindow
