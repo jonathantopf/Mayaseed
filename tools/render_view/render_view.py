@@ -488,9 +488,9 @@ class ConnectionStatus(QtGui.QWidget):
 # MainWindow
 #----------------------------------------------------------------------------------
 
-class RenderSequenceWindow(QtGui.QMainWindow):
+class RenderViewWindow(QtGui.QMainWindow):
     def __init__(self):
-        super(RenderSequenceWindow, self).__init__()
+        super(RenderViewWindow, self).__init__()
         self.initUI()
         self.app_controller = None
 
@@ -624,7 +624,7 @@ def main():
     app = QtGui.QApplication(sys.argv)
     set_style(app)
 
-    main_window = RenderSequenceWindow()
+    main_window = RenderViewWindow()
     app_controller = AppController(main_window)
     main_window.app_controller = app_controller
     main_window.show()
