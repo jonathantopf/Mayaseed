@@ -317,6 +317,21 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.force_linear_color_interpretation = force_linear_color_interpretation_nAttr.create("force_linear_color_interpretation", "force_linear_color_interpretation", OpenMaya.MFnNumericData.kBoolean, False)
     ms_renderSettings.addAttribute(ms_renderSettings.force_linear_color_interpretation)
 
+    # optimise_assembly_heirarchy
+    optimise_assembly_heirarchy_nAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.optimise_assembly_heirarchy = optimise_assembly_heirarchy_nAttr.create("optimise_assembly_heirarchy", "optimise_assembly_heirarchy", OpenMaya.MFnNumericData.kBoolean, True)
+    ms_renderSettings.addAttribute(ms_renderSettings.optimise_assembly_heirarchy)
+
+    # generate_object_mapping
+    generate_object_mapping_nAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.generate_object_mapping = generate_object_mapping_nAttr.create("generate_object_mapping", "generate_object_mapping", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.generate_object_mapping)
+
+    # start_interactive_render_session
+    start_interactive_render_session_nAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.start_interactive_render_session = start_interactive_render_session_nAttr.create("start_interactive_render_session", "start_interactive_render_session", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.start_interactive_render_session)
+
 
 def initializePlugin(obj):
     plugin = OpenMayaMPx.MFnPlugin(obj)

@@ -163,7 +163,7 @@ def get_maya_params(render_settings_node):
     params['output_res_height'] = cmds.getAttr(render_settings_node + '.height')
     params['export_straight_alpha'] = cmds.getAttr(render_settings_node + '.export_straight_alpha')
 
-    # configuration settings.
+    # Configuration settings.
     params['sampler'] = cmds.getAttr(render_settings_node + '.sampler')
     if params['sampler'] == 0:
         params['sampler'] = 'adaptive'
@@ -193,9 +193,23 @@ def get_maya_params(render_settings_node):
         ms_commands.warning("No native obj exporter found, exporting using Python obj exporter.")
         params['obj_exporter'] = ms_export_obj.export
 
+    # Advanced settings
     params['autodetect_alpha'] = cmds.getAttr(render_settings_node + '.autodetect_alpha')
     params['force_linear_texture_interpretation'] = cmds.getAttr(render_settings_node + '.force_linear_texture_interpretation')
     params['force_linear_color_interpretation'] = cmds.getAttr(render_settings_node + '.force_linear_color_interpretation')
+
+    params['start_interactive_render_session'] = cmds.getAttr(render_settings_node + '.start_interactive_render_session')
+
+    params['generate_object_mapping'] = cmds.getAttr(render_settings_node + '.generate_object_mapping')
+    if params['start_interactive_render_session'] and not params['generate_object_mapping']:
+        ms_commands.warning('"generate_object_mapping" has been turned on as it is a requirement for interactive renders')
+        params['generate_object_mapping'] = True
+
+    params['optimise_assembly_heirarchy'] = cmds.getAttr(render_settings_node + '.optimise_assembly_heirarchy')
+    if params['start_interactive_render_session'] and params['optimise_assembly_heirarchy']:
+        ms_commands.warning('"optimise_assembly_heirarchy" has been turned off as it is a requirement for interactive renders')
+        params['optimise_assembly_heirarchy'] = False
+
     return params
 
 

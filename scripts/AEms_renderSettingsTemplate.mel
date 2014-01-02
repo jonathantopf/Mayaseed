@@ -259,6 +259,9 @@ global proc AEms_renderSettingsTemplate(string $nodeName) {
             editorTemplate -addControl "autodetect_alpha";
             editorTemplate -addControl "force_linear_texture_interpretation";
             editorTemplate -addControl "force_linear_color_interpretation";
+            editorTemplate -addControl "start_interactive_render_session";
+            editorTemplate -addControl "generate_object_mapping";
+            editorTemplate -addControl "optimise_assembly_heirarchy";
         editorTemplate -endLayout;
 
         AEdependNodeTemplate $nodeName;
