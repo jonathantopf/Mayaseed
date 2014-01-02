@@ -644,12 +644,20 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.console_out.append('<font color=#f9f9f9>{0}</font>'.format(msg))
 
 
+    def console_success(self, msg):
+        self.console_out.append('<font color=#0fce52>{0}</font>'.format(msg))
+
+
     def console_warning(self, msg):
         self.console_out.append('<font color=#ffec1c>{0}</font>'.format(msg))
 
 
     def console_error(self, msg):
         self.console_out.append('<font color=#ff5757>{0}</font>'.format(msg))
+
+
+    def console_command(self, msg):
+        self.console_out.append('<font color=#00c6ff>{0}</font>'.format(msg))
 
 
 #----------------------------------------------------------------------------------
