@@ -174,7 +174,7 @@ class RendererController(appleseed.IRendererController):
 
     # This method is called before rendering begins.
     def on_rendering_begin(self):
-        print 'starting render'
+        pass
 
 
     # This method is called after rendering has succeeded.
