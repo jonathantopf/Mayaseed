@@ -521,8 +521,6 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.stop_render_action = QtGui.QAction('stop render', self)
         self.toolbar.addAction(self.stop_render_action)
 
-        self.test_action = QtGui.QAction('test', self)
-        self.toolbar.addAction(self.test_action)
 
         # splitter
         self.console_splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
@@ -562,7 +560,6 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.open_action.triggered.connect(self.load_project)
         self.start_interactive_render_action.triggered.connect(self.interactive_render)
         self.stop_render_action.triggered.connect(self.stop_render)
-        self.test_action.triggered.connect(self.test)
         self.console_in.returnPressed.connect(self.console_submit)
 
 
@@ -575,15 +572,6 @@ class RenderViewWindow(QtGui.QMainWindow):
 
     def interactive_render(self):
         self.app_controller.start_render()
-
-
-    def test(self):
-        print 'Test'
-        if self.app_controller is not None:
-            color_container = self.app_controller.project.get_scene().assemblies()['assembly'].colors()
-            self.stop_render()
-            update_color_entity(color_container, 'light_radiance', [1,0,0], 30)
-            self.interactive_render()
 
 
     def stop_render(self):
