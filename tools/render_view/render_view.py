@@ -521,6 +521,10 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.stop_render_action = QtGui.QAction('stop render', self)
         self.toolbar.addAction(self.stop_render_action)
 
+        # status bar
+        self.status_bar = self.statusBar()
+        self.connection_status = ConnectionStatus()
+        self.status_bar.addPermanentWidget(self.connection_status)
 
         # splitter
         self.console_splitter = QtGui.QSplitter(QtCore.Qt.Vertical)
