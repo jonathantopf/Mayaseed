@@ -350,8 +350,6 @@ class AppController(QtCore.QObject):
             self.main_window.console_error('No project loaded')
 
 
-    def test(self):
-        print 'testing'
 
 
 #----------------------------------------------------------------------------------
