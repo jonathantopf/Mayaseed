@@ -2238,7 +2238,7 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
     if maya_transform.has_children and maya_transform.visibility_states[non_mb_sample_number]:
 
-        if maya_transform.is_animated and transformation_blur:
+        if (not params['optimise_assembly_heirarchy']) or (maya_transform.is_animated and transformation_blur):
             current_assembly = AsAssembly()
             current_assembly.name = maya_transform.safe_name
             parent_assembly.assemblies.append(current_assembly)
