@@ -255,8 +255,9 @@ class TcpTonnectionThread (QtCore.QThread):
 # AppController
 #----------------------------------------------------------------------------------
 
-class AppController():
+class AppController(QtCore.QObject):
     def __init__(self, main_window):
+        QtCore.QObject.__init__(self)
         self.renderer_controller = RendererController()
         self.project = None
         self.renderer = None 
