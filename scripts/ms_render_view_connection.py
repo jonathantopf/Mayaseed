@@ -45,7 +45,9 @@ def socket_open():
 
 def socket_close():
     global socket_connection
+    global client_connection
     socket_connection = None
+    client_connection = None
     print 'Connection closed'
 
 
@@ -61,6 +63,7 @@ def client_connected():
     global socket_connection
     global client_connection
     client_connection = socket_connection.nextPendingConnection()
+    client_connection.disconnected.connect(client_disconnected)
 
 
 def client_disconnected():
@@ -296,6 +299,7 @@ class ConnectionWindow(QtGui.QMainWindow):
     def server_close(self):
         socket_close()
         self.server_status_closed()
+        self.client_status_no_client()
 
 
     def server_status_open(self, port):
