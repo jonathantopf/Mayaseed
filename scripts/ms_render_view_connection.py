@@ -231,11 +231,11 @@ class ConnectionWindow(QtGui.QMainWindow):
         self.open_close_buttons_layout = QtGui.QHBoxLayout()
         self.main_layout.addLayout(self.open_close_buttons_layout)
 
-        self.connect_button = QtGui.QPushButton('Open')
-        self.open_close_buttons_layout.addWidget(self.connect_button)
+        self.open_button = QtGui.QPushButton('Open')
+        self.open_close_buttons_layout.addWidget(self.open_button)
 
-        self.disconnect_button = QtGui.QPushButton('Close')
-        self.open_close_buttons_layout.addWidget(self.disconnect_button)
+        self.close_button = QtGui.QPushButton('Close')
+        self.open_close_buttons_layout.addWidget(self.close_button)
 
         # server status 
         self.server_status_layout = QtGui.QHBoxLayout()
@@ -276,8 +276,8 @@ class ConnectionWindow(QtGui.QMainWindow):
 
         # connections
         self.maping_button.pressed.connect(self.generate_mapping)
-        self.connect_button.pressed.connect(self.server_open)
-        self.disconnect_button.pressed.connect(self.server_close)
+        self.open_button.pressed.connect(self.server_open)
+        self.close_button.pressed.connect(self.server_close)
 
 
     def generate_mapping(self):
