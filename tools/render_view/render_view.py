@@ -279,7 +279,10 @@ class AppController(QtCore.QObject):
 
         # connections
         self.tcp_socket.readyRead.connect(self.socket_read_command)
-        # self.tcpSocket.error.connect(self.displayError)
+        self.tcp_socket.connected.connect(self.socket_connected)
+        self.tcp_socket.disconnected.connect(self.socket_disconnected)
+        self.tcp_socket.error.connect(self.socket_error)
+        self.tcp_socket.error.connect(self.socket_connection_error)
 
 
     def load_project(self, file_path):
@@ -338,6 +341,7 @@ class AppController(QtCore.QObject):
 
     def submit_command(self, command):
         # try:
+        self.main_window.console_command('Received command: {0}'.format(command))
         exec command
         # except:
         #     self.main_window.console_error('There was an error processing the command')
@@ -360,6 +364,22 @@ class AppController(QtCore.QObject):
 
     def socket_connect(self, port):
         self.tcp_socket.connectToHost('localhost', port)
+        self.main_window.console_info('Connecting to: {0}'.format(port))
+
+
+    def socket_connection_error(self, socket_error):
+        if socket_error == QtNetwork.QAbstractSocket.RemoteHostClosedError:
+            pass
+        elif socket_error == QtNetwork.QAbstractSocket.HostNotFoundError:
+            self.main_window.console_error('Host not found. Please check the host name and port settings.')
+
+        elif socket_error == QtNetwork.QAbstractSocket.ConnectionRefusedError:
+            self.main_window.console_error('Connection refused by the peer.')
+
+        else:
+            self.main_window.console_error('The following error occurred: {0}.'.format(self.tcp_socket.errorString()))
+
+        self.main_window.connection_status.status_disconnected()
 
 
     def socket_disconnect(self):
@@ -369,6 +389,20 @@ class AppController(QtCore.QObject):
     def socket_read_command(self):
         data = self.tcp_socket.read(1024).data()
         self.submit_command(data)
+
+
+    def socket_connected(self):
+        self.main_window.console_success('Connecetd')
+        self.main_window.connection_status.status_connected()
+
+
+    def socket_disconnected(self):
+        self.main_window.console_info('Disconnecetd')
+        self.main_window.connection_status.status_disconnected()
+
+    def socket_error(self):
+        self.main_window.console_error('Socket error')
+
 
 
 #----------------------------------------------------------------------------------
@@ -629,10 +663,7 @@ class RenderViewWindow(QtGui.QMainWindow):
 
 
     def socket_connect(self):
-        if self.app_controller.socket_connect(int(self.port_number.text())):
-            self.connection_status.status_connected()
-        else:
-            self.connection_status.status_disconnected()
+        self.app_controller.socket_connect(int(self.port_number.text()))
 
 
     def socket_disconnect(self):
