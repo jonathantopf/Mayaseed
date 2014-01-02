@@ -36,6 +36,7 @@ import signal
 import array
 import inspect
 
+
 sys.path.append('/projects/appleseed/sandbox/bin/Ship')
 
 current_script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -320,7 +321,6 @@ class AppController(QtCore.QObject):
     
 
     def update_view(self):
-
         properties = self.project.get_frame().image().properties()        
         for x in range(properties.tile_count_x):
             for y in range(properties.tile_count_y):
@@ -357,8 +357,6 @@ class AppController(QtCore.QObject):
 #----------------------------------------------------------------------------------
 
 class RenderView(QtGui.QWidget):
-
-
     def __init__(self):      
         super(RenderView, self).__init__()
         self.initUI()
@@ -482,7 +480,6 @@ class ConnectionStatus(QtGui.QWidget):
         self.update()
         QtCore.QTimer.singleShot(10, self.status_stop_sending_data)
 
-    
 
 #----------------------------------------------------------------------------------
 # MainWindow
@@ -499,7 +496,6 @@ class RenderViewWindow(QtGui.QMainWindow):
 
         self.setGeometry(100, 100, 700, 500)
         self.setWindowTitle('Render View')
-
 
         window = QtGui.QWidget()
         self.setCentralWidget(window)
