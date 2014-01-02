@@ -421,9 +421,69 @@ class RenderView(QtGui.QWidget):
         painter = QtGui.QPainter(self.image)
         painter.drawImage(tile_start, tile_image)
 
+
 #----------------------------------------------------------------------------------
+# ConnectionStatus
 #----------------------------------------------------------------------------------
 
+class ConnectionStatus(QtGui.QWidget):
+    def __init__(self):      
+        super(ConnectionStatus, self).__init__()
+        self.m_mutex = QtCore.QMutex()
+        self.initUI()
+
+        self.connected = False
+        self.sending = False
+
+
+    def initUI(self):
+        self.width = 12
+        self.height = 12
+        self.setMaximumWidth(self.width)
+        self.setMinimumWidth(self.width)
+        self.setMaximumHeight(self.height)
+        self.setMinimumHeight(self.height)
+
+
+    def paintEvent(self, e):
+        qp = QtGui.QPainter()
+        qp.begin(self)
+        qp.setRenderHint(QtGui.QPainter.Antialiasing)
+        self.drawWidget(qp)
+        qp.end()
+
+
+    def drawWidget(self, qp):
+        pen = QtGui.QPen()
+        qp.setPen(QtCore.Qt.NoPen)
+
+        if self.sending:
+            brush = QtGui.QBrush(QtGui.QColor(255, 219, 18))
+        elif self.connected:
+            brush = QtGui.QBrush(QtGui.QColor(43, 222, 8))
+        else:
+            brush = QtGui.QBrush(QtGui.QColor(251, 58, 58))
+
+        qp.setBrush(brush)
+        qp.drawEllipse(0, 0, self.width, self.height)
+
+
+    def status_connected(self):
+        self.connected = True
+        self.update()
+
+
+    def status_disconnected(self):
+        self.connected = False
+        self.update()
+
+
+    def status_receiving_data(self):
+        self.sending = True
+        self.update()
+        QtCore.QTimer.singleShot(10, self.status_stop_sending_data)
+
+    
 
 #----------------------------------------------------------------------------------
 # MainWindow
