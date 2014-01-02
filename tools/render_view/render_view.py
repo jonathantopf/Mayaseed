@@ -28,7 +28,7 @@
 #
 
 import sys
-from PySide import QtGui, QtCore
+from PySide import QtGui, QtCore, QtNetwork
 import os
 import subprocess
 import re
@@ -273,6 +273,15 @@ class AppController(QtCore.QObject):
         self.tile_callback.post_render_tile_methods.append(self.update_tile)
         self.tile_callback.post_render_tile_methods.append(self.main_window.viewport.update)
 
+        # socket
+        self.tcp_socket = QtNetwork.QTcpSocket(self)
+        self.block_size = 0
+        self.tcp_socket = QtNetwork.QTcpSocket(self)
+
+        # connections
+        self.tcp_socket.readyRead.connect(self.socket_read_command)
+        # self.tcpSocket.error.connect(self.displayError)
+
 
     def load_project(self, file_path):
         if os.path.exists(file_path):
@@ -350,6 +359,19 @@ class AppController(QtCore.QObject):
             self.main_window.console_error('No project loaded')
 
 
+    def socket_connect(self, port):
+        print 'connecting'
+        self.tcp_socket.connectToHost('localhost', port)
+
+
+    def socket_disconnect(self):
+        print 'disconnecting'
+        self.tcp_socket.disconnectFromHost()
+
+
+    def socket_read_command(self):
+        data = self.tcp_socket.read(1024).data()
+        self.submit_command(data)
 
 
 #----------------------------------------------------------------------------------
@@ -556,11 +578,29 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.console_layout.addWidget(self.console_out)
         self.console_splitter.addWidget(self.console_widget)
 
+        self.connection_layout = QtGui.QHBoxLayout()
+        self.console_layout.addLayout(self.connection_layout)
+        self.connection_layout.addStretch()
+        self.connection_layout.addWidget(QtGui.QLabel('Port'))
+        self.port_number = QtGui.QLineEdit('10210')
+        self.port_number.setInputMask('99999')
+        self.port_number.setMaximumWidth(50)
+        self.connection_layout.addWidget(self.port_number)
+        self.connect_button = QtGui.QPushButton('Connect')
+        self.connection_layout.addWidget(self.connect_button)
+        self.disconnect_button = QtGui.QPushButton('Disconnect')
+        self.connection_layout.addWidget(self.disconnect_button)
+
+        # hide console
+        self.console_splitter.setSizes([400, 0])
+
         # connections
         self.open_action.triggered.connect(self.load_project)
         self.start_interactive_render_action.triggered.connect(self.interactive_render)
         self.stop_render_action.triggered.connect(self.stop_render)
         self.console_in.returnPressed.connect(self.console_submit)
+        self.connect_button.pressed.connect(self.socket_connect)
+        self.disconnect_button.pressed.connect(self.socket_disconnect)
 
 
     def load_project(self):
@@ -581,11 +621,24 @@ class RenderViewWindow(QtGui.QMainWindow):
 
     def closeEvent(self, event):
         self.stop_render()
+        self.socket_disconnect()
         event.accept()
 
 
     def console_submit(self):
         self.app_controller.submit_command(self.console_in.text())
+
+
+    def socket_connect(self):
+        if self.app_controller.socket_connect(int(self.port_number.text())):
+            self.connection_status.status_connected()
+        else:
+            self.connection_status.status_disconnected()
+
+
+    def socket_disconnect(self):
+        self.app_controller.socket_disconnect()
+        self.connection_status.status_disconnected()
 
     
     def console_info(self, msg):
