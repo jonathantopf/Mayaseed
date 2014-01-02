@@ -219,11 +219,9 @@ class ConnectionWindow(QtGui.QMainWindow):
             self.maping_button = QtGui.QPushButton('Generate object mapping')
 
         # mapping button
-
         self.main_layout.addWidget(self.maping_button)
 
         # open close buttons
-        
         self.line = QtGui.QFrame()
         self.line.setFrameShape(QtGui.QFrame.HLine)
         self.line.setFrameShadow(QtGui.QFrame.Sunken)
@@ -240,7 +238,6 @@ class ConnectionWindow(QtGui.QMainWindow):
         self.open_close_buttons_layout.addWidget(self.disconnect_button)
 
         # server status 
-
         self.server_status_layout = QtGui.QHBoxLayout()
         self.main_layout.addLayout(self.server_status_layout)
 
@@ -262,7 +259,6 @@ class ConnectionWindow(QtGui.QMainWindow):
         self.server_status_layout.addStretch()
 
         # client status 
-
         self.client_status_layout = QtGui.QHBoxLayout()
         self.main_layout.addLayout(self.client_status_layout)
 

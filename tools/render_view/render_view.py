@@ -230,9 +230,8 @@ class TcpTonnectionThread (QtCore.QThread):
         socket_connection.setblocking(0)
         self.socket_connection, self.addr = socket_connection.accept()
 
+
     def run(self):
-
-
         while(True):
             # check for shutdown flag
             if self.exiting:
@@ -360,12 +359,10 @@ class AppController(QtCore.QObject):
 
 
     def socket_connect(self, port):
-        print 'connecting'
         self.tcp_socket.connectToHost('localhost', port)
 
 
     def socket_disconnect(self):
-        print 'disconnecting'
         self.tcp_socket.disconnectFromHost()
 
 
