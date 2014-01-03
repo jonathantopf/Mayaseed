@@ -319,10 +319,11 @@ class AppController(QtCore.QObject):
 
 
     def stop_render(self):
-        self.main_window.console_info('Stopping render')
-        self.renderer_controller.terminate = True
         if self.render_thread is not None:
+            self.main_window.console_info('Stopping render')
+            self.renderer_controller.terminate = True
             self.render_thread.join()
+            self.render_thread = None
 
 
     def update_tile(self, tx, ty, w, h, tile):
