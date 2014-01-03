@@ -42,7 +42,6 @@ def buildMenu():
     cmds.menu('ms_menu', edit=True, deleteAllItems=True, pmc=('import ms_menu\nms_menu.buildMenu()'))
 
     # Export
-    cmds.menuItem(divider=True, parent='ms_menu')
     cmds.menuItem('menu_export', subMenu=True, label='Export', to=True, parent='ms_menu')
     for render_settings_node in cmds.ls(type='ms_renderSettings'):
         cmds.menuItem(label=render_settings_node, parent='menu_export', command=('import ms_export \nreload(ms_export)\nms_export.export("{0}")'.format(render_settings_node)))
