@@ -116,6 +116,11 @@ def buildMenu():
         command = 'import ms_commands\nms_commands.selection_remove_material_export_modifier("' + item[0] + '")'
         cmds.menuItem(label=item[0], parent='menu_remove_export_modifier', command=command)
 
+    # import appleseed scene archive
+    cmds.menuItem(divider=True, parent='ms_menu')
+
+    cmds.menuItem(label='Import appleseed scene archive', parent='ms_menu', command='import ms_commands;ms_commands.create_ms_appleseed_scene()')
+
 
     # convert materials
     cmds.menuItem(divider=True, parent='ms_menu')

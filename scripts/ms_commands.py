@@ -990,3 +990,41 @@ def strip_scene_xml(xml_file_path, export_dir):
 
     return stripped_xml
 
+
+def create_ms_appleseed_scene():
+    scene_file = cmds.fileDialog2(fm=1, okc='Import', cap='Select an appleseed scene to import', ff='*.appleseed')
+    if scene_file is not None:
+
+        scene_name = os.path.splitext(os.path.split(scene_file[0])[1])[0]
+        relative_path = os.path.relpath(scene_file[0], cmds.workspace(q=True, rd=True))
+
+        file = open(scene_file[0], 'r')
+        data = file.read()
+        file.close()
+
+        dom = parseString(data)
+
+        bounding_box = [-0.5, 0.5, -0.5, 0.5, -0.5, 0.5]
+
+        for scene in dom.getElementsByTagName('scene'):
+            for param in scene.getElementsByTagName('parameter'):
+                if param.getAttribute('name') == 'bounding_box':
+                    bounding_box_text = param.getAttribute('value')
+
+                    bounding_box = bounding_box_text.split(' ')
+
+                    for i in range(len(bounding_box)):
+                        bounding_box[i] = float(bounding_box[i])
+
+
+        new_node = cmds.createNode('ms_appleseed_scene', name=legalize_name(scene_name).replace('.', '_'))
+
+        cmds.setAttr(new_node + '.appleseed_file', relative_path, type='string')
+        cmds.setAttr(new_node + '.x_min', bounding_box[0])
+        cmds.setAttr(new_node + '.x_max', bounding_box[3])
+        cmds.setAttr(new_node + '.y_min', bounding_box[1])
+        cmds.setAttr(new_node + '.y_max', bounding_box[4])
+        cmds.setAttr(new_node + '.z_min', bounding_box[2])
+        cmds.setAttr(new_node + '.z_max', bounding_box[5])
+
+
