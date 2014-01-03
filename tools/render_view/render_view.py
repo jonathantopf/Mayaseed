@@ -63,6 +63,18 @@ def get_assembly(assembly_container, assembly_path):
 
 
 #----------------------------------------------------------------------------------
+# Appleseed scene edition functions
+#----------------------------------------------------------------------------------
+
+def update_color_entity(color_container, color_name, values, multiplier):
+    color = color_container.get_by_name(color_name)
+    params = color.get_parameters()
+    params['multiplier'] = multiplier
+    color_container.remove(color)
+    color_container.insert(appleseed.ColorEntity(color_name, params, values))
+
+
+#----------------------------------------------------------------------------------
 # Set style function
 #----------------------------------------------------------------------------------
 
@@ -116,20 +128,6 @@ def set_style(app):
         style = style.replace(pattern[0], pattern[1])
 
     app.setStyleSheet(style)
-
-
-#----------------------------------------------------------------------------------
-# Appleseed scene edition functions
-#----------------------------------------------------------------------------------
-
-def update_color_entity(color_container, color_name, values, multiplier):
-
-    color = color_container.get_by_name(color_name)
-
-    params = color.get_parameters()
-    params['multiplier'] = multiplier
-    color_container.remove(color)
-    color_container.insert(appleseed.ColorEntity(color_name, params, values))
 
 
 #----------------------------------------------------------------------------------
