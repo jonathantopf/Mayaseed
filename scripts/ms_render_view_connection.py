@@ -308,5 +308,21 @@ class ConnectionWindow(QtGui.QMainWindow):
         self.client_connection_status.status_open()
 
 
+#--------------------------------------------------------------------------------------------------
+# Render Viewer edition functions.
+#--------------------------------------------------------------------------------------------------
+
+def update_color(msg, m_plug, other_m_plug, client_data):
+    global client_connection
+    # client_data = [assembly_path, color_name]
+    if client_connection is not None:
+        node, attribute = m_plug.name().split('.')
+        normalized_color = ms_commands.normalizeRGB(cmds.getAttr(node + '.color')[0])
+
+        # update_color(self, assembly_path, color_name, values, multiplier)
+        command = 'self.update_color({0}, "{1}", [{2},{3},{4}], {5})'.format(client_data[0], client_data[1], normalized_color[0], normalized_color[1], normalized_color[2], normalized_color[3])
+        socket_send(command)
+
+
 
 
