@@ -31,6 +31,8 @@ import subprocess
 import sys
 import ms_commands
 reload(ms_commands) # hack to avoid reloading modules after each edit during dev
+import ms_render_view_connection
+reload(ms_render_view_connection)
 import ms_export_obj
 import time
 import inspect
@@ -1578,6 +1580,9 @@ class AsAssembly():
 
     def __init__(self):
         self.name = None
+
+        self.parent_assembly = None
+
         self.colors = []
         self.textures = []
         self.texture_instances = []
@@ -1599,6 +1604,12 @@ class AsAssembly():
         assembly_instance = AsAssemblyInstance(self)
         self.instances.append(assembly_instance)
         return assembly_instance
+
+    def get_path(self):
+        path = [self.name]
+        if self.parent_assembly is not None:
+            path = self.parent_assembly.get_path() + path
+        return path
 
     def emit_xml(self, doc):
         doc.start_element('assembly name="%s"' % self.name)
@@ -2240,7 +2251,8 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
         if (not params['optimise_assembly_heirarchy']) or (maya_transform.is_animated and transformation_blur):
             current_assembly = AsAssembly()
-            current_assembly.name = maya_transform.safe_name
+            current_assembly.name = str(maya_transform.safe_name)
+            current_assembly.parent_assembly = parent_assembly
             parent_assembly.assemblies.append(current_assembly)
             current_assembly_instance = current_assembly.instantiate()
             parent_assembly.assembly_instances.append(current_assembly_instance)
@@ -2271,6 +2283,9 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                 else:
                     light_color = m_color_connection_to_as_color(light.color, '_light_color')
                     current_assembly.colors.append(light_color)
+
+                if params['generate_object_mapping']:
+                    ms_render_view_connection.add_callback(light.name, ms_render_view_connection.update_color, [current_assembly.get_path(), light_color.name])
 
                 if light.model == 'areaLight':
                     
@@ -3004,6 +3019,10 @@ def export_container(render_settings_node):
     params = get_maya_params(render_settings_node)
     maya_scene, maya_environment = get_maya_scene(params)
     scene_cache_finish_time = time.time()
+
+    # if generate_object_mapping it set remove any previous callbacks
+    if params['generate_object_mapping']:
+        ms_render_view_connection.remove_callbacks()
 
     ms_commands.info('Scene cached for translation in %.2f seconds.' % (scene_cache_finish_time - export_start_time))
 
