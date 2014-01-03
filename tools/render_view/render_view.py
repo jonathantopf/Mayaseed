@@ -541,9 +541,6 @@ class RenderViewWindow(QtGui.QMainWindow):
 
 
     def initUI(self):
-        # keep window on top
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
-
         self.setGeometry(100, 100, 700, 500)
         self.setWindowTitle('Render View')
 
@@ -566,6 +563,9 @@ class RenderViewWindow(QtGui.QMainWindow):
 
         self.stop_render_action = QtGui.QAction('stop render', self)
         self.toolbar.addAction(self.stop_render_action)
+
+        self.toggle_keep_window_on_top_action = QtGui.QAction('toggle keep window on top', self)
+        self.toolbar.addAction(self.toggle_keep_window_on_top_action)
 
         # status bar
         self.status_bar = self.statusBar()
@@ -626,6 +626,8 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.open_action.triggered.connect(self.load_project)
         self.start_interactive_render_action.triggered.connect(self.interactive_render)
         self.stop_render_action.triggered.connect(self.stop_render)
+        self.toggle_keep_window_on_top_action.triggered.connect(self.toggle_keep_window_on_top)
+        # others
         self.console_in.returnPressed.connect(self.console_submit)
         self.connect_button.pressed.connect(self.socket_connect)
         self.disconnect_button.pressed.connect(self.socket_disconnect)
@@ -651,6 +653,11 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.stop_render()
         self.socket_disconnect()
         event.accept()
+
+
+    def toggle_keep_window_on_top(self):
+        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        self.show()
 
 
     def console_submit(self):
