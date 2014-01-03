@@ -570,6 +570,10 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.toggle_keep_window_on_top_action = QtGui.QAction('toggle keep window on top', self)
         self.toolbar.addAction(self.toggle_keep_window_on_top_action)
 
+        self.toggle_console_action = QtGui.QAction('toggle console', self)
+        self.toggle_console_action.setShortcut('Ctrl+Return')
+        self.toolbar.addAction(self.toggle_console_action)
+
         # status bar
         self.status_bar = self.statusBar()
         self.connection_status = ConnectionStatus()
@@ -632,6 +636,7 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.start_interactive_render_action.triggered.connect(self.interactive_render)
         self.stop_render_action.triggered.connect(self.stop_render)
         self.toggle_keep_window_on_top_action.triggered.connect(self.toggle_keep_window_on_top)
+        self.toggle_console_action.triggered.connect(self.toggle_console)
         # others
         self.console_in.returnPressed.connect(self.console_submit)
         self.connect_button.pressed.connect(self.socket_connect)
@@ -666,6 +671,14 @@ class RenderViewWindow(QtGui.QMainWindow):
     def toggle_keep_window_on_top(self):
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
         self.show()
+
+
+    def toggle_console(self):
+        if self.console_splitter.sizes()[1] == 0:
+            self.console_splitter.setSizes([400, 50])
+            self.console_in.setFocus(QtCore.Qt.OtherFocusReason)
+        else:
+            self.console_splitter.setSizes([400, 00])
 
 
     def console_submit(self):
