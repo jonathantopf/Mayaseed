@@ -37,6 +37,9 @@ import inspect
 import shutil
 import copy
 
+global previous_export
+previous_export = None
+
 #--------------------------------------------------------------------------------------------------
 # WriteXml class.
 #--------------------------------------------------------------------------------------------------
@@ -3078,6 +3081,7 @@ def export_container(render_settings_node):
     completed_message = 'Export completed in %.2f seconds, see the script editor for details.' % (export_finish_time - export_start_time)
 
     ms_commands.info(completed_message)
+
     cmds.confirmDialog(message=completed_message, button='ok')
 
 
@@ -3085,13 +3089,25 @@ def export_container(render_settings_node):
 # export function.
 #--------------------------------------------------------------------------------------------------
 
-def export(render_settings_node):
+def export(render_settings_node=None):
 
     """ This function is a wrapper for export_container so that we can profile the export easily """
+    
+    global previous_export
 
-    if cmds.getAttr(render_settings_node + '.profile_export'):
+    if render_settings_node is None:
+        if previous_export is not None:
+            resolved_render_settings_node = previous_export
+        else:
+            ms_commands.error('No previous export')
+    else:
+        resolved_render_settings_node = render_settings_node
+
+    previous_export = resolved_render_settings_node
+
+    if cmds.getAttr(resolved_render_settings_node + '.profile_export'):
         import cProfile
-        command = 'import ms_export\nms_export.export_container("' + render_settings_node + '")'
+        command = 'import ms_export\nms_export.export_container("' + resolved_render_settings_node + '")'
         cProfile.run(command)
     else:
-        export_container(render_settings_node)
+        export_container(resolved_render_settings_node)
