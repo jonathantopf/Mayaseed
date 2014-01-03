@@ -307,6 +307,7 @@ class AppController(QtCore.QObject):
 
     def start_render(self):
         if self.project is not None:
+            self.main_window.console_info('Starting render')
             self.renderer = appleseed.MasterRenderer(self.project,
                                                      self.project.configurations()['interactive'].get_inherited_parameters(),
                                                      self.renderer_controller,
