@@ -37,10 +37,6 @@ import inspect
 import shutil
 import copy
 
-INCH_TO_METER = 0.02539999983236
-GEO_DIR = '_geometry'
-TEXTURE_DIR = '_textures'
-
 #--------------------------------------------------------------------------------------------------
 # WriteXml class.
 #--------------------------------------------------------------------------------------------------
@@ -247,8 +243,8 @@ def get_maya_scene(params):
     params['output_directory'] = params['output_directory'].replace("<ProjectDir>", project_directory)
     params['output_directory'] = params['output_directory'].replace("<SceneName>", scene_basename)
 
-    ms_commands.create_dir(os.path.join(params['output_directory'], TEXTURE_DIR))
-    ms_commands.create_dir(os.path.join(params['output_directory'], GEO_DIR))
+    ms_commands.create_dir(os.path.join(params['output_directory'], ms_commands.TEXTURE_DIR))
+    ms_commands.create_dir(os.path.join(params['output_directory'], ms_commands.GEO_DIR))
 
     # get environment
     environment = None
@@ -506,7 +502,7 @@ class MMesh(MTransformChild):
         # otherwise skip export and just append a null
         if ms_commands.visible_in_hierarchy(self.transform.name):
             file_name = '%s_%i_%i.obj' % (self.safe_short_name, self.id, time)
-            output_file_path = os.path.join(GEO_DIR, file_name)
+            output_file_path = os.path.join(ms_commands.GEO_DIR, file_name)
 
             # set file path as relative value
             self.mesh_file_names.append(output_file_path)
@@ -567,10 +563,10 @@ class MCamera(MTransformChild):
         maya_film_aspect = cmds.getAttr(self.name + '.horizontalFilmAperture') / cmds.getAttr(self.name + '.verticalFilmAperture')
 
         if maya_resolution_aspect > maya_film_aspect:
-            self.film_width = float(cmds.getAttr(self.name + '.horizontalFilmAperture')) * INCH_TO_METER * 100
+            self.film_width = float(cmds.getAttr(self.name + '.horizontalFilmAperture')) * ms_commands.INCH_TO_METER * 100
             self.film_height = self.film_width / maya_resolution_aspect
         else:
-            self.film_height = float(cmds.getAttr(self.name + '.verticalFilmAperture')) * INCH_TO_METER * 100
+            self.film_height = float(cmds.getAttr(self.name + '.verticalFilmAperture')) * ms_commands.INCH_TO_METER * 100
             self.film_width = self.film_height * maya_resolution_aspect
 
     def add_matrix_sample(self):
@@ -641,12 +637,12 @@ class MFile():
         if self.node_type == 'file':
             image_name = ms_commands.get_file_texture_name(self.name, time)
         else:
-            image_name = ms_commands.convert_connection_to_image(self.source_node, self.attribute, os.path.join(export_root, TEXTURE_DIR, ('{0}_{1}.iff'.format(self.name, time))))
+            image_name = ms_commands.convert_connection_to_image(self.source_node, self.attribute, os.path.join(export_root, ms_commands.TEXTURE_DIR, ('{0}_{1}.iff'.format(self.name, time))))
 
         if self.params['convert_textures_to_exr']:
             if image_name not in self.converted_images:
                 self.converted_images.add(image_name)
-                converted_image_name = ms_commands.convert_texture_to_exr(image_name, export_root, TEXTURE_DIR, overwrite=self.params['overwrite_existing_textures'], pass_through=False)
+                converted_image_name = ms_commands.convert_texture_to_exr(image_name, export_root, ms_commands.TEXTURE_DIR, overwrite=self.params['overwrite_existing_textures'], pass_through=False)
                 self.image_file_names.append(converted_image_name)
         else:
             self.image_file_names.append(image_name)
@@ -2263,7 +2259,7 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                     # create new light mesh instance and material
                     light_mesh = AsObject()
                     light_mesh.name = light.safe_name
-                    light_mesh.file_names = AsParameter('filename', GEO_DIR + '/maya_area_light.obj')
+                    light_mesh.file_names = AsParameter('filename', ms_commands.GEO_DIR + '/maya_area_light.obj')
 
                     light_mesh_transform = AsTransform()
                     if current_matrix_stack is not []:
@@ -2997,7 +2993,7 @@ def export_container(render_settings_node):
     current_script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     obj_file_name = 'maya_area_light.obj'
     obj_source_path = os.path.join(current_script_path, obj_file_name)
-    obj_dest_path = os.path.join(params['output_directory'], GEO_DIR, obj_file_name)
+    obj_dest_path = os.path.join(params['output_directory'], ms_commands.GEO_DIR, obj_file_name)
     shutil.copy(obj_source_path, obj_dest_path)
 
     # translate maya scene
