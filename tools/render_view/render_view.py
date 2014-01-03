@@ -569,6 +569,7 @@ class RenderViewWindow(QtGui.QMainWindow):
 
         self.toggle_keep_window_on_top_action = QtGui.QAction('toggle keep window on top', self)
         self.toolbar.addAction(self.toggle_keep_window_on_top_action)
+        self.window_is_on_top = False
 
         self.toggle_console_action = QtGui.QAction('toggle console', self)
         self.toggle_console_action.setShortcut('Ctrl+Return')
@@ -669,7 +670,13 @@ class RenderViewWindow(QtGui.QMainWindow):
 
 
     def toggle_keep_window_on_top(self):
-        self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
+        if self.window_is_on_top:
+            self.setWindowFlags(self.windowFlags() & ~QtCore.Qt.WindowStaysOnTopHint)
+            self.window_is_on_top  = False
+        else:
+            self.setWindowFlags(self.windowFlags() | QtCore.Qt.WindowStaysOnTopHint)
+            self.window_is_on_top = True
+
         self.show()
 
 
