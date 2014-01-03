@@ -354,7 +354,6 @@ class AppController(QtCore.QObject):
             else:
                 self.main_window.console_error('Bad assembly path')
         else: 
-           
             self.main_window.console_error('No project loaded')
 
 
@@ -552,7 +551,6 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.main_layout.setContentsMargins(0,0,0,0)
         window.setLayout(self.main_layout)
 
-
         # toolbar
         self.toolbar = QtGui.QToolBar(self)
         self.addToolBar(self.toolbar)
@@ -625,6 +623,7 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.console_splitter.setSizes([400, 0])
 
         # connections
+        # toolbar
         self.open_action.triggered.connect(self.load_project)
         self.start_interactive_render_action.triggered.connect(self.interactive_render)
         self.stop_render_action.triggered.connect(self.stop_render)
