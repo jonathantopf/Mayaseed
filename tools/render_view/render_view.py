@@ -635,7 +635,10 @@ class RenderViewWindow(QtGui.QMainWindow):
 
 
     def load_project(self):
-        file_name = QtGui.QFileDialog.getOpenFileName(self, caption="Open .appleseed file", filter="*.appleseed")
+        dialog = QtGui.QFileDialog(self)
+        dialog.setFileMode(QtGui.QFileDialog.AnyFile)
+        dialog.setNameFilter("*.appleseed")
+        file_name = dialog.getOpenFileName()
 
         if file_name[0] != '':
             self.app_controller.load_project(file_name[0])
