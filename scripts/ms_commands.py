@@ -946,46 +946,11 @@ def selection_remove_material_export_modifier(attr):
 # Repackage referenced appleseed file.
 #--------------------------------------------------------------------------------------------------
 
-
-def move_dependency(base_name, source_path, file_dir, export_dir, relative_geo_dir, relative_texture_dir):
-    
-    if os.path.exists(source_path):
-        resolved_source_path = source_path
-    elif os.path.exists(os.path.join(file_dir, source_path)):
-        resolved_source_path = os.path.join(file_dir, source_path)
-    else:
-        warning('File not found: {0}'.format(source_path))
-        return
-
-    if os.path.splitext(resolved_source_path)[1] == '.exr':
-        relative_dest_path = os.path.join(relative_texture_dir, os.path.split(resolved_source_path)[1])
-    else:
-        relative_dest_path = os.path.join(relative_geo_dir, os.path.split(resolved_source_path)[1])
-
-    resolved_dest_path = os.path.join(export_dir, relative_dest_path)
-
-    shutil.copy(resolved_source_path, resolved_dest_path)
-    
-    return relative_dest_path
-
-
-def package_dependencies(base_name, element, file_dir, export_dir, relative_geo_dir, relative_texture_dir):
-    for param in element.getElementsByTagName('parameter'):
-        if param.getAttribute('name') == 'filename':
-            param.setAttribute('value', move_dependency(base_name, param.getAttribute('value'), file_dir, export_dir, relative_geo_dir, relative_texture_dir))
-            
-            
-def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
+def strip_scene_xml(xml_file_path, export_dir):
     base_name = os.path.split(xml_file_path)[1]
     file_dir = os.path.split(xml_file_path)[0]
 
-    relative_geo_dir = os.path.join(geo_dir, base_name)
-    relative_texture_dir = os.path.join(texture_dir, base_name)
-
-    for directory in [relative_geo_dir, relative_texture_dir]:
-        resolved_dir = os.path.join(export_dir, directory)
-        if not os.path.exists(resolved_dir):
-            os.makedirs(resolved_dir)
+    archive_dir = os.path.join(REFERENCED_SCENES, base_name)
 
     file = open(xml_file_path, 'r')
     data = file.read()
@@ -993,29 +958,35 @@ def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
 
     dom = parseString(data)
 
+    # source and destinations for copied files are stored in a dict with the 
+    # source as the key to avoid wasting time copying the file many times
+    file_source_dest_pairs = {}
+
     stripped_xml = ''
 
     for scene in dom.getElementsByTagName('scene'):
-        for assembly in scene.getElementsByTagName('assembly'):
-            package_dependencies(base_name, assembly, file_dir, export_dir, relative_geo_dir, relative_texture_dir)
-            
-            stripped_xml += assembly.toprettyxml('    ', '\n')
+        for param in scene.getElementsByTagName('parameter'):
+            if param.getAttribute('name') == 'filename':
+                source = param.getAttribute('value')
 
-        for assembly_instance in scene.getElementsByTagName('assembly_instance'):
-            package_dependencies(base_name, assembly_instance, file_dir, export_dir, relative_geo_dir, relative_texture_dir)
-            
-            stripped_xml += assembly_instance.toprettyxml('    ', '\n')
+                if not os.path.isabs(source):
+                    dest = os.path.join(archive_dir, source)
+                    param.setAttribute('value', dest)
+                    file_source_dest_pairs[os.path.join(file_dir, source)] = os.path.join(export_dir, dest)
 
-    # modify name attributes to avoid conflicts
-    names_to_replace = []
-    name_attribute_re = re.compile('(?<!parameter) name="(.*?)"')
 
-    for name in name_attribute_re.findall(stripped_xml):
-        if not name in names_to_replace:
-            names_to_replace.append(name)
+        for element in scene.childNodes:
+            if element.__class__.__name__ == 'Element':
+                if element.tagName == 'assembly' or element.tagName == 'assembly_instance':
+                    stripped_xml += element.toxml()
 
-    for name in names_to_replace:
-        stripped_xml = stripped_xml.replace('{0}'.format(name), '{0}_{1}'.format(base_name, name))
+
+    for key in file_source_dest_pairs.keys():
+        dest = os.path.split(file_source_dest_pairs[key])[0]
+        if not os.path.exists(dest):
+            os.makedirs(dest)
+
+        shutil.copy(key, file_source_dest_pairs[key])
 
     return stripped_xml
 
