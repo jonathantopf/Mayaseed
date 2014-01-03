@@ -10,8 +10,8 @@ import socket
 # module variables
 #----------------------------------------------------------------------------------
 
-global object_mapping
-object_mapping = []
+global callbacks
+callbacks = []
 
 global socket_connection
 socket_connection = None
@@ -73,34 +73,17 @@ def client_disconnected():
 
 
 #----------------------------------------------------------------------------------
-# callback functions
-#----------------------------------------------------------------------------------
-
-def update_color(msg, mplug, other_mplug, client_data):
-    global connection
-    if connection is not None:
-        # update_color(self, assembly_path, color_name, values, multiplier)
-
-        command = 'self.update_color({0}, {1}, {2}, {3})'
-
-
-def update_transform(msg, mplug, other_mplug, client_data):
-    global connection
-    if connection is not None:
-        pass
-
-
-#----------------------------------------------------------------------------------
-# add/remove callbacks functions
+# add/remove callback functions
 #----------------------------------------------------------------------------------
 
 def add_callback(object_name, callback, client_data):
-
+    global callbacks
     s_list = om.MSelectionList()
     s_list.add(object_name)
     m_object = om.MObject()
-    s_list.getDependNode(0, m_object)    
-    return om.MNodeMessage.addAttributeChangedCallback(m_object, callback, client_data)
+    s_list.getDependNode(0, m_object)   
+    print 'adding callback to', object_name 
+    callbacks.append(om.MNodeMessage.addAttributeChangedCallback(m_object, callback, client_data))
     
 
 def remove_callback(callback):
@@ -108,11 +91,11 @@ def remove_callback(callback):
 
 
 def remove_callbacks():
-    global object_mapping
-    for callback in object_mapping:
+    global callbacks
+    for callback in callbacks:
         removeCallback(callback)
 
-    object_mapping = []
+    callbacks = []
 
 
 #----------------------------------------------------------------------------------
@@ -216,7 +199,7 @@ class ConnectionWindow(QtGui.QMainWindow):
         self.setCentralWidget(self.window)
         self.window.setLayout(self.main_layout)
 
-        if len(object_mapping) != 0:
+        if len(callbacks) != 0:
             self.maping_button = QtGui.QPushButton('Re-generate object mapping')
         else:
             self.maping_button = QtGui.QPushButton('Generate object mapping')
