@@ -202,10 +202,10 @@ def get_maya_params(render_settings_node):
 
     params['start_interactive_render_session'] = cmds.getAttr(render_settings_node + '.start_interactive_render_session')
 
-    params['generate_object_mapping'] = cmds.getAttr(render_settings_node + '.generate_object_mapping')
-    if params['start_interactive_render_session'] and not params['generate_object_mapping']:
-        ms_commands.warning('"generate_object_mapping" has been turned on as it is a requirement for interactive renders')
-        params['generate_object_mapping'] = True
+    params['attach_render_view_callbacks'] = cmds.getAttr(render_settings_node + '.attach_render_view_callbacks')
+    if params['start_interactive_render_session'] and not params['attach_render_view_callbacks']:
+        ms_commands.warning('"attach_render_view_callbacks" has been turned on as it is a requirement for interactive renders')
+        params['attach_render_view_callbacks'] = True
 
     params['optimise_assembly_heirarchy'] = cmds.getAttr(render_settings_node + '.optimise_assembly_heirarchy')
     if params['start_interactive_render_session'] and params['optimise_assembly_heirarchy']:
@@ -2284,7 +2284,7 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                     light_color = m_color_connection_to_as_color(light.color, '_light_color')
                     current_assembly.colors.append(light_color)
 
-                if params['generate_object_mapping']:
+                if params['attach_render_view_callbacks']:
                     ms_render_view_connection.add_callback(light.name, ms_render_view_connection.update_color, [current_assembly.get_path(), light_color.name])
 
                 if light.model == 'areaLight':
@@ -3020,8 +3020,8 @@ def export_container(render_settings_node):
     maya_scene, maya_environment = get_maya_scene(params)
     scene_cache_finish_time = time.time()
 
-    # if generate_object_mapping it set remove any previous callbacks
-    if params['generate_object_mapping']:
+    # if attach_render_view_callbacks it set remove any previous callbacks
+    if params['attach_render_view_callbacks']:
         ms_render_view_connection.remove_callbacks()
 
     ms_commands.info('Scene cached for translation in %.2f seconds.' % (scene_cache_finish_time - export_start_time))

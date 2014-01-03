@@ -322,10 +322,10 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.optimise_assembly_heirarchy = optimise_assembly_heirarchy_nAttr.create("optimise_assembly_heirarchy", "optimise_assembly_heirarchy", OpenMaya.MFnNumericData.kBoolean, True)
     ms_renderSettings.addAttribute(ms_renderSettings.optimise_assembly_heirarchy)
 
-    # generate_object_mapping
-    generate_object_mapping_nAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.generate_object_mapping = generate_object_mapping_nAttr.create("generate_object_mapping", "generate_object_mapping", OpenMaya.MFnNumericData.kBoolean, False)
-    ms_renderSettings.addAttribute(ms_renderSettings.generate_object_mapping)
+    # attach_render_view_callbacks
+    attach_render_view_callbacks_nAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.attach_render_view_callbacks = attach_render_view_callbacks_nAttr.create("attach_render_view_callbacks", "attach_render_view_callbacks", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.attach_render_view_callbacks)
 
     # start_interactive_render_session
     start_interactive_render_session_nAttr = OpenMaya.MFnNumericAttribute()
