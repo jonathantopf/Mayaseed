@@ -1787,8 +1787,8 @@ class AsScene():
     def emit_xml(self, doc):
         doc.start_element('scene')
 
-        # for parameter in self.parameters:
-        #     parameter.emit_xml(doc)
+        for parameter in self.parameters:
+            parameter.emit_xml(doc)
 
         self.camera.emit_xml(doc)
 
@@ -2037,7 +2037,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         # create bouding box scene parameter
 
         bb = cmds.ls(type='mesh')
-        if len(bb) > 1:
+        if len(bb) > 0:
             bounding_box = cmds.exactWorldBoundingBox(bb)
             bounding_box_string = str(bounding_box[0])
             for item in bounding_box[1:]:
