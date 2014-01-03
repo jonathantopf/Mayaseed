@@ -603,6 +603,7 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.console_widget.setLayout(self.console_layout)
         self.console_in = QtGui.QLineEdit()
         self.console_out = QtGui.QTextEdit()
+        self.console_out.setLineWrapMode(QtGui.QTextEdit.NoWrap)
         self.console_layout.addWidget(self.console_in)
         self.console_layout.addWidget(self.console_out)
         self.console_splitter.addWidget(self.console_widget)
