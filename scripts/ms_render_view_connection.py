@@ -320,7 +320,7 @@ def update_color(msg, m_plug, other_m_plug, client_data):
         normalized_color = ms_commands.normalizeRGB(cmds.getAttr(node + '.color')[0])
 
         # update_color(self, assembly_path, color_name, values, multiplier)
-        command = 'self.update_color({0}, "{1}", [{2},{3},{4}], {5})'.format(client_data[0], client_data[1], normalized_color[0], normalized_color[1], normalized_color[2], normalized_color[3])
+        command = 'self.update_color({0}, "{1}", [{2},{3},{4}], {5})\n'.format(client_data[0], client_data[1], normalized_color[0], normalized_color[1], normalized_color[2], normalized_color[3])
         socket_send(command)
 
 
