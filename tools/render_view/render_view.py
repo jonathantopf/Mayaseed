@@ -556,12 +556,15 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.toolbar = QtGui.QToolBar(self)
         self.addToolBar(self.toolbar)
         self.open_action = QtGui.QAction('open', self)
+        self.open_action.setShortcut('Ctrl+O')
         self.toolbar.addAction(self.open_action)
 
         self.start_interactive_render_action = QtGui.QAction('start interactive render', self)
+        self.start_interactive_render_action.setShortcut('F5')
         self.toolbar.addAction(self.start_interactive_render_action)
 
         self.stop_render_action = QtGui.QAction('stop render', self)
+        self.stop_render_action.setShortcut('Shift+F5')
         self.toolbar.addAction(self.stop_render_action)
 
         self.toggle_keep_window_on_top_action = QtGui.QAction('toggle keep window on top', self)
