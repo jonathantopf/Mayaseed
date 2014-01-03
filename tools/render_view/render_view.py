@@ -285,6 +285,7 @@ class AppController(QtCore.QObject):
 
     def load_project(self, file_path):
         if os.path.exists(file_path):
+            self.stop_render()
             reader = appleseed.ProjectFileReader()
             self.project = reader.read(str(file_path), appleseed_schema_path)
 
