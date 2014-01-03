@@ -338,11 +338,7 @@ class AppController(QtCore.QObject):
 
 
     def submit_command(self, command):
-        # try:
-        self.main_window.console_command('Received command: {0}'.format(command))
         exec command
-        # except:
-        #     self.main_window.console_error('There was an error processing the command')
 
 
     def update_color(self, assembly_path, color_name, values, multiplier):
