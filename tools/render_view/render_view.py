@@ -740,6 +740,7 @@ def main():
     app_controller = AppController(main_window)
     main_window.app_controller = app_controller
     main_window.show()
+    main_window.raise_()
 
     sys.exit(app.exec_())
 
