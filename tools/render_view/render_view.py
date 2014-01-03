@@ -238,11 +238,14 @@ class TcpTonnectionThread (QtCore.QThread):
             # listen for commands
             data = self.socket_connection.recv(4096)
             if data:
-                self.app_controller.main_window.console_info('Received_data --------------------')
-                for line in data.split('\n'):
-                    if line != '':
-                        self.app_controller.main_window.console_info(line)
-                        self.app_controller.submit_command(line)
+                if not data[-1] == '\n':
+                    self.app_controller.main_window.console_error('Received incomplete command')
+                else:
+                    self.app_controller.main_window.console_info('Received_data --------------------')
+                    for line in data.split('\n'):
+                        if line != '':
+                            self.app_controller.main_window.console_info(line)
+                            self.app_controller.submit_command(line)
 
             print 'looping'
 
