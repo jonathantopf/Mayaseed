@@ -26,6 +26,7 @@ import maya.mel
 import maya.utils as mu
 import __main__ 
 import ms_commands
+import ms_export
 import os
 
 def createMenu():
@@ -42,6 +43,10 @@ def buildMenu():
     cmds.menu('ms_menu', edit=True, deleteAllItems=True, pmc=('import ms_menu\nms_menu.buildMenu()'))
 
     # Export
+    if ms_export.previous_export is not None and cmds.objExists(ms_export.previous_export):
+        cmds.menuItem(label='Re-export {0}'.format(ms_export.previous_export), parent='ms_menu', command=('import ms_export\nms_export.export(None)'))
+        cmds.menuItem(divider=True, parent='ms_menu')
+
     cmds.menuItem('menu_export', subMenu=True, label='Export', to=True, parent='ms_menu')
     for render_settings_node in cmds.ls(type='ms_renderSettings'):
         cmds.menuItem(label=render_settings_node, parent='menu_export', command=('import ms_export \nreload(ms_export)\nms_export.export("{0}")'.format(render_settings_node)))
