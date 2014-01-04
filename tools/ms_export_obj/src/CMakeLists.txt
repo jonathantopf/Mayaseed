@@ -28,7 +28,6 @@ project(ms_export_obj)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake/Modules)
 find_package(Maya REQUIRED)
 add_definitions(-D_BOOL)
-
 include_directories(${MAYA_INCLUDE_DIR})
 
 add_library(ms_export_obj SHARED ms_export_obj.cpp)
