@@ -46,7 +46,7 @@ def ms_renderSettings_nodeCreator():
 def ms_renderSettings_nodeInitializer():
     # define attributes
     # output directory
-    output_dir_string = OpenMaya.MFnStringData().create(os.path.join("<ProjectDir>Mayaseed", "<SceneName>"))
+    output_dir_string = OpenMaya.MFnStringData().create(os.path.join("<ProjectDir>mayaseed", "<SceneName>"))
     output_dir_Attr = OpenMaya.MFnTypedAttribute()
     ms_renderSettings.output_dir = output_dir_Attr.create("output_directory", "out_dir", OpenMaya.MFnData.kString, output_dir_string)
     ms_renderSettings.addAttribute(ms_renderSettings.output_dir)

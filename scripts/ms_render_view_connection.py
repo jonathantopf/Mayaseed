@@ -7,23 +7,6 @@ import socket
 
 
 #----------------------------------------------------------------------------------
-# module variables
-#----------------------------------------------------------------------------------
-
-global callbacks
-callbacks = []
-
-global socket_connection
-socket_connection = None
-
-global client_connection
-client_connection = None
-
-global window
-window = None
-
-
-#----------------------------------------------------------------------------------
 # tcp functions
 #----------------------------------------------------------------------------------
 
@@ -180,9 +163,6 @@ class ConnectionWindow(QtGui.QMainWindow):
         global socket_connection
         self.socket_connection = socket_connection
 
-        global window
-        window = self
-
         # keep window on top
         self.setWindowFlags(QtCore.Qt.WindowStaysOnTopHint)
 
@@ -240,6 +220,7 @@ class ConnectionWindow(QtGui.QMainWindow):
         if self.socket_connection is None:
             self.server_status_closed()
         else:
+            print self.socket_connection.localPort()
             self.server_status_open()
 
         self.server_status_layout.addStretch()
@@ -323,6 +304,22 @@ def update_color(msg, m_plug, other_m_plug, client_data):
         command = 'self.update_color({0}, "{1}", [{2},{3},{4}], {5})\n'.format(client_data[0], client_data[1], normalized_color[0], normalized_color[1], normalized_color[2], normalized_color[3])
         socket_send(command)
 
+
+#----------------------------------------------------------------------------------
+# module variables
+#----------------------------------------------------------------------------------
+
+global callbacks
+callbacks = []
+
+global socket_connection
+socket_connection = None
+
+global client_connection
+client_connection = None
+
+global window
+window = ConnectionWindow()
 
 
 

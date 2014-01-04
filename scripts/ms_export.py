@@ -39,9 +39,8 @@ import inspect
 import shutil
 import copy
 
-INCH_TO_METER = 0.02539999983236
-GEO_DIR = '_geometry'
-TEXTURE_DIR = '_textures'
+global previous_export
+previous_export = None
 
 #--------------------------------------------------------------------------------------------------
 # WriteXml class.
@@ -263,8 +262,8 @@ def get_maya_scene(params):
     params['output_directory'] = params['output_directory'].replace("<ProjectDir>", project_directory)
     params['output_directory'] = params['output_directory'].replace("<SceneName>", scene_basename)
 
-    ms_commands.create_dir(os.path.join(params['output_directory'], TEXTURE_DIR))
-    ms_commands.create_dir(os.path.join(params['output_directory'], GEO_DIR))
+    ms_commands.create_dir(os.path.join(params['output_directory'], ms_commands.TEXTURE_DIR))
+    ms_commands.create_dir(os.path.join(params['output_directory'], ms_commands.GEO_DIR))
 
     # get environment
     environment = None
@@ -398,6 +397,7 @@ class MTransform():
         self.child_meshes = []
         self.child_lights = []
         self.child_ms_appleseed_scenes = []
+        self.child_ms_appleseed_scene_instances = []
         self.child_transforms = []
 
         self.has_children = False
@@ -463,6 +463,23 @@ class MTransform():
 # MTransformChild class.
 #--------------------------------------------------------------------------------------------------
 
+def get_ms_appleseed_scene_from_heirarchy(ms_appleseed_scene_name, transform):
+    for ms_appleseed_scene in transform.child_ms_appleseed_scenes:
+        if ms_appleseed_scene.name == ms_appleseed_scene_name:
+            return ms_appleseed_scene
+
+    for chlid_tranform in transform.child_transforms:
+        ms_appleseed_scene_in_heirarchy = get_ms_appleseed_scene_from_heirarchy()
+        if ms_appleseed_scene_in_heirarchy is not None:
+            return ms_appleseed_scene_in_heirarchy
+
+    return None
+
+
+#--------------------------------------------------------------------------------------------------
+# MTransformChild class.
+#--------------------------------------------------------------------------------------------------
+
 class MTransformChild():
 
     """ Base class for all classes representing Maya scene entities """
@@ -490,6 +507,7 @@ class MMesh(MTransformChild):
 
     """ Lightweight class representing Maya mesh data """
 
+    # because fill path names of geo can be too long for a file name we use the short name plus a counter
     object_counter = 1
 
     def __init__(self, params, maya_mesh_name, MTransform_object):
@@ -522,7 +540,7 @@ class MMesh(MTransformChild):
         # otherwise skip export and just append a null
         if ms_commands.visible_in_hierarchy(self.transform.name):
             file_name = '%s_%i_%i.obj' % (self.safe_short_name, self.id, time)
-            output_file_path = os.path.join(GEO_DIR, file_name)
+            output_file_path = os.path.join(ms_commands.GEO_DIR, file_name)
 
             # set file path as relative value
             self.mesh_file_names.append(output_file_path)
@@ -583,10 +601,10 @@ class MCamera(MTransformChild):
         maya_film_aspect = cmds.getAttr(self.name + '.horizontalFilmAperture') / cmds.getAttr(self.name + '.verticalFilmAperture')
 
         if maya_resolution_aspect > maya_film_aspect:
-            self.film_width = float(cmds.getAttr(self.name + '.horizontalFilmAperture')) * INCH_TO_METER * 100
+            self.film_width = float(cmds.getAttr(self.name + '.horizontalFilmAperture')) * ms_commands.INCH_TO_METER * 100
             self.film_height = self.film_width / maya_resolution_aspect
         else:
-            self.film_height = float(cmds.getAttr(self.name + '.verticalFilmAperture')) * INCH_TO_METER * 100
+            self.film_height = float(cmds.getAttr(self.name + '.verticalFilmAperture')) * ms_commands.INCH_TO_METER * 100
             self.film_width = self.film_height * maya_resolution_aspect
 
     def add_matrix_sample(self):
@@ -609,6 +627,21 @@ class MMsAppleseedScene(MTransformChild):
         MTransformChild.__init__(self, params, ms_appleseed_scene_node_name, MTransform_object)
 
         self.scene_filepath = cmds.getAttr(self.name + '.appleseed_file')
+
+
+#--------------------------------------------------------------------------------------------------
+# MMsAppleseedSceneInstance class.
+#--------------------------------------------------------------------------------------------------
+
+class MMsAppleseedSceneInstance(MTransformChild):
+
+    """ Lightweight class representing an instance of a Maya ms_appleseed_scene node """
+
+    def __init__(self, params, ms_appleseed_scene_node_name, MTransform_object, original):
+        MTransformChild.__init__(self, params, ms_appleseed_scene_node_name, MTransform_object)
+
+        self.original = original
+
 
 
 #--------------------------------------------------------------------------------------------------
@@ -657,12 +690,12 @@ class MFile():
         if self.node_type == 'file':
             image_name = ms_commands.get_file_texture_name(self.name, time)
         else:
-            image_name = ms_commands.convert_connection_to_image(self.source_node, self.attribute, os.path.join(export_root, TEXTURE_DIR, ('{0}_{1}.iff'.format(self.name, time))))
+            image_name = ms_commands.convert_connection_to_image(self.source_node, self.attribute, os.path.join(export_root, ms_commands.TEXTURE_DIR, ('{0}_{1}.iff'.format(self.name, time))))
 
         if self.params['convert_textures_to_exr']:
             if image_name not in self.converted_images:
                 self.converted_images.add(image_name)
-                converted_image_name = ms_commands.convert_texture_to_exr(image_name, export_root, TEXTURE_DIR, overwrite=self.params['overwrite_existing_textures'], pass_through=False)
+                converted_image_name = ms_commands.convert_texture_to_exr(image_name, export_root, ms_commands.TEXTURE_DIR, overwrite=self.params['overwrite_existing_textures'], pass_through=False)
                 self.image_file_names.append(converted_image_name)
         else:
             self.image_file_names.append(image_name)
@@ -1578,7 +1611,8 @@ class AsAssembly():
 
     """ Class representing appleseed Assembly entity """
 
-    def __init__(self):
+    def __init__(self, parent_assembly):
+        self.parent_assembly = parent_assembly
         self.name = None
 
         self.parent_assembly = None
@@ -1782,8 +1816,8 @@ class AsScene():
     def emit_xml(self, doc):
         doc.start_element('scene')
 
-        # for parameter in self.parameters:
-        #     parameter.emit_xml(doc)
+        for parameter in self.parameters:
+            parameter.emit_xml(doc)
 
         self.camera.emit_xml(doc)
 
@@ -2032,7 +2066,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         # create bouding box scene parameter
 
         bb = cmds.ls(type='mesh')
-        if len(bb) > 1:
+        if len(bb) > 0:
             bounding_box = cmds.exactWorldBoundingBox(bb)
             bounding_box_string = str(bounding_box[0])
             for item in bounding_box[1:]:
@@ -2040,9 +2074,8 @@ def translate_maya_scene(params, maya_scene, maya_environment):
 
             as_project.scene.parameters.append(AsParameter('bounding_box', bounding_box_string))
 
-
         # define root assembly
-        root_assembly = AsAssembly()
+        root_assembly = AsAssembly(None)
 
         # if present add the environment
         if maya_environment is not None:
@@ -2250,9 +2283,9 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
     if maya_transform.has_children and maya_transform.visibility_states[non_mb_sample_number]:
 
         if (not params['optimise_assembly_heirarchy']) or (maya_transform.is_animated and transformation_blur):
-            current_assembly = AsAssembly()
+            current_assembly = AsAssembly(parent_assembly)
             current_assembly.name = str(maya_transform.safe_name)
-            current_assembly.parent_assembly = parent_assembly
+
             parent_assembly.assemblies.append(current_assembly)
             current_assembly_instance = current_assembly.instantiate()
             parent_assembly.assembly_instances.append(current_assembly_instance)
@@ -2292,7 +2325,7 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                     # create new light mesh instance and material
                     light_mesh = AsObject()
                     light_mesh.name = light.safe_name
-                    light_mesh.file_names = AsParameter('filename', GEO_DIR + '/maya_area_light.obj')
+                    light_mesh.file_names = AsParameter('filename', ms_commands.GEO_DIR + '/maya_area_light.obj')
 
                     light_mesh_transform = AsTransform()
                     if current_matrix_stack is not []:
@@ -2415,29 +2448,51 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
         for ms_appleseed_scene in maya_transform.child_ms_appleseed_scenes:
 
-            new_assembly = AsAssembly()
-            new_assembly.name = os.path.split(ms_appleseed_scene.scene_filepath)[1]
-            new_assembly_instance = new_assembly.instantiate()
+            scene_file_name = os.path.split(ms_appleseed_scene.scene_filepath)[1]
+
+            ms_commands.info('Embedding scene: {0}'.format(scene_file_name))
+
+            assembly = get_ms_appleseed_scene_from_heirarchy(scene_file_name, current_assembly)
+
+
+            if assembly is None:
+                assembly = AsAssembly(parent_assembly)
+                assembly.name = scene_file_name
+                current_assembly.assemblies.append(assembly)
+
+                if os.path.exists(ms_appleseed_scene.scene_filepath):
+                    path = ms_appleseed_scene.scene_filepath
+                elif os.path.exists(os.path.join(cmds.workspace(q=True, rd=True), ms_appleseed_scene.scene_filepath)):
+                    path = os.path.join(cmds.workspace(q=True, rd=True), ms_appleseed_scene.scene_filepath)
+                else:
+                    path = None
+
+                if path is None:
+                    ms_commands.warning('{0} does not exist, skipping archive output'.format(ms_appleseed_scene.scene_filepath))
+                else:
+                    assembly.raw_xml += ms_commands.strip_scene_xml(path, params['output_directory'])
+
+            assembly_instance = assembly.instantiate()
 
             assembly_transform = AsTransform()
             if current_matrix_stack is not []:
                 assembly_transform.matrices = current_matrix_stack
-            new_assembly_instance.transforms.append(assembly_transform)
+            assembly_instance.transforms.append(assembly_transform)
 
-            parent_assembly.assemblies.append(new_assembly)
-            parent_assembly.assembly_instances.append(new_assembly_instance)
+            current_assembly.assembly_instances.append(assembly_instance)
 
-            if os.path.exists(ms_appleseed_scene.scene_filepath):
-                path = ms_appleseed_scene.scene_filepath
-            elif os.path.exists(os.path.join(cmds.workspace(q=True, rd=True), ms_appleseed_scene.scene_filepath)):
-                path = os.path.join(cmds.workspace(q=True, rd=True), ms_appleseed_scene.scene_filepath)
-            else:
-                path = None
 
-            if path is None:
-                ms_commands.warning('{0} does not exist, skipping archive output'.format(ms_appleseed_scene.scene_filepath))
-            else:
-                new_assembly.raw_xml += ms_commands.strip_scene_xml(path, params['output_directory'], GEO_DIR, TEXTURE_DIR)
+def get_ms_appleseed_scene_from_heirarchy(scene_name, current_assembly):
+    for child_assembly in current_assembly.assemblies:
+        if child_assembly.name == scene_name:
+            return child_assembly
+
+    if current_assembly.parent_assembly is not None:
+        child_in_parent_assembly = get_ms_appleseed_scene_from_heirarchy(scene_name, current_assembly.parent_assembly)
+        if child_child_assembly is not None:
+            return child_child_assembly
+            
+    return None    
 
 
 #--------------------------------------------------------------------------------------------------
@@ -3015,6 +3070,9 @@ def export_container(render_settings_node):
                         status='Beginning export',
                         isInterruptable=True)
 
+    # reset object counter so there is a higher chance of avoiding duplicate mesh exports
+    MMesh.object_counter = 1
+
     # cache maya scene
     params = get_maya_params(render_settings_node)
     maya_scene, maya_environment = get_maya_scene(params)
@@ -3030,7 +3088,7 @@ def export_container(render_settings_node):
     current_script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
     obj_file_name = 'maya_area_light.obj'
     obj_source_path = os.path.join(current_script_path, obj_file_name)
-    obj_dest_path = os.path.join(params['output_directory'], GEO_DIR, obj_file_name)
+    obj_dest_path = os.path.join(params['output_directory'], ms_commands.GEO_DIR, obj_file_name)
     shutil.copy(obj_source_path, obj_dest_path)
 
     # translate maya scene
@@ -3067,13 +3125,25 @@ def export_container(render_settings_node):
 # export function.
 #--------------------------------------------------------------------------------------------------
 
-def export(render_settings_node):
+def export(render_settings_node=None):
 
     """ This function is a wrapper for export_container so that we can profile the export easily """
+    
+    global previous_export
 
-    if cmds.getAttr(render_settings_node + '.profile_export'):
+    if render_settings_node is None:
+        if previous_export is not None:
+            resolved_render_settings_node = previous_export
+        else:
+            ms_commands.error('No previous export')
+    else:
+        resolved_render_settings_node = render_settings_node
+
+    previous_export = resolved_render_settings_node
+
+    if cmds.getAttr(resolved_render_settings_node + '.profile_export'):
         import cProfile
-        command = 'import ms_export\nms_export.export_container("' + render_settings_node + '")'
+        command = 'import ms_export\nms_export.export_container("' + resolved_render_settings_node + '")'
         cProfile.run(command)
     else:
-        export_container(render_settings_node)
+        export_container(resolved_render_settings_node)

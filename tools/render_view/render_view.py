@@ -332,8 +332,8 @@ class AppController(QtCore.QObject):
 
 
     def update_tile(self, tx, ty, w, h, tile):
-        self.main_window.viewport.update_tile(tx, ty, w, h, tile, self.project.get_frame().image().properties().channel_count)
-    
+        frame = self.project.get_frame()
+        self.main_window.viewport.update_tile(tx, ty, w, h, frame, tile, self.project.get_frame().image().properties().channel_count)
 
     def update_view(self):
         properties = self.project.get_frame().image().properties()        
@@ -411,6 +411,7 @@ class AppController(QtCore.QObject):
 class RenderView(QtGui.QWidget):
     def __init__(self):      
         super(RenderView, self).__init__()
+        self.m_mutex = QtCore.QMutex()
         self.initUI()
 
 
@@ -422,6 +423,7 @@ class RenderView(QtGui.QWidget):
 
 
     def set_size(self, width, height):
+        locker = QtCore.QMutexLocker(self.m_mutex)
         self.width = width
         self.height = height
         self.image = QtGui.QImage(width, self.height, QtGui.QImage.Format_RGB32)
@@ -433,6 +435,7 @@ class RenderView(QtGui.QWidget):
 
 
     def paintEvent(self, e):
+        locker = QtCore.QMutexLocker(self.m_mutex)
         qp = QtGui.QPainter()
         qp.begin(self)
         self.drawWidget(qp)
@@ -443,7 +446,10 @@ class RenderView(QtGui.QWidget):
         qp.drawImage(QtCore.QPoint(0,0), self.image)
 
 
-    def update_tile(self, tx, ty, w, h, tile, channel_count):
+    def update_tile(self, tx, ty, w, h, frame, tile, channel_count):
+        locker = QtCore.QMutexLocker(self.m_mutex)
+
+        frame.transform_tile_to_output_color_space(tile) # transform tile color space
 
         tile_array = array.array('f', range(tile.get_channel_count() * tile.get_pixel_count()))
         tile.copy_data_to(tile_array)

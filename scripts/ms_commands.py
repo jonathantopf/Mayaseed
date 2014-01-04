@@ -45,6 +45,11 @@ MAYASEED_URL = 'http://www.mayaseed.net/'
 APPLESEED_URL = 'http://appleseedhq.net/'
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
 
+GEO_DIR = '_geometry'
+TEXTURE_DIR = '_textures'
+REFERENCED_SCENES = '_references'
+
+INCH_TO_METER = 0.02539999983236
 
 #--------------------------------------------------------------------------------------------------
 # Export modifiers.
@@ -176,27 +181,33 @@ def find_path_to_imf_copy():
     #
     # Values of maya_base_path:
     #
-    #                   Maya 2012                           Maya 2013
-    #   --------------------------------------------------------------------------
-    #   Mac OS X        maya2012/Maya.app/Contents          maya2013/Maya.app/Contents
-    #   Windows         Maya2012                            Maya2013
-    #   Linux           ?                                   ?
+    #                   Maya 2012                       Maya 2013                    Maya 2014
+    #   -----------------------------------------------------------------------------------------------------
+    #   Mac OS X        maya2012/Maya.app/Contents      maya2013/Maya.app/Contents   maya2014/Maya.app/Contents
+    #   Windows         Maya2012                        Maya2013
+    #   Linux           ?                               ?
     #
-    # Locations of imf_copy:
+    # Locations of imf_copy:                    
     #
-    #                   Maya 2012                           Maya 2013
-    #   --------------------------------------------------------------------------
-    #   Mac OS X        maya2012/Maya.app/Contents/bin      maya2013/mentalray/bin
-    #   Windows         Maya2012\bin                        Maya2013\mentalray\bin
-    #   Linux           ?                                   ?
+    #                   Maya 2012                       Maya 2013                    Maya 2014
+    #   -----------------------------------------------------------------------------------------------------
+    #   Mac OS X        maya2012/Maya.app/Contents/bin  maya2013/mentalray/bin       mentalrayForMaya2014/bin
+    #   Windows         Maya2012\bin                    Maya2013\mentalray\bin
+    #   Linux           ?                               ?
     #
 
     maya_base_path = os.path.split(sys.path[0])[0]
     imf_copy_path = None
+    maya_version = mel.eval('getApplicationVersionAsFloat()')
 
-    if mel.eval('getApplicationVersionAsFloat()') >= 2013.0:
+    if maya_version == 2013.0:
         if sys.platform == 'darwin':
             imf_copy_path = os.path.join(maya_base_path, '..', '..', 'mentalray', 'bin')
+        elif sys.platform == 'win32':
+            imf_copy_path = os.path.join(maya_base_path, 'mentalray', 'bin')
+    elif maya_version >= 2013.0:
+        if sys.platform == 'darwin':
+            imf_copy_path = os.path.join(maya_base_path, '..', '..', '..', 'mentalrayForMaya2014', 'bin')
         elif sys.platform == 'win32':
             imf_copy_path = os.path.join(maya_base_path, 'mentalray', 'bin')
     else:
@@ -529,14 +540,18 @@ def get_file_texture_name(file_node, frame=None):
 #--------------------------------------------------------------------------------------------------
 
 def export_obj(object_name, file_path, overwrite=True):
-    directory = os.path.split(file_path)[0]
+    if overwrite or (not os.path.exists(file_path)):
+        print 'doesnt exist'
+        directory = os.path.split(file_path)[0]
 
-    create_dir(directory)
+        create_dir(directory)
 
-    safe_file_path = file_path.replace('\\', '\\\\')
-    mel.eval('ms_export_obj -mesh "{0}" -filePath "{1}"'.format(object_name, safe_file_path))
+        safe_file_path = file_path.replace('\\', '\\\\')
+        mel.eval('ms_export_obj -mesh "{0}" -filePath "{1}"'.format(object_name, safe_file_path))
 
-    return safe_file_path
+        return safe_file_path
+
+    return file_path
 
 
 #--------------------------------------------------------------------------------------------------
@@ -941,46 +956,11 @@ def selection_remove_material_export_modifier(attr):
 # Repackage referenced appleseed file.
 #--------------------------------------------------------------------------------------------------
 
-
-def move_dependency(base_name, source_path, file_dir, export_dir, relative_geo_dir, relative_texture_dir):
-    
-    if os.path.exists(source_path):
-        resolved_source_path = source_path
-    elif os.path.exists(os.path.join(file_dir, source_path)):
-        resolved_source_path = os.path.join(file_dir, source_path)
-    else:
-        warning('File not found: {0}'.format(source_path))
-        return
-
-    if os.path.splitext(resolved_source_path)[1] == '.exr':
-        relative_dest_path = os.path.join(texture_dir, os.path.split(resolved_source_path)[1])
-    else:
-        relative_dest_path = os.path.join(geo_dir, os.path.split(resolved_source_path)[1])
-
-    dest_path = os.path.join(export_dir, relative_dest_path)
-
-    shutil.copy(resolved_source_path, dest_path)
-    
-    return relative_dest_path
-
-
-def package_dependencies(base_name, element, file_dir, export_dir, relative_geo_dir, relative_texture_dir):
-    for param in element.getElementsByTagName('parameter'):
-        if param.getAttribute('name') == 'filename':
-            param.setAttribute('value', move_dependency(base_name, param.getAttribute('value'), file_dir, export_dir, relative_geo_dir, relative_texture_dir))
-            
-def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
+def strip_scene_xml(xml_file_path, export_dir):
     base_name = os.path.split(xml_file_path)[1]
     file_dir = os.path.split(xml_file_path)[0]
 
-    relative_geo_dir = os.path.join(geo_dir, base_name)
-
-    relative_texture_dir = os.path.join(texture_dir, base_name)
-
-
-    for directory in [relative_geo_dir, relative_texture_dir]:
-        if not os.path.exists(directory):
-            os.makedirs(directory)
+    archive_dir = os.path.join(REFERENCED_SCENES, base_name)
 
     file = open(xml_file_path, 'r')
     data = file.read()
@@ -988,32 +968,73 @@ def strip_scene_xml(xml_file_path, export_dir, geo_dir, texture_dir):
 
     dom = parseString(data)
 
+    # source and destinations for copied files are stored in a dict with the 
+    # source as the key to avoid wasting time copying the file many times
+    file_source_dest_pairs = {}
+
     stripped_xml = ''
 
     for scene in dom.getElementsByTagName('scene'):
-        for assembly in scene.getElementsByTagName('assembly'):
-            package_dependencies(base_name, assembly, file_dir, export_dir, relative_geo_dir, relative_texture_dir)
-            
-            stripped_xml += assembly.toprettyxml('    ', '\n')
+        for param in scene.getElementsByTagName('parameter'):
+            if param.getAttribute('name') == 'filename':
+                source = param.getAttribute('value')
 
-        for assembly_instance in scene.getElementsByTagName('assembly_instance'):
-            package_dependencies(base_name, assembly_instance, file_dir, export_dir, relative_geo_dir, relative_texture_dir)
-            
-            stripped_xml += assembly_instance.toprettyxml('    ', '\n')
+                if not os.path.isabs(source):
+                    dest = os.path.join(archive_dir, source)
+                    param.setAttribute('value', dest)
+                    file_source_dest_pairs[os.path.join(file_dir, source)] = os.path.join(export_dir, dest)
 
-    print stripped_xml
 
-    # modify name attributes to avoid conflicts
-    names_to_replace = []
-    name_attribute_re = re.compile('(?<!parameter) name="(.*?)"')
+        for element in scene.childNodes:
+            if element.__class__.__name__ == 'Element':
+                if element.tagName == 'assembly' or element.tagName == 'assembly_instance':
+                    stripped_xml += element.toxml()
 
-    for name in name_attribute_re.findall(stripped_xml):
-        if not name in names_to_replace:
-            names_to_replace.append(name)
 
-    for name in names_to_replace:
-        print name
-        stripped_xml = stripped_xml.replace('{0}'.format(name), '{0}_{1}'.format(base_name, name))
+    for key in file_source_dest_pairs.keys():
+        dest = os.path.split(file_source_dest_pairs[key])[0]
+        if not os.path.exists(dest):
+            os.makedirs(dest)
+
+        shutil.copy(key, file_source_dest_pairs[key])
 
     return stripped_xml
+
+
+def create_ms_appleseed_scene():
+    scene_file = cmds.fileDialog2(fm=1, okc='Import', cap='Select an appleseed scene to import', ff='*.appleseed')
+    if scene_file is not None:
+
+        scene_name = os.path.splitext(os.path.split(scene_file[0])[1])[0]
+        relative_path = os.path.relpath(scene_file[0], cmds.workspace(q=True, rd=True))
+
+        file = open(scene_file[0], 'r')
+        data = file.read()
+        file.close()
+
+        dom = parseString(data)
+
+        bounding_box = [-0.5, 0.5, -0.5, 0.5, -0.5, 0.5]
+
+        for scene in dom.getElementsByTagName('scene'):
+            for param in scene.getElementsByTagName('parameter'):
+                if param.getAttribute('name') == 'bounding_box':
+                    bounding_box_text = param.getAttribute('value')
+
+                    bounding_box = bounding_box_text.split(' ')
+
+                    for i in range(len(bounding_box)):
+                        bounding_box[i] = float(bounding_box[i])
+
+
+        new_node = cmds.createNode('ms_appleseed_scene', name=legalize_name(scene_name).replace('.', '_'))
+
+        cmds.setAttr(new_node + '.appleseed_file', relative_path, type='string')
+        cmds.setAttr(new_node + '.x_min', bounding_box[0])
+        cmds.setAttr(new_node + '.x_max', bounding_box[3])
+        cmds.setAttr(new_node + '.y_min', bounding_box[1])
+        cmds.setAttr(new_node + '.y_max', bounding_box[4])
+        cmds.setAttr(new_node + '.z_min', bounding_box[2])
+        cmds.setAttr(new_node + '.z_max', bounding_box[5])
+
 

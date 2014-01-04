@@ -26,6 +26,7 @@ import maya.mel
 import maya.utils as mu
 import __main__ 
 import ms_commands
+import ms_export
 import os
 
 def createMenu():
@@ -42,16 +43,27 @@ def buildMenu():
     cmds.menu('ms_menu', edit=True, deleteAllItems=True, pmc=('import ms_menu\nms_menu.buildMenu()'))
 
     # Export
-    cmds.menuItem(divider=True, parent='ms_menu')
-    cmds.menuItem('menu_export', subMenu=True, label='Export', to=True, parent='ms_menu')
-    for render_settings_node in cmds.ls(type='ms_renderSettings'):
-        cmds.menuItem(label=render_settings_node, parent='menu_export', command=('import ms_export \nreload(ms_export)\nms_export.export("{0}")'.format(render_settings_node)))
+    if ms_export.previous_export is not None and cmds.objExists(ms_export.previous_export):
+        cmds.menuItem(label='Re-export {0}'.format(ms_export.previous_export), parent='ms_menu', command=('import ms_export\nms_export.export(None)'))
+    else:
+        cmds.menuItem(label='No previous exports', parent='ms_menu')
     cmds.menuItem(divider=True, parent='ms_menu')
 
+    cmds.menuItem('menu_export', subMenu=True, label='Export', to=True, parent='ms_menu')
+    render_settings_nodes = cmds.ls(type='ms_renderSettings')
+    if len(render_settings_nodes) == 0:
+        cmds.menuItem(label='Nothing to export', parent='menu_export')
+    else:
+        for render_settings_node in cmds.ls(type='ms_renderSettings'):
+            cmds.menuItem(label=render_settings_node, parent='menu_export', command=('import ms_export \nreload(ms_export)\nms_export.export("{0}")'.format(render_settings_node)))
+
     # Add/Select Render Settings Node
+    cmds.menuItem(divider=True, parent='ms_menu')
     cmds.menuItem(label='Add Render Settings Node', parent='ms_menu', command='import maya.cmds\nmaya.cmds.createNode("ms_renderSettings")')
     cmds.menuItem('menu_select_render_settings', subMenu=True, label='Select Render Settings Node', to=True, parent='ms_menu')
-    for render_settings_node in cmds.ls(type='ms_renderSettings'):
+    if len(render_settings_nodes) == 0:
+        cmds.menuItem(label='Nothing to select', parent='menu_select_render_settings')
+    for render_settings_node in render_settings_nodes:
         cmds.menuItem(label=render_settings_node, parent='menu_select_render_settings', command=('import maya.cmds as cmds\ncmds.select("{0}")'.format(render_settings_node)))
 
     # Add/Select Environment Node
@@ -59,11 +71,18 @@ def buildMenu():
     cmds.menuItem(label='Add Physical Environment Node', parent='ms_menu', command='import maya.cmds\nmaya.cmds.createNode("ms_physical_environment")')
     cmds.menuItem(label='Add Environment Node', parent='ms_menu', command='import maya.cmds\nmaya.cmds.createNode("ms_environment")')
     cmds.menuItem('menu_select_environment', subMenu=True, label='Select Environment Node', to=True, parent='ms_menu')
-    for environment in cmds.ls(type='ms_physical_environment'):
-        cmds.menuItem(label=environment, parent='menu_select_environment', command=('import maya.cmds as cmds\ncmds.select("{0}")'.format(environment)))
-    cmds.menuItem(divider=True, parent='menu_select_environment')
-    for environment in cmds.ls(type='ms_environment'):
-        cmds.menuItem(label=environment, parent='menu_select_environment', command=('import maya.cmds as cmds\ncmds.select("{0}")'.format(environment)))
+    ms_physical_environments = cmds.ls(type='ms_physical_environment')
+    ms_environments = cmds.ls(type='ms_environment')
+
+    if len(ms_physical_environments) == 0 and len(ms_environments) == 0:
+        cmds.menuItem(label='Nothing to select', parent='menu_select_environment',)
+    else:
+        for environment in cmds.ls(type='ms_physical_environment'):
+            cmds.menuItem(label=environment, parent='menu_select_environment', command=('import maya.cmds as cmds\ncmds.select("{0}")'.format(environment)))        
+        if len(ms_physical_environments) > 0 and len(ms_environments) > 0:
+            cmds.menuItem(divider=True, parent='menu_select_environment')
+        for environment in cmds.ls(type='ms_environment'):
+            cmds.menuItem(label=environment, parent='menu_select_environment', command=('import maya.cmds as cmds\ncmds.select("{0}")'.format(environment)))
 
     cmds.menuItem(divider=True, parent='ms_menu')
     cmds.menuItem(label='Create Material', parent='ms_menu', command=('import maya.cmds as cmds\ncmds.shadingNode("ms_appleseed_material", asShader=True)'))
@@ -115,6 +134,11 @@ def buildMenu():
     for item in ms_commands.MATERIAL_EXPORT_MODIFIERS:
         command = 'import ms_commands\nms_commands.selection_remove_material_export_modifier("' + item[0] + '")'
         cmds.menuItem(label=item[0], parent='menu_remove_export_modifier', command=command)
+
+    # import appleseed scene archive
+    cmds.menuItem(divider=True, parent='ms_menu')
+
+    cmds.menuItem(label='Import appleseed scene archive', parent='ms_menu', command='import ms_commands;ms_commands.create_ms_appleseed_scene()')
 
 
     # convert materials
