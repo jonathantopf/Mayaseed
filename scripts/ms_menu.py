@@ -45,7 +45,9 @@ def buildMenu():
     # Export
     if ms_export.previous_export is not None and cmds.objExists(ms_export.previous_export):
         cmds.menuItem(label='Re-export {0}'.format(ms_export.previous_export), parent='ms_menu', command=('import ms_export\nms_export.export(None)'))
-        cmds.menuItem(divider=True, parent='ms_menu')
+    else:
+        cmds.menuItem(label='No previous exports', parent='ms_menu')
+    cmds.menuItem(divider=True, parent='ms_menu')
 
     cmds.menuItem('menu_export', subMenu=True, label='Export', to=True, parent='ms_menu')
     render_settings_nodes = cmds.ls(type='ms_renderSettings')
