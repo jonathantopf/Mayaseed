@@ -51,6 +51,7 @@
 
 // Standard headers.
 #include <fstream>
+#include <iostream>
 #include <vector>
 
 #if defined _WIN32
@@ -174,7 +175,7 @@ MStatus ms_export_obj::doIt(const MArgList& args)
             last_shader_index = shader_index;
 
             out_file << "usemtl ";
-            out_file << (shader_index == -1 ? "no_material" : material_names[shader_index]);
+            out_file << (shader_index == -1 ? "no_material" : material_names[shader_index].asChar());
             out_file << endl;
         }
 
