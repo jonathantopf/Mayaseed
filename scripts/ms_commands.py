@@ -534,14 +534,18 @@ def get_file_texture_name(file_node, frame=None):
 #--------------------------------------------------------------------------------------------------
 
 def export_obj(object_name, file_path, overwrite=True):
-    directory = os.path.split(file_path)[0]
+    if overwrite or (not os.path.exists(file_path)):
+        print 'doesnt exist'
+        directory = os.path.split(file_path)[0]
 
-    create_dir(directory)
+        create_dir(directory)
 
-    safe_file_path = file_path.replace('\\', '\\\\')
-    mel.eval('ms_export_obj -mesh "{0}" -filePath "{1}"'.format(object_name, safe_file_path))
+        safe_file_path = file_path.replace('\\', '\\\\')
+        mel.eval('ms_export_obj -mesh "{0}" -filePath "{1}"'.format(object_name, safe_file_path))
 
-    return safe_file_path
+        return safe_file_path
+
+    return file_path
 
 
 #--------------------------------------------------------------------------------------------------
