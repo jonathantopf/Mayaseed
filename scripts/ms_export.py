@@ -491,6 +491,7 @@ class MMesh(MTransformChild):
 
     """ Lightweight class representing Maya mesh data """
 
+    # because fill path names of geo can be too long for a file name we use the short name plus a counter
     object_counter = 1
 
     def __init__(self, params, maya_mesh_name, MTransform_object):
@@ -3039,6 +3040,9 @@ def export_container(render_settings_node):
                         progress=0,
                         status='Beginning export',
                         isInterruptable=True)
+
+    # reset object counter so there is a higher chance of avoiding duplicate mesh exports
+    MMesh.object_counter = 1
 
     # cache maya scene
     params = get_maya_params(render_settings_node)
