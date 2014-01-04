@@ -181,27 +181,33 @@ def find_path_to_imf_copy():
     #
     # Values of maya_base_path:
     #
-    #                   Maya 2012                           Maya 2013
-    #   --------------------------------------------------------------------------
-    #   Mac OS X        maya2012/Maya.app/Contents          maya2013/Maya.app/Contents
-    #   Windows         Maya2012                            Maya2013
-    #   Linux           ?                                   ?
+    #                   Maya 2012                       Maya 2013                    Maya 2014
+    #   -----------------------------------------------------------------------------------------------------
+    #   Mac OS X        maya2012/Maya.app/Contents      maya2013/Maya.app/Contents   maya2014/Maya.app/Contents
+    #   Windows         Maya2012                        Maya2013
+    #   Linux           ?                               ?
     #
-    # Locations of imf_copy:
+    # Locations of imf_copy:                    
     #
-    #                   Maya 2012                           Maya 2013
-    #   --------------------------------------------------------------------------
-    #   Mac OS X        maya2012/Maya.app/Contents/bin      maya2013/mentalray/bin
-    #   Windows         Maya2012\bin                        Maya2013\mentalray\bin
-    #   Linux           ?                                   ?
+    #                   Maya 2012                       Maya 2013                    Maya 2014
+    #   -----------------------------------------------------------------------------------------------------
+    #   Mac OS X        maya2012/Maya.app/Contents/bin  maya2013/mentalray/bin       mentalrayForMaya2014/bin
+    #   Windows         Maya2012\bin                    Maya2013\mentalray\bin
+    #   Linux           ?                               ?
     #
 
     maya_base_path = os.path.split(sys.path[0])[0]
     imf_copy_path = None
+    maya_version = mel.eval('getApplicationVersionAsFloat()')
 
-    if mel.eval('getApplicationVersionAsFloat()') >= 2013.0:
+    if maya_version == 2013.0:
         if sys.platform == 'darwin':
             imf_copy_path = os.path.join(maya_base_path, '..', '..', 'mentalray', 'bin')
+        elif sys.platform == 'win32':
+            imf_copy_path = os.path.join(maya_base_path, 'mentalray', 'bin')
+    elif maya_version >= 2013.0:
+        if sys.platform == 'darwin':
+            imf_copy_path = os.path.join(maya_base_path, '..', '..', '..', 'mentalrayForMaya2014', 'bin')
         elif sys.platform == 'win32':
             imf_copy_path = os.path.join(maya_base_path, 'mentalray', 'bin')
     else:
