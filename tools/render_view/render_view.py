@@ -315,7 +315,7 @@ class AppController(QtCore.QObject):
                 update_color_entity(assembly.colors(), color_name, values, multiplier)
                 self.start_render()
             else:
-                self.main_window.console_error('Bad assembly path')
+                self.main_window.console_error('Bad assembly path: {0}'.format(assembly_path))
         else: 
             self.main_window.console_error('No project loaded')
 
