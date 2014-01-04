@@ -617,6 +617,7 @@ class RenderViewWindow(QtGui.QMainWindow):
         # others
         self.console_in.returnPressed.connect(self.console_submit)
         self.connect_button.pressed.connect(self.socket_connect)
+        self.port_number.returnPressed.connect(self.socket_connect)
         self.disconnect_button.pressed.connect(self.socket_disconnect)
 
 
