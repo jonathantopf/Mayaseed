@@ -37,6 +37,7 @@ sys.path.append(os.path.join(ROOT_DIRECTORY, 'graphics'))
 sys.path.append(os.path.join(ROOT_DIRECTORY, 'nodes'))
 
 import ms_menu
+import ms_shelf
 
 #--------------------------------------------------------------------------------------------------
 # mayaseed plugin.
@@ -65,6 +66,8 @@ def initializePlugin(obj):
     
     ms_menu.createMenu()
     ms_menu.buildMenu()
+
+    ms_shelf.create_if_absent()
 
 
 def uninitializePlugin(obj):
