@@ -212,47 +212,6 @@ class RendererController(appleseed.IRendererController):
 
 
 #----------------------------------------------------------------------------------
-# TcpTonnectionThread
-#----------------------------------------------------------------------------------
-
-class TcpTonnectionThread (QtCore.QThread):
-    def __init__(self, parent, port):
-        QtCore.QThread.__init__(self, parent)
-        self.exiting = False
-
-        self.app_controller = parent
-        host_name = 'localhost'
-        socket_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        socket_connection.bind((host_name, port))
-        socket_connection.listen(1)
-        socket_connection.setblocking(0)
-        self.socket_connection, self.addr = socket_connection.accept()
-
-
-    def run(self):
-        while(True):
-            # check for shutdown flag
-            if self.exiting:
-                break
-
-            # listen for commands
-            data = self.socket_connection.recv(4096)
-            if data:
-                if not data[-1] == '\n':
-                    self.app_controller.main_window.console_error('Received incomplete command')
-                else:
-                    self.app_controller.main_window.console_info('Received_data --------------------')
-                    for line in data.split('\n'):
-                        if line != '':
-                            self.app_controller.main_window.console_info(line)
-                            self.app_controller.submit_command(line)
-
-            print 'looping'
-
-        print 'cleanup'
-
-
-#----------------------------------------------------------------------------------
 # AppController
 #----------------------------------------------------------------------------------
 
@@ -386,8 +345,16 @@ class AppController(QtCore.QObject):
 
 
     def socket_read_command(self):
-        data = self.tcp_socket.read(1024).data()
-        self.submit_command(data)
+        data = self.tcp_socket.read(4098).data()
+        if data:
+            if not data[-1] == '\n':
+                self.main_window.console_error('Received incomplete command: try increasing the read rate')
+            else:
+                self.main_window.console_command('Received_data --------------------')
+                for line in data.split('\n'):
+                    if line != '':
+                        self.main_window.console_command(line)
+                        self.submit_command(line)
 
 
     def socket_connected(self):
