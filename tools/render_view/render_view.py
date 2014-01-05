@@ -35,6 +35,7 @@ import re
 import signal
 import array
 import inspect
+import argparse
 
 
 sys.path.append('/projects/appleseed/sandbox/bin/Ship')
@@ -216,13 +217,15 @@ class RendererController(appleseed.IRendererController):
 #----------------------------------------------------------------------------------
 
 class AppController(QtCore.QObject):
-    def __init__(self, main_window):
+    def __init__(self,  main_window):
         QtCore.QObject.__init__(self)
         self.renderer_controller = RendererController()
         self.project = None
         self.renderer = None 
         self.render_thread = None
         self.main_window = main_window
+        self.tcp_port = 10210
+        self.read_rate = 4096
 
         # tile callback methods
         self.tile_callback = TileCallback()
@@ -320,9 +323,9 @@ class AppController(QtCore.QObject):
             self.main_window.console_error('No project loaded')
 
 
-    def socket_connect(self, port):
-        self.tcp_socket.connectToHost('localhost', port)
-        self.main_window.console_info('Connecting to: {0}'.format(port))
+    def socket_connect(self):
+        self.tcp_socket.connectToHost('localhost', self.tcp_port)
+        self.main_window.console_info('Connecting to: {0}'.format(self.read_rate))
 
 
     def socket_connection_error(self, socket_error):
@@ -348,7 +351,7 @@ class AppController(QtCore.QObject):
         data = self.tcp_socket.read(4098).data()
         if data:
             if not data[-1] == '\n':
-                self.main_window.console_error('Received incomplete command: try increasing the read rate')
+                self.main_window.console_error('Received incomplete command: try increasing the tcp read rate')
             else:
                 self.main_window.console_command('Received_data --------------------')
                 for line in data.split('\n'):
@@ -623,6 +626,9 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.console_in.returnPressed.connect(self.console_submit)
         self.connect_button.pressed.connect(self.socket_connect)
         self.port_number.returnPressed.connect(self.socket_connect)
+        self.port_number.editingFinished.connect(self.port_updated)
+        self.read_rate.returnPressed.connect(self.socket_connect)
+        self.read_rate.editingFinished.connect(self.read_rate_updated)
         self.disconnect_button.pressed.connect(self.socket_disconnect)
 
 
@@ -675,8 +681,17 @@ class RenderViewWindow(QtGui.QMainWindow):
 
 
     def socket_connect(self):
-        self.app_controller.socket_connect(int(self.port_number.text()))
+        self.app_controller.socket_connect()
 
+
+    def port_updated(self):
+        self.app_controller.tcp_port = int(self.port_number.text())
+        print 'port', self.app_controller.tcp_port
+
+    def read_rate_updated(self):
+
+        self.app_controller.read_rate = int(self.read_rate.text())
+        print 'read rate', self.app_controller.read_rate
 
     def socket_disconnect(self):
         self.app_controller.socket_disconnect()
@@ -709,6 +724,14 @@ class RenderViewWindow(QtGui.QMainWindow):
 
 def main():
 
+    parser = argparse.ArgumentParser(description='render_view.py is a render er and viewer for .appleseed scenes')
+    parser.add_argument('file', help=".appleseed file to open", nargs='?')
+    parser.add_argument('-s', '--start', help='Start render on startup', action='store_true')
+    parser.add_argument('-p', '--port', metavar='port number', help='Port to open on startup', type=int)
+    parser.add_argument('-r', '--read-rate', metavar='read rate', help='Bytes per line to read from tcp port', type=int)
+    args = parser.parse_args()
+    print args
+
     # log_target = appleseed.ConsoleLogTarget(sys.stderr)
     # appleseed.global_logger().add_target(log_target)
 
@@ -717,9 +740,24 @@ def main():
 
     main_window = RenderViewWindow()
     app_controller = AppController(main_window)
+
+    if args.port is not None:
+        app_controller.tcp_port = args.port
+        main_window.port_number.setText(str(args.port))
+
+    if args.read_rate is not None:
+        app_controller.read_rate = args.read_rate
+        main_window.read_rate.setText(str(args.read_rate))
+
     main_window.app_controller = app_controller
     main_window.show()
     main_window.raise_()
+
+    if args.file is not None:
+        app_controller.load_project(args.file)
+
+    if args.start:
+        app_controller.start_render()
 
     sys.exit(app.exec_())
 
