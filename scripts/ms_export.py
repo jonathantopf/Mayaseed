@@ -3118,6 +3118,10 @@ def export_container(render_settings_node):
     completed_message = 'Export completed in %.2f seconds, see the script editor for details.' % (export_finish_time - export_start_time)
 
     ms_commands.info(completed_message)
+
+    if params['start_interactive_render_session']:
+        ms_render_view_connection.window.show()
+
     cmds.confirmDialog(message=completed_message, button='ok')
 
 
