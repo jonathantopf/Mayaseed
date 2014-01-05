@@ -361,12 +361,12 @@ class AppController(QtCore.QObject):
 
 
     def socket_connected(self):
-        self.main_window.console_success('Connecetd')
+        self.main_window.console_success('Connected')
         self.main_window.connection_status.status_connected()
 
 
     def socket_disconnected(self):
-        self.main_window.console_info('Disconnecetd')
+        self.main_window.console_info('Disconnected')
         self.main_window.connection_status.status_disconnected()
 
     def socket_error(self):
