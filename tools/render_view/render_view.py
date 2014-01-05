@@ -36,6 +36,7 @@ import signal
 import array
 import inspect
 import argparse
+import time
 
 
 sys.path.append('/projects/appleseed/sandbox/bin/Ship')
@@ -164,6 +165,8 @@ class RendererController(appleseed.IRendererController):
         signal.signal(signal.SIGINT, lambda signal, frame: self.__signal_handler(signal, frame))
         self.__abort = False
         self.terminate = False
+        self.render_begin_methods = []
+        self.frame_end_methods = []
         self.progress_methods = []
 
 
@@ -174,7 +177,8 @@ class RendererController(appleseed.IRendererController):
 
     # This method is called before rendering begins.
     def on_rendering_begin(self):
-        pass
+        for method in self.render_begin_methods:
+            method()
 
 
     # This method is called after rendering has succeeded.
@@ -194,7 +198,8 @@ class RendererController(appleseed.IRendererController):
 
     # This method is called after rendering a single frame.
     def on_frame_end(self):
-        pass
+        for method in self.frame_end_methods:
+            method()
 
 
     def on_progress(self):
@@ -226,6 +231,7 @@ class AppController(QtCore.QObject):
         self.main_window = main_window
         self.tcp_port = 10210
         self.read_rate = 4096
+        self.render_start_time = None
 
         # tile callback methods
         self.tile_callback = TileCallback()
@@ -234,6 +240,15 @@ class AppController(QtCore.QObject):
 
         self.tile_callback.post_render_tile_methods.append(self.update_tile)
         self.tile_callback.post_render_tile_methods.append(self.main_window.viewport.update)
+
+        # progress callback methods
+        self.renderer_controller.progress_methods.append(self.on_render_progress)
+
+        # rendering begin callback methods
+        self.renderer_controller.render_begin_methods.append(self.on_render_start)
+
+        # frame end methods
+        self.renderer_controller.frame_end_methods.append(self.on_render_stop)
 
         # socket
         self.tcp_socket = QtNetwork.QTcpSocket(self)
@@ -369,9 +384,21 @@ class AppController(QtCore.QObject):
         self.main_window.console_info('Disconnected')
         self.main_window.connection_status.status_disconnected()
 
+    
     def socket_error(self):
         self.main_window.console_error('Socket error')
 
+
+    def on_render_start(self):
+        self.render_start_time = time.time()
+
+
+    def on_render_progress(self):  
+        self.main_window.status_bar.showMessage('Rendering for {0:.2f} seconds'.format(time.time() - self.render_start_time))
+
+
+    def on_render_stop(self):
+        self.main_window.status_bar.showMessage('Rendering finised in {0:.2f} seconds'.format(time.time() - self.render_start_time))
 
 
 #----------------------------------------------------------------------------------
