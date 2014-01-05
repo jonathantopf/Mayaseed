@@ -1615,7 +1615,7 @@ class AsAssembly():
         self.parent_assembly = parent_assembly
         self.name = None
 
-        self.parent_assembly = None
+        self.parent_assembly = parent_assembly
 
         self.colors = []
         self.textures = []
@@ -2285,10 +2285,9 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
         if (not params['optimise_assembly_heirarchy']) or (maya_transform.is_animated and transformation_blur):
             current_assembly = AsAssembly(parent_assembly)
             current_assembly.name = str(maya_transform.safe_name)
-
-            parent_assembly.assemblies.append(current_assembly)
             current_assembly_instance = current_assembly.instantiate()
             parent_assembly.assembly_instances.append(current_assembly_instance)
+            parent_assembly.assemblies.append(current_assembly)
             current_matrix_stack = []
 
             sample_index = 0
@@ -2318,6 +2317,7 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                     current_assembly.colors.append(light_color)
 
                 if params['attach_render_view_callbacks']:
+                    print current_assembly.get_path()
                     ms_render_view_connection.add_callback(light.name, ms_render_view_connection.update_color, [current_assembly.get_path(), light_color.name])
 
                 if light.model == 'areaLight':
