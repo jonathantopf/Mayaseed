@@ -795,7 +795,7 @@ def main():
         main_window.read_rate.setText(str(args.read_rate))
 
     main_window.app_controller = app_controller
-    main_window.show()
+    main_window.showMaximized()
     main_window.raise_()
 
     if args.file is not None:
