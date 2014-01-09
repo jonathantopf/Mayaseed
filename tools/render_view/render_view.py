@@ -311,7 +311,7 @@ class AppController(QtCore.QObject):
 
     def update_tile(self, tx, ty, w, h, tile):
         frame = self.project.get_frame()
-        self.main_window.viewport.update_tile(tx, ty, w, h, frame, tile, self.project.get_frame().image().properties().channel_count)
+        self.main_window.viewport.update_tile(tx, ty, w, h, frame, tile, frame.image().properties().channel_count)
 
     def update_view(self):
         properties = self.project.get_frame().image().properties()        
