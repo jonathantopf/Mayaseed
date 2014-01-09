@@ -149,7 +149,10 @@ def normalizeRGB(color):
 # Convert shader connection to image.
 #--------------------------------------------------------------------------------------------------
 
-def convert_connection_to_image(shader, attribute, dest_file, resolution=1024, pass_through=False):
+def convert_connection_to_image(shader, attribute, dest_file, overwrite, resolution=1024, pass_through=False):
+
+    if os.path.exists(dest_file) and not overwrite:
+        return dest_file
 
     dest_dir = os.path.split(dest_file)[0]
 
