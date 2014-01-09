@@ -306,7 +306,6 @@ class AppController(QtCore.QObject):
             if THREADED_INTERFACE:
                 self.render_thread = appleseed.RenderThread(self.renderer)
                 self.render_thread.start()
-                self.test_timer.start(50)  
             else:
                 print 'no threads'
                 self.renderer.render()  
@@ -775,7 +774,6 @@ def main():
     parser.add_argument('-p', '--port', metavar='port number', help='Port to open on startup', type=int)
     parser.add_argument('-r', '--read-rate', metavar='read rate', help='Bytes per line to read from tcp port', type=int)
     args = parser.parse_args()
-    print args
 
     # log_target = appleseed.ConsoleLogTarget(sys.stderr)
     # appleseed.global_logger().add_target(log_target)
