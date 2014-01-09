@@ -37,6 +37,7 @@ import array
 import inspect
 import argparse
 import time
+import copy
 
 
 sys.path.append('/projects/appleseed/sandbox/bin/Ship')
@@ -446,15 +447,18 @@ class RenderView(QtGui.QWidget):
     def update_tile(self, tx, ty, w, h, frame, tile, channel_count):
         locker = QtCore.QMutexLocker(self.m_mutex)
 
-        frame.transform_tile_to_output_color_space(tile) # transform tile color space
+        # create copy of tile to color transformations dont get applied twice or not at all
+        tile_copy = copy.copy(tile)
 
-        tile_array = array.array('f', range(tile.get_channel_count() * tile.get_pixel_count()))
-        tile.copy_data_to(tile_array)
+        frame.transform_tile_to_output_color_space(tile_copy) # transform tile color space
+
+        tile_array = array.array('f', range(tile_copy.get_channel_count() * tile_copy.get_pixel_count()))
+        tile_copy.copy_data_to(tile_array)
 
         # we must calculate the width of the current tile incase it is not a whole tile
         # this may happen if the tile is at the edge of the buffer
-        real_width = tile.get_width()
-        real_height = tile.get_height()
+        real_width = tile_copy.get_width()
+        real_height = tile_copy.get_height()
 
         tile_image = QtGui.QImage(real_width ,real_height ,QtGui.QImage.Format_RGB32)
         tile_start = QtCore.QPoint(tx * w, ty * h)
