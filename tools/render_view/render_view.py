@@ -48,6 +48,14 @@ appleseed_schema_path = os.path.join(current_script_path, 'project.xsd')
 
 import appleseed
 
+
+#----------------------------------------------------------------------------------
+# Globals
+#----------------------------------------------------------------------------------
+
+THREADED_INTERFACE = True
+
+
 #----------------------------------------------------------------------------------
 # Utilities
 #----------------------------------------------------------------------------------
@@ -295,18 +303,24 @@ class AppController(QtCore.QObject):
                                                      self.tile_callback)
 
             # Render the frame.
-            self.render_thread = appleseed.RenderThread(self.renderer)
-            self.render_thread.start()      
+            if THREADED_INTERFACE:
+                self.render_thread = appleseed.RenderThread(self.renderer)
+                self.render_thread.start()
+                self.test_timer.start(50)  
+            else:
+                print 'no threads'
+                self.renderer.render()  
         else:
             self.main_window.console_error('No project loaded')
 
 
     def stop_render(self):
-        if self.render_thread is not None:
+        if (THREADED_INTERFACE and self.render_thread is not None) or self.renderer is not None:
             self.main_window.console_info('Stopping render')
             self.renderer_controller.terminate = True
             self.render_thread.join()
             self.render_thread = None
+            self.renderer = None
 
 
     def update_tile(self, tx, ty, w, h, tile):
