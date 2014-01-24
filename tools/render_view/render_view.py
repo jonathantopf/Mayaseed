@@ -762,6 +762,7 @@ def main():
     parser.add_argument('-s', '--start', help='Start render on startup', action='store_true')
     parser.add_argument('-p', '--port', metavar='port number', help='Port to open on startup', type=int)
     parser.add_argument('-r', '--read-rate', metavar='read rate', help='Bytes per line to read from tcp port', type=int)
+    parser.add_argument('-oc', '--openconnection', help='Open tcp connection on startup', action='store_true')
     args = parser.parse_args()
 
     # log_target = appleseed.ConsoleLogTarget(sys.stderr)
@@ -784,6 +785,9 @@ def main():
     main_window.app_controller = app_controller
     main_window.showMaximized()
     main_window.raise_()
+
+    if args.openconnection:
+        app_controller.socket_connect()
 
     if args.file is not None:
         app_controller.load_project(args.file)
