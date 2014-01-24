@@ -587,6 +587,9 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.toggle_console_action.setShortcut('Ctrl+Return')
         self.toolbar.addAction(self.toggle_console_action)
 
+        self.quit_action = QtGui.QAction('quit', self)
+        self.quit_action.setShortcut('Ctrl+q')
+
         # status bar
         self.status_bar = self.statusBar()
         self.connection_status = ConnectionStatus()
@@ -655,6 +658,7 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.stop_render_action.triggered.connect(self.stop_render)
         self.toggle_keep_window_on_top_action.triggered.connect(self.toggle_keep_window_on_top)
         self.toggle_console_action.triggered.connect(self.toggle_console)
+        self.quit_action.triggered.connect(self.toggle_console)
         # others
         self.console_in.returnPressed.connect(self.console_submit)
         self.connect_button.pressed.connect(self.socket_connect)
@@ -662,7 +666,7 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.port_number.editingFinished.connect(self.port_updated)
         self.read_rate.returnPressed.connect(self.socket_connect)
         self.read_rate.editingFinished.connect(self.read_rate_updated)
-        self.disconnect_button.pressed.connect(self.socket_disconnect)
+        self.disconnect_button.pressed.connect(self.quit)
 
 
     def load_project(self):
@@ -685,9 +689,13 @@ class RenderViewWindow(QtGui.QMainWindow):
 
 
     def closeEvent(self, event):
+        self.quit()
+        event.accept()
+
+
+    def quit(self):
         self.stop_render()
         self.socket_disconnect()
-        event.accept()
 
 
     def toggle_keep_window_on_top(self):
