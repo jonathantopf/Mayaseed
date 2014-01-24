@@ -4,6 +4,9 @@ import maya.cmds as cmds
 import maya.OpenMaya as om
 import ms_commands
 import socket
+import subprocess
+import sys
+import os
 
 
 #----------------------------------------------------------------------------------
@@ -305,6 +308,33 @@ def update_color(msg, m_plug, other_m_plug, client_data):
         # update_color(self, assembly_path, color_name, values, multiplier)
         command = 'self.update_color({0}, "{1}", [{2},{3},{4}], {5})\n'.format(client_data[0], client_data[1], normalized_color[0], normalized_color[1], normalized_color[2], normalized_color[3])
         socket_send(command)
+
+
+#--------------------------------------------------------------------------------------------------
+# Launch render viewer.
+#--------------------------------------------------------------------------------------------------
+
+def launch_viewer(port=None, file_name=None, start=True):
+    executable = os.path.join(os.environ['MAYA_LOCATION'], 'bin', 'mayapy')
+    render_view = os.path.join(ms_commands.ROOT_DIRECTORY, 'tools', 'render_view', 'render_view.py')
+    command = [executable, render_view]
+
+    environment = os.environ.copy()
+    appleseed_root = ms_commands.get_appleseed_root()
+
+    if appleseed_root is not None:
+        environment['PYTHONPATH'] += ':' + appleseed_root
+
+    if file_name is not None:
+        command += [file_name]
+
+    if port is not None:
+        command += ['-p', str(port), '-oc']
+
+    if start:
+        command += ['-s']
+
+    p = subprocess.Popen(command, env=environment)
 
 
 #----------------------------------------------------------------------------------
