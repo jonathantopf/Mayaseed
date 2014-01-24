@@ -40,7 +40,7 @@ import time
 import copy
 
 
-sys.path.append('/projects/appleseed/sandbox/bin/Ship')
+# sys.path.append('/projects/appleseed/sandbox/bin/Ship')
 
 current_script_path = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
