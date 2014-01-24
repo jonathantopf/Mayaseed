@@ -50,13 +50,6 @@ import appleseed
 
 
 #----------------------------------------------------------------------------------
-# Globals
-#----------------------------------------------------------------------------------
-
-THREADED_INTERFACE = True
-
-
-#----------------------------------------------------------------------------------
 # Utilities
 #----------------------------------------------------------------------------------
 
@@ -303,22 +296,15 @@ class AppController(QtCore.QObject):
                                                      self.tile_callback)
 
             # Render the frame.
-            if THREADED_INTERFACE:
-                self.render_thread = appleseed.RenderThread(self.renderer)
-                self.render_thread.start()
-            else:
-                print 'no threads'
-                self.renderer.render()  
+            self.renderer.render()  
         else:
             self.main_window.console_error('No project loaded')
 
 
     def stop_render(self):
-        if (THREADED_INTERFACE and self.render_thread is not None) or self.renderer is not None:
+        if self.renderer is not None:
             self.main_window.console_info('Stopping render')
             self.renderer_controller.terminate = True
-            self.render_thread.join()
-            self.render_thread = None
             self.renderer = None
 
 
@@ -422,7 +408,6 @@ class AppController(QtCore.QObject):
 class RenderView(QtGui.QWidget):
     def __init__(self):      
         super(RenderView, self).__init__()
-        self.m_mutex = QtCore.QMutex()
         self.initUI()
 
 
@@ -434,7 +419,6 @@ class RenderView(QtGui.QWidget):
 
 
     def set_size(self, width, height):
-        locker = QtCore.QMutexLocker(self.m_mutex)
         self.width = width
         self.height = height
         self.image = QtGui.QImage(width, self.height, QtGui.QImage.Format_RGB32)
@@ -446,7 +430,6 @@ class RenderView(QtGui.QWidget):
 
 
     def paintEvent(self, e):
-        locker = QtCore.QMutexLocker(self.m_mutex)
         qp = QtGui.QPainter()
         qp.begin(self)
         self.drawWidget(qp)
@@ -458,7 +441,6 @@ class RenderView(QtGui.QWidget):
 
 
     def update_tile(self, tx, ty, w, h, frame, tile, channel_count):
-        locker = QtCore.QMutexLocker(self.m_mutex)
 
         # create copy of tile to color transformations dont get applied twice or not at all
         tile_copy = copy.copy(tile)
@@ -498,7 +480,6 @@ class RenderView(QtGui.QWidget):
 class ConnectionStatus(QtGui.QWidget):
     def __init__(self):      
         super(ConnectionStatus, self).__init__()
-        self.m_mutex = QtCore.QMutex()
         self.initUI()
 
         self.connected = False
