@@ -224,13 +224,13 @@ class RendererController(appleseed.IRendererController):
 #----------------------------------------------------------------------------------
 
 class AppController(QtCore.QObject):
-    def __init__(self,  main_window):
+    def __init__(self,  main_window, app):
         QtCore.QObject.__init__(self)
         self.renderer_controller = RendererController()
         self.project = None
         self.renderer = None 
-        self.render_thread = None
         self.main_window = main_window
+        self.app = app
         self.tcp_port = 10210
         self.read_rate = 4096
         self.render_start_time = None
@@ -245,12 +245,17 @@ class AppController(QtCore.QObject):
 
         # progress callback methods
         self.renderer_controller.progress_methods.append(self.on_render_progress)
+        self.renderer_controller.progress_methods.append(self.app.processEvents)
 
         # rendering begin callback methods
         self.renderer_controller.render_begin_methods.append(self.on_render_start)
 
         # frame end methods
         self.renderer_controller.frame_end_methods.append(self.on_render_stop)
+
+        # RenderView widget callbacks
+        self.main_window.viewport.callbacks.append(self.app.processEvents)
+        self.main_window.viewport.callbacks.append(self.on_render_progress)
 
         # socket
         self.tcp_socket = QtNetwork.QTcpSocket(self)
@@ -416,6 +421,7 @@ class RenderView(QtGui.QWidget):
         self.height = 200
         self.set_size(self.width, self.height)
         self.image = QtGui.QImage(self.width, self.height, QtGui.QImage.Format_RGB32)
+        self.callbacks = []
 
 
     def set_size(self, width, height):
@@ -459,6 +465,8 @@ class RenderView(QtGui.QWidget):
         tile_start = QtCore.QPoint(tx * w, ty * h)
 
         for y in range(real_height):
+            for method in self.callbacks:
+                method()
             for x in range(real_width):
 
                 pixel_start = ((y * real_width) + x) * channel_count
@@ -763,7 +771,7 @@ def main():
     set_style(app)
 
     main_window = RenderViewWindow()
-    app_controller = AppController(main_window)
+    app_controller = AppController(main_window, app)
 
     if args.port is not None:
         app_controller.tcp_port = args.port
