@@ -34,6 +34,13 @@ button_list = []
 # Buttons.
 #--------------------------------------------------------------------------------------------------
 
+# reload modules
+
+button_list.append(['Reload mayaseed modues', 'icon_reload_modules.png', 'python', """
+import ms_shelf
+ms_shelf.reload_modules()
+"""])
+
 # export.
 
 button_list.append(['Export', 'icon_export.png', 'python', """
@@ -130,6 +137,21 @@ def re_export_no_deps():
 
 def import_appleseed_scene():
     ms_commands.create_ms_appleseed_scene()
+
+
+def reload_modules():
+    import ms_export
+    reload(ms_export)
+    import ms_commands
+    reload(ms_commands)
+    import ms_menu
+    reload(ms_menu)
+    import ms_shelf
+    reload(ms_shelf)
+    import ms_export_obj
+    reload(ms_export_obj)
+    import ms_render_view_connection
+    reload(ms_render_view_connection)
 
 
 #--------------------------------------------------------------------------------------------------

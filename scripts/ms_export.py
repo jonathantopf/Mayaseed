@@ -30,9 +30,7 @@ import re
 import subprocess
 import sys
 import ms_commands
-reload(ms_commands) # hack to avoid reloading modules after each edit during dev
 import ms_render_view_connection
-reload(ms_render_view_connection)
 import ms_export_obj
 import time
 import inspect
@@ -657,14 +655,14 @@ class MFile():
         self.image_file_names = []
         self.converted_images = set()
         self.node_type = cmds.nodeType(maya_file_node)
-        
+        self.autodetect_alpha = params['autodetect_alpha']        
+
         if self.node_type == 'file':
             self.name = maya_file_node
             self.safe_name = ms_commands.legalize_name(self.name)
             self.image_name = cmds.getAttr(self.name + '.fileTextureName')
             self.is_animated = cmds.getAttr(self.name + '.useFrameExtension')
             self.alpha_is_luminance = cmds.getAttr(self.name + '.alphaIsLuminance')
-            self.autodetect_alpha = params['autodetect_alpha']
             self.filtering_mode = cmds.getAttr((self.name + '.filterType'), asString=True)
 
             # Off, Mipmap, Box, Quadratic, Quartic, Gaussian 
@@ -680,6 +678,7 @@ class MFile():
         else:
             self.source_node = source_node
             self.attribute = attribute
+            self.filtering_mode = 'Quadratic'
             self.name = 'baked_' + self.source_node + '_' + self.attribute
             self.safe_name = ms_commands.legalize_name(self.name)
             self.is_animated = False
@@ -690,7 +689,7 @@ class MFile():
         if self.node_type == 'file':
             image_name = ms_commands.get_file_texture_name(self.name, time)
         else:
-            image_name = ms_commands.convert_connection_to_image(self.source_node, self.attribute, os.path.join(export_root, ms_commands.TEXTURE_DIR, ('{0}_{1}.iff'.format(self.name, time))))
+            image_name = ms_commands.convert_connection_to_image(self.source_node, self.attribute, os.path.join(export_root, ms_commands.TEXTURE_DIR, ('{0}_{1}.iff'.format(self.name, time))), self.params['overwrite_existing_textures'])
 
         if self.params['convert_textures_to_exr']:
             if image_name not in self.converted_images:
@@ -1004,7 +1003,7 @@ class MGenericMaterial():
             self.transparency = MColorConnection(self.params, self.name + '.transparency')
             if self.transparency.connected_node is not None:
                 self.transparency = m_file_from_color_connection(self.params, self.transparency)
-                self.textures.append(self.alpha)
+                self.textures.append(self.transparency)
             elif self.transparency.is_black:
                 self.transparency = None
 
@@ -2582,7 +2581,10 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
     # material alpha component
     if material_attribs['alpha'] is not None:
-        front_material.alpha_map = AsParameter('alpha_map', 1 - material_attribs['alpha'])
+        if isinstance(material_attribs['alpha'], (int, long, float, complex)):
+            front_material.alpha_map = AsParameter('alpha_map', 1 - material_attribs['alpha'])
+        else:
+            front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'])
         if double_sided and (single_material == False):
             back_material.alpha_map = front_material.alpha_map
 
