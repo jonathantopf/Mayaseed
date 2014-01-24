@@ -12,17 +12,20 @@ import socket
 
 def socket_open():
     global socket_connection
+    global window
     if socket_connection is None:
         socket_connection = QtNetwork.QTcpServer()
         if socket_connection.listen():
             print 'Server opened at port:', socket_connection.serverPort()
             socket_connection.newConnection.connect(client_connected)
+            window.server_status_open(socket_connection.serverPort())
             return socket_connection
         else:
             print 'Error opening connection'
     else:
         print 'A connection is already open at:', socket_connection.serverPort()
         print 'Close connection before connecting again'
+    window.server_status_closed()
     return None
 
 
@@ -31,6 +34,10 @@ def socket_close():
     global client_connection
     socket_connection = None
     client_connection = None
+
+    window.server_status_closed()
+    window.client_status_no_client()
+
     print 'Connection closed'
 
 
@@ -45,8 +52,10 @@ def socket_send(data):
 def client_connected():
     global socket_connection
     global client_connection
+    global window
     client_connection = socket_connection.nextPendingConnection()
     client_connection.disconnected.connect(client_disconnected)
+    window.client_status_got_client()
 
 
 def client_disconnected():
@@ -253,17 +262,10 @@ class ConnectionWindow(QtGui.QMainWindow):
 
     def server_open(self):
         self.socket_connection = socket_open()
-        if self.socket_connection is not None:
-            self.server_status_open(self.socket_connection.serverPort())
-            self.socket_connection.newConnection.connect(self.client_status_got_client)
-        else:
-            self.server_status_closed()
 
 
     def server_close(self):
         socket_close()
-        self.server_status_closed()
-        self.client_status_no_client()
 
 
     def server_status_open(self, port):
