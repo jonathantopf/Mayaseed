@@ -122,7 +122,7 @@ def set_style(app):
     app.setPalette(palette)
 
     # set stylesheet
-    stylesheet = open('style.qss', 'r')
+    stylesheet = open(os.path.join(current_script_path, 'style.qss'), 'r')
     style = stylesheet.read()
 
     style_replacement_patterns = [
