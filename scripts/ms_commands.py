@@ -1038,3 +1038,22 @@ def create_ms_appleseed_scene():
         cmds.setAttr(new_node + '.z_max', bounding_box[5])
 
 
+#--------------------------------------------------------------------------------------------------
+# get appleseed directory.
+#--------------------------------------------------------------------------------------------------
+
+def get_appleseed_root():
+    option_var_name = 'ms_appleseed_root'
+    if cmds.optionVar(ex=option_var_name):
+        option_var_value = cmds.optionVar(q=option_var_name)
+        cli_path = os.path.join(option_var_value, 'appleseed.cli')
+        if os.path.exists(cli_path):
+            return option_var_value
+    
+    appleseed_dir = cmds.fileDialog2(fm=1, okc='Select', cap='select appleseed.cli file', ff='*appleseed.cli*')
+    if appleseed_dir is not None:
+        cmds.optionVar(sv=[option_var_name, os.path.split(appleseed_dir[0])[0]])
+        return cmds.optionVar(q=option_var_name)
+    
+    return None
+
