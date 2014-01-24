@@ -3111,6 +3111,8 @@ def export_container(render_settings_node):
         cmds.progressWindow(e=True, progress=i)
         cmds.refresh(cv=True)
 
+        last_output_file = as_object[0]
+
     export_finish_time = time.time()
 
     cmds.progressWindow(endProgress=1)
@@ -3122,7 +3124,15 @@ def export_container(render_settings_node):
     if params['start_interactive_render_session']:
         ms_render_view_connection.window.show()
 
-    cmds.confirmDialog(message=completed_message, button='ok')
+        if ms_render_view_connection.socket_connection is None:
+            port = ms_render_view_connection.socket_open().serverPort()
+        else:
+            port = ms_render_view_connection.socket_connection.serverPort()
+
+        ms_render_view_connection.launch_viewer(port, last_output_file)
+
+    else:
+        cmds.confirmDialog(message=completed_message, button='ok')
 
 
 #--------------------------------------------------------------------------------------------------
