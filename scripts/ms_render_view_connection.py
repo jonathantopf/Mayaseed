@@ -85,7 +85,7 @@ def remove_callback(callback):
 def remove_callbacks():
     global callbacks
     for callback in callbacks:
-        removeCallback(callback)
+        remove_callback(callback)
 
     callbacks = []
 
