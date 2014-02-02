@@ -90,8 +90,8 @@ def set_style(app):
     # set palette
     shadow     = QtGui.QColor(30, 30, 30 )
     background = QtGui.QColor(40, 40, 40 )
-    mid        = QtGui.QColor(45 ,45, 45 )
-    mid_light  = QtGui.QColor(50 ,50 ,50 )
+    mid        = QtGui.QColor(50 ,50, 50 )
+    mid_light  = QtGui.QColor(55 ,55 ,55 )
     light      = QtGui.QColor(90,90,90)
     highlight  = QtGui.QColor(120,180,200)
     text       = QtGui.QColor(220,220,220)
@@ -278,16 +278,33 @@ class AppController(QtCore.QObject):
 
             self.main_window.console_info('Loaded project: {0}'.format(self.project.get_name()))
 
-            frame_params = self.project.get_frame().get_parameters()
+            frame = self.project.get_frame()
+
+            frame_params = frame.get_parameters()
 
             if (not 'pixel_format' in frame_params) or (frame_params['pixel_format'] != 'float'):
                 self.main_window.console_warning('Pixel format not supported, converting to float')
                 frame_params['pixel_format'] = 'float'
                 new_frame = appleseed.Frame('beauty', frame_params)
                 self.project.set_frame(new_frame)
+                frame = self.project.get_frame()
 
-            self.main_window.viewport.set_size(self.project.get_frame().image().properties().canvas_width,
-                  self.project.get_frame().image().properties().canvas_height)
+
+
+            # initialize ui
+            image_properties = frame.image().properties()            
+            self.main_window.viewport.set_size(image_properties.canvas_width, image_properties.canvas_height)
+
+            render_layer_combo_list = []
+
+            aov_images = frame.aov_images()
+
+            for i in range(aov_images.size()):
+                render_layer_combo_list.append(aov_images.get_name(i))
+
+            self.main_window.populate_render_layer_combo(render_layer_combo_list)
+
+
         else:
             self.main_window.console_error('Path is not valid')
 
@@ -587,6 +604,9 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.toggle_console_action.setShortcut('Ctrl+Return')
         self.toolbar.addAction(self.toggle_console_action)
 
+        self.render_layer_combo_box = QtGui.QComboBox()
+        self.toolbar.addWidget(self.render_layer_combo_box)
+
         self.quit_action = QtGui.QAction('quit', self)
         self.quit_action.setShortcut('Ctrl+q')
 
@@ -659,6 +679,7 @@ class RenderViewWindow(QtGui.QMainWindow):
         self.toggle_keep_window_on_top_action.triggered.connect(self.toggle_keep_window_on_top)
         self.toggle_console_action.triggered.connect(self.toggle_console)
         self.quit_action.triggered.connect(self.toggle_console)
+
         # others
         self.console_in.returnPressed.connect(self.console_submit)
         self.connect_button.pressed.connect(self.socket_connect)
@@ -696,6 +717,7 @@ class RenderViewWindow(QtGui.QMainWindow):
     def quit(self):
         self.stop_render()
         self.socket_disconnect()
+        QtCore.QCoreApplication.instance().quit
 
 
     def toggle_keep_window_on_top(self):
@@ -715,6 +737,12 @@ class RenderViewWindow(QtGui.QMainWindow):
             self.console_in.setFocus(QtCore.Qt.OtherFocusReason)
         else:
             self.console_splitter.setSizes([400, 00])
+
+
+    def populate_render_layer_combo(self, items):
+        self.render_layer_combo_box.clear()
+        for item in items:
+            self.render_layer_combo_box.addItem(item)
 
 
     def console_submit(self):

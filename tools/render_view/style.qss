@@ -136,5 +136,18 @@ QSplitter:handle  {
 }
  
 
+QComboBox {
+    background-color: MID;
+    border-radius: 3;
+    border-width: 0px;
+    padding: 3px;
+    font-size: 11px;
+    padding-left: 7px;
+    padding-right: 7px;
+    margin-left: 2px;
+    margin-right: 2px;
+    width: 100px;
+}
+
 
 
