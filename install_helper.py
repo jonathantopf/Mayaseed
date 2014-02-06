@@ -63,7 +63,7 @@ def install():
                 return False
         
         try:
-            module_file_contents = "+ mayaseed {0} {1} \n\nicons: graphics \nscripts: scripts".format(ms_commands.MAYASEED_VERSION, mayaseed_dir)
+            module_file_contents = "+ mayaseed {0} {1} \nMAYA_CUSTOM_TEMPLATE_PATH+:=scripts".format(ms_commands.MAYASEED_VERSION, mayaseed_dir)
             file = open(module_file_path, 'w')
             file.write(module_file_contents)
             file.close()
