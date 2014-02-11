@@ -49,6 +49,9 @@ GEO_DIR = '_geometry'
 TEXTURE_DIR = '_textures'
 REFERENCED_SCENES = '_references'
 
+# http://stackoverflow.com/questions/12253014/why-does-popen-fail-on-windows-if-the-env-parameter-contains-a-unicode-object
+ENV_VARIABLES = dict((k, str(os.environ[k])) for k in os.environ.keys())
+
 INCH_TO_METER = 0.02539999983236
 
 #--------------------------------------------------------------------------------------------------
@@ -186,19 +189,30 @@ def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, 
     dest_dir = os.path.join(export_root, texture_dir)
     result_file = relative_path if relative else dest_file
 
+    if not os.path.exists(file_path):
+        info("# error: {0} does not exist".format(file_path))
+        return result_file
+
+    if pass_through:
+        info("# skipping conversion of {0}".format(file_path))
+        return result_file
+
+    if os.path.exists(dest_file) and not overwrite:
+        info("# {0} already exists, skipping conversion".format(dest_file))
+        return result_file
+
     create_dir(dest_dir)
 
     # -r: make a tiled OpenEXR file
     # -t: set the tile dimensions
     args = ['imf_copy', "-r", "-t 32", file_path, dest_file]
-    environment = os.environ
 
     if sys.platform == 'win32':
         # http://stackoverflow.com/questions/2935704/running-shell-commands-without-a-shell-window
-        p = subprocess.Popen(args, creationflags=0x08000000, env=environment)
+        p = subprocess.Popen(args, creationflags=0x08000000, env=ENV_VARIABLES)
         p.wait()
     elif sys.platform == 'darwin':
-        p = subprocess.Popen(args, env=environment)
+        p = subprocess.Popen(args, env=ENV_VARIABLES)
         p.wait()
 
     return result_file
