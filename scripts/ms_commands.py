@@ -49,6 +49,9 @@ GEO_DIR = '_geometry'
 TEXTURE_DIR = '_textures'
 REFERENCED_SCENES = '_references'
 
+# http://stackoverflow.com/questions/12253014/why-does-popen-fail-on-windows-if-the-env-parameter-contains-a-unicode-object
+ENV_VARIABLES = dict((k, str(os.environ[k])) for k in os.environ.keys())
+
 INCH_TO_METER = 0.02539999983236
 
 #--------------------------------------------------------------------------------------------------
@@ -180,45 +183,6 @@ def convert_connection_to_image(shader, attribute, dest_file, overwrite, resolut
 # Convert textures to OpenEXR format.
 #--------------------------------------------------------------------------------------------------
 
-def find_path_to_imf_copy():
-    #
-    # Values of maya_base_path:
-    #
-    #                   Maya 2012                       Maya 2013                    Maya 2014
-    #   -----------------------------------------------------------------------------------------------------
-    #   Mac OS X        maya2012/Maya.app/Contents      maya2013/Maya.app/Contents   maya2014/Maya.app/Contents
-    #   Windows         Maya2012                        Maya2013
-    #   Linux           ?                               ?
-    #
-    # Locations of imf_copy:                    
-    #
-    #                   Maya 2012                       Maya 2013                    Maya 2014
-    #   -----------------------------------------------------------------------------------------------------
-    #   Mac OS X        maya2012/Maya.app/Contents/bin  maya2013/mentalray/bin       mentalrayForMaya2014/bin
-    #   Windows         Maya2012\bin                    Maya2013\mentalray\bin
-    #   Linux           ?                               ?
-    #
-
-    maya_base_path = os.path.split(sys.path[0])[0]
-    imf_copy_path = None
-    maya_version = mel.eval('getApplicationVersionAsFloat()')
-
-    if maya_version == 2013.0:
-        if sys.platform == 'darwin':
-            imf_copy_path = os.path.join(maya_base_path, '..', '..', 'mentalray', 'bin')
-        elif sys.platform == 'win32':
-            imf_copy_path = os.path.join(maya_base_path, 'mentalray', 'bin')
-    elif maya_version >= 2013.0:
-        if sys.platform == 'darwin':
-            imf_copy_path = os.path.join(maya_base_path, '..', '..', '..', 'mentalrayForMaya2014', 'bin')
-        elif sys.platform == 'win32':
-            imf_copy_path = os.path.join(maya_base_path, 'mentalray', 'bin')
-    else:
-        imf_copy_path = os.path.join(maya_base_path, 'bin')
-
-    return None if imf_copy_path is None else os.path.join(imf_copy_path, 'imf_copy')
-
-
 def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, pass_through=False, relative=True):
     relative_path = os.path.join(texture_dir, os.path.splitext(os.path.split(file_path)[1])[0] + '.exr')
     dest_file = os.path.join(export_root, relative_path)
@@ -237,24 +201,18 @@ def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, 
         info("# {0} already exists, skipping conversion".format(dest_file))
         return result_file
 
-    imf_copy_path = find_path_to_imf_copy()
-
-    if imf_copy_path is None:
-        info("# error: cannot convert {0}, imf_copy utility not found".format(file_path))
-        return result_file
-
     create_dir(dest_dir)
 
     # -r: make a tiled OpenEXR file
     # -t: set the tile dimensions
-    args = [imf_copy_path, "-r", "-t 32", file_path, dest_file]
+    args = ['imf_copy', "-r", "-t 32", file_path, dest_file]
 
     if sys.platform == 'win32':
         # http://stackoverflow.com/questions/2935704/running-shell-commands-without-a-shell-window
-        p = subprocess.Popen(args, creationflags=0x08000000)
+        p = subprocess.Popen(args, creationflags=0x08000000, env=ENV_VARIABLES)
         p.wait()
     elif sys.platform == 'darwin':
-        p = subprocess.Popen(args)
+        p = subprocess.Popen(args, env=ENV_VARIABLES)
         p.wait()
 
     return result_file
