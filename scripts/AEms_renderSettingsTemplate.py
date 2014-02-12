@@ -15,24 +15,101 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 self.callCustom(self.toolbar_create, self.toolbar_edit, 'render_toolbar')
 
 
-                self.beginLayout('Export Settings', collapse=False)
-
+                # export settings
+                self.beginLayout('Export settings', collapse=False)
                 self.callCustom(self.output_directory_create, self.populate_render_layer_layout, 'output_directory')
                 self.addControl('output_file')
-
-                self.addControl('convert_shading_nodes_to_textures')
                 self.addSeparator()
-                self.addControl('convert_textures_to_exr')
+                self.addControl('convert_shading_nodes_to_textures', label='Bake shading networks')
                 self.addSeparator()
-                self.addControl('overwrite_existing_textures')
+                self.addControl('convert_textures_to_exr', label='Convert Textures to OpenEXR')
                 self.addSeparator()
-                self.addControl('overwrite_existing_geometry')
-
+                self.addControl('overwrite_existing_textures', label='Overwrite Existing Textures Files')
+                self.addSeparator()
+                self.addControl('overwrite_existing_geometry', label='Overwrite Existing Geometry Files')
+                self.addSeparator()
+                self.addControl('export_camera_blur', label='Export Camera Transformation Motion Blur')
+                self.addSeparator()
+                self.addControl('export_transformation_blur', label='Export Assembly Transformation Motion Blur')
+                self.addSeparator()
+                self.addControl('export_deformation_blur', label='Export Object Deformation Motion Blur')
+                self.addSeparator()
+                self.addControl('motion_samples')
+                self.addControl('shutter_open_time')
+                self.addControl('shutter_close_time')
+                self.addSeparator()
+                self.addControl('export_animation')
+                self.addControl('animation_start_frame')
+                self.addControl('animation_end_frame')
+                self.addControl('export_animated_textures')
                 self.endLayout()
 
-                self.beginLayout('Render Layers')
+                # output settings
+                self.beginLayout('Output settings')
+                self.addControl('camera')
+                self.addControl('frame_width')
+                self.addControl('frame_height')
+                self.addControl('color_space')
+                self.addControl('export_straight_alpha')
+                self.endLayout()
+
+                # environment settings
+                self.beginLayout('Environment settings')
+                self.addControl('environment')
+                self.addControl('render_sky')
+                self.addControl('scene_index_of_refraction')
+                self.endLayout()
+
+
+                # configuration settings
+                self.beginLayout('Configuration settings')
+                self.addControl('sampler')
+                self.addControl('adaptive_min_samples')
+                self.addControl('adaptive_max_samples')
+                self.addControl('adaptive_quality')
+                self.addSeparator()
+                self.addControl('uniform_samples')
+                self.addControl('uniform_decorrelate_pixels')
+                self.addSeparator()
+                self.addControl('pt_direct_lighting')
+                self.addControl('pt_ibl')
+                self.addControl('pt_caustics')
+                self.addSeparator()
+                self.addControl('pt_next_event_estimation')
+                self.addControl('pt_max_bounces')
+                self.addControl('pt_light_samples')
+                self.addControl('pt_environment_samples')
+                self.addControl('pt_max_ray_intensity')
+                self.addSeparator()
+                self.addControl('enable_importance_sampling')
+                self.endLayout()
+
+                # render layers
+                self.beginLayout('Render layers')
                 self.callCustom(self.render_layer_create_layout, self.populate_render_layer_layout, 'render_layers')
                 self.endLayout()
+
+                # advanced settings
+
+                self.beginLayout('Advanced settings')
+
+                self.addControl('profile_export')
+                self.addSeparator()
+                self.addControl('autodetect_alpha')
+                self.addSeparator()
+                self.addControl('force_linear_texture_interpretation')
+                self.addSeparator()
+                self.addControl('force_linear_color_interpretation')
+                self.addSeparator()
+                self.addControl('export_all_cameras_as_thin_lens')
+                self.addSeparator()
+                self.addControl('export_maya_lights')
+
+                self.endLayout()
+
+
+
+
 
                 self.addExtraControls()
 
@@ -123,7 +200,6 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
             while True:
                 i += 1
 
-
                 if i > 50:
                     break
                 layer_name = 'render_layer_{0}_name'.format(i)
@@ -144,6 +220,10 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                     rule_text_field = cmds.textField()
                     cmds.intField(v=1)
                     cmds.button(' - ', height=20)
+
+
+        def set_render_layer_attrs(layer_number):
+            pass
 
 
         def toolbar_create(self, args):
