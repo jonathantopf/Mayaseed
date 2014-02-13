@@ -60,16 +60,15 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 self.addControl('scene_index_of_refraction')
                 self.endLayout()
 
-
                 # configuration settings
                 self.beginLayout('Configuration settings')
-                self.addControl('sampler')
+                self.addControl('sampler', changeCommand=self.configuration_settings_sampler_callback)
                 self.addControl('adaptive_min_samples')
                 self.addControl('adaptive_max_samples')
                 self.addControl('adaptive_quality')
                 self.addSeparator()
                 self.addControl('uniform_samples')
-                self.addControl('uniform_decorrelate_pixels')
+                self.addControl('uniform_decorrelate_pixels', label='Decorrelate pixels')
                 self.addSeparator()
                 self.addControl('pt_direct_lighting')
                 self.addControl('pt_ibl')
@@ -233,6 +232,21 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
         def toolbar_edit(self, args):
             pass
+
+
+        def configuration_settings_sampler_callback(self, node):
+            if cmds.getAttr(node + '.sampler') == 0: # adaptive
+                cmds.editorTemplate(dimControl=[node, 'adaptive_min_samples', False])
+                cmds.editorTemplate(dimControl=[node, 'adaptive_max_samples', False])
+                cmds.editorTemplate(dimControl=[node, 'adaptive_quality', False])
+                cmds.editorTemplate(dimControl=[node, 'uniform_samples', True])
+                cmds.editorTemplate(dimControl=[node, 'uniform_decorrelate_pixels', True])
+            else: # uniform
+                cmds.editorTemplate(dimControl=[node, 'adaptive_min_samples', True])
+                cmds.editorTemplate(dimControl=[node, 'adaptive_max_samples', True])
+                cmds.editorTemplate(dimControl=[node, 'adaptive_quality', True])
+                cmds.editorTemplate(dimControl=[node, 'uniform_samples', False])
+                cmds.editorTemplate(dimControl=[node, 'uniform_decorrelate_pixels', False])
 
 
         def refresh_editor(self, args):
