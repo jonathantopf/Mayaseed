@@ -6,6 +6,8 @@ import ms_export
 
 ENTITY_TYPES = ['object_instance', 'light', 'edf']
 
+RENDER_LAYER_ATTRS = [['name', 'layer_name'], ['model', 'regex'], ['rule', '*object_name*'], ['type', 'object_instance'], ['order', '0']]
+
 
 class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
         def __init__(self, node):
@@ -13,7 +15,6 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 self.beginScrollLayout()
 
                 self.callCustom(self.toolbar_create, self.toolbar_edit, 'render_toolbar')
-
 
                 # export settings
                 self.beginLayout('Export settings', collapse=False)
@@ -91,7 +92,6 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 # advanced settings
 
                 self.beginLayout('Advanced settings')
-
                 self.addControl('profile_export')
                 self.addSeparator()
                 self.addControl('autodetect_alpha')
@@ -106,13 +106,14 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
                 self.endLayout()
 
-
-
-
-
                 self.addExtraControls()
 
                 self.endScrollLayout()
+
+                # suppress potential render layers
+                for i in range(50):
+                    for attr in RENDER_LAYER_ATTRS:
+                        self.suppress('render_layer_{0}_{1}'.format(i, attr[0]))
 
 
         def get_file_dir(self, *attr):
@@ -120,11 +121,13 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
             if file_name is not None:
                 cmds.setAttr(attr[0], file_name[0], type='string')
 
+
         def output_directory_create(self, attr):
             cmds.rowLayout(nc=3)
             cmds.text(label='Output Directory')
             self.output_dir_text_field = cmds.textField(fileName=cmds.getAttr(attr))
             self.output_dir_button = cmds.button(' Select directory ', c=partial(self.get_file_dir, attr))
+
 
         def output_directory_update(self, attr):
             cmds.textField(self.output_dir_text_field, edit=True, fileName=cmds.getAttr(attr))
@@ -144,85 +147,80 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
             cmds.setParent('..')
             self.render_layer_layout = cmds.columnLayout('render_layer_layout')
             cmds.setParent('..')
-            cmds.rowLayout(nc=3)
-            cmds.button(' + ', command=partial(self.add_render_layer, args))
-
             self.populate_render_layer_layout(args)
 
 
-        def add_render_layer(self, attr, name=None, model=None, rule=None, entity_type=None, refresh=False):
-            node = attr.split('.')[0]
-
-            i = 0
-
-            while True:
+        def add_render_layer(self, node, refresh=True):
+            for i in range(50):
                 i += 1
-                if i > 50:
-                    break
+
                 layer_name = 'render_layer_{0}_name'.format(i)  
             
                 if not cmds.attributeQuery(layer_name, exists=True, node=node):
-
-                    cmds.addAttr(node, longName='render_layer_{0}_name'.format(i), dt="string")
-                    if name is not None:
-                        cmds.setAttr(node + '.render_layer_{0}_name'.format(i), name, type='string')
-                    cmds.addAttr(node, longName='render_layer_{0}_model'.format(i), dt="string")
-                    if model is not None:
-                        cmds.setAttr(node + '.render_layer_{0}_model'.format(i), model, type='string')
-                    cmds.addAttr(node, longName='render_layer_{0}_rule'.format(i), dt="string")
-                    if rule is not None:
-                        cmds.setAttr(node + '.render_layer_{0}_rule'.format(i), rule, type='string')
-                    if entity_type is not None:
-                        cmds.setAttr(node + '.render_layer_{0}_type'.format(i), entity_type, type='string')
-                    cmds.addAttr(node, longName='render_layer_{0}_type'.format(i), dt="string")
-
-                    cmds.addAttr(node, longName='render_layer_{0}_order'.format(i), at="short")
-
+                    for attr in RENDER_LAYER_ATTRS:
+                        cmds.addAttr(node, longName='render_layer_{0}_{1}'.format(i, attr[0]), dt="string", k=False, w=False)
+                        cmds.setAttr('{0}.render_layer_{1}_{2}'.format(node, i, attr[0]), attr[1], type='string')
                     if refresh:
                         self.populate_render_layer_layout(attr)
-
                     break
 
 
-        def populate_render_layer_layout(self, attr): # here we pass the attribute rather than the node name so we can re use this finction id the call custom menu
+        def remove_render_layer(self, node, number, args):
+            for attr in RENDER_LAYER_ATTRS:
+                cmds.deleteAttr(n=node, at='render_layer_{0}_{1}'.format(number, attr[0]))
+            self.populate_render_layer_layout(node)
 
+
+        def populate_render_layer_layout(self, attr):
             node = attr.split('.')[0]  
-
             # delete old ui
             children = cmds.columnLayout(self.render_layer_layout, q=True, childArray=True)
             if children is not None:
                 for name in children:
                     cmds.deleteUI(name)
 
-            i = 0
-
-            while True:
+            for i in range(50):
                 i += 1
 
-                if i > 50:
-                    break
                 layer_name = 'render_layer_{0}_name'.format(i)
 
                 if cmds.attributeQuery(layer_name, exists=True, node=node):
-
                     cmds.setParent(self.render_layer_layout)
-
                     current_render_layer_layout = cmds.rowLayout(nc=5)
-            
                     for n, width in enumerate(self.render_layer_layout_widths):
                         cmds.rowLayout(current_render_layer_layout, e=True, cw=[n + 1, width])
-
-                    cmds.textField()
-                    entity_type_menu = cmds.optionMenu()
+                    cmds.textField(cc=partial(self.set_render_layer_name, node, i), text=cmds.getAttr('{0}.render_layer_{1}_name'.format(node, i)))
+                    entity_type_menu = cmds.optionMenu(cc=partial(self.set_render_layer_type, node, i))
                     for entity_type in ENTITY_TYPES:
                         cmds.menuItem(label=entity_type)
-                    rule_text_field = cmds.textField()
-                    cmds.intField(v=1)
-                    cmds.button(' - ', height=20)
+                    cmds.optionMenu(entity_type_menu, e=True, v=cmds.getAttr('{0}.render_layer_{1}_type'.format(node, i)))
+                    rule_text_field = cmds.textField(cc=partial(self.set_render_layer_rule, node, i), text=cmds.getAttr('{0}.render_layer_{1}_rule'.format(node, i)))
+                    cmds.textField(cc=partial(self.set_render_layer_order, i), text=cmds.getAttr('{0}.render_layer_{1}_order'.format(node, i)))
+                    cmds.button(' - ', height=20, command=partial(self.remove_render_layer, node, i))
+            
+            cmds.setParent(self.render_layer_layout)
+            current_render_layer_layout = cmds.rowLayout(nc=2)
+            cmds.button(' + ', command=partial(self.add_render_layer, node))
 
 
-        def set_render_layer_attrs(layer_number):
-            pass
+        def set_render_layer_name(self, node, layer_number, value):
+            self.set_render_layer_attr(node, layer_number, 'name', value)
+
+
+        def set_render_layer_type(self, node, layer_number, value):
+            self.set_render_layer_attr(node, layer_number, 'type', value)
+
+
+        def set_render_layer_rule(self, node, layer_number, value):
+            self.set_render_layer_attr(node, layer_number, 'rule', value)
+
+
+        def set_render_layer_order(self, node, layer_number, value):
+            self.set_render_layer_attr(node, layer_number, 'order', value)
+
+
+        def set_render_layer_attr(self, node, layer_number, name, value):
+            cmds.setAttr('{0}.render_layer_{1}_{2}'.format(node, layer_number, name), value, type='string')
 
 
         def toolbar_create(self, args):
