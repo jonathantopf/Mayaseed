@@ -228,11 +228,14 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
         def camera_select_set(self, attr, camera):
             value = cmds.optionMenu(self.camera_select_option_menu, q=True, v=True)
+            connection = cmds.listConnections(attr, sh=True)
             if value == '<none>':
-                connection = cmds.listConnections(attr, sh=True)
                 if connection is not None:
                     cmds.disconnectAttr(connection[0] + '.message', attr)
             else:
+                if connection is not None:
+                    if connection[0] == camera:
+                        return
                 cmds.connectAttr(camera + '.message', attr, f=True)
 
 
