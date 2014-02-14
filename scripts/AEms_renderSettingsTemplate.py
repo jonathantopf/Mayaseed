@@ -48,6 +48,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 # output settings
                 self.beginLayout('Output settings')
                 self.callCustom(self.camera_select_create, self.camera_select_update, 'camera')
+                self.camera_select_option_menu = None
                 self.addControl('frame_width')
                 self.addControl('frame_height')
                 self.addControl('color_space')
@@ -87,10 +88,10 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 # render layers
                 self.beginLayout('Render layers')
                 self.callCustom(self.render_layer_create_layout, self.populate_render_layer_layout, 'render_layers')
+                self.render_layer_layout = None
                 self.endLayout()
 
                 # advanced settings
-
                 self.beginLayout('Advanced settings')
                 self.addControl('profile_export')
                 self.addSeparator()
@@ -136,9 +137,9 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
         def render_layer_create_layout(self, args):
             self.render_layer_layout_widths = [130, 120, 130, 50, 30]
-            render_layer_label_layout = cmds.rowLayout('render_layer_label_layout', nc=5, cal=[1, 'left'])
+            self.render_layer_label_layout = cmds.rowLayout('render_layer_label_layout', nc=5, cal=[1, 'left'])
             for i, width in enumerate(self.render_layer_layout_widths):
-                cmds.rowLayout(render_layer_label_layout, e=True, cw=[i + 1, width])
+                cmds.rowLayout(self.render_layer_label_layout, e=True, cw=[i + 1, width])
             cmds.text('name')
             cmds.text('entity type')
             cmds.text('rule')
@@ -172,38 +173,39 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
 
         def populate_render_layer_layout(self, attr):
-            node = attr.split('.')[0]  
-            # delete old ui
-            children = cmds.columnLayout(self.render_layer_layout, q=True, childArray=True)
-            if children is not None:
-                for name in children:
-                    cmds.deleteUI(name)
+            if self.render_layer_layout is not None:
+                node = attr.split('.')[0]  
+                # delete old ui
+                children = cmds.columnLayout(self.render_layer_layout, q=True, childArray=True)
+                if children is not None:
+                    for name in children:
+                        cmds.deleteUI(name)
 
-            for i in range(50):
-                i += 1
+                for i in range(50):
+                    i += 1
 
-                layer_name = 'render_layer_{0}_name'.format(i)
+                    layer_name = 'render_layer_{0}_name'.format(i)
 
-                if cmds.attributeQuery(layer_name, exists=True, node=node):
-                    cmds.setParent(self.render_layer_layout)
-                    current_render_layer_layout = cmds.rowLayout(nc=5)
-                    for n, width in enumerate(self.render_layer_layout_widths):
-                        cmds.rowLayout(current_render_layer_layout, e=True, cw=[n + 1, width])
-                    cmds.textField(cc=partial(self.set_render_layer_name, node, i), text=cmds.getAttr('{0}.render_layer_{1}_name'.format(node, i)))
-                    entity_type_menu = cmds.optionMenu(cc=partial(self.set_render_layer_type, node, i))
-                    for entity_type in ENTITY_TYPES:
-                        cmds.menuItem(label=entity_type)
-                    cmds.optionMenu(entity_type_menu, e=True, v=cmds.getAttr('{0}.render_layer_{1}_type'.format(node, i)))
-                    rule_text_field = cmds.textField(cc=partial(self.set_render_layer_rule, node, i), text=cmds.getAttr('{0}.render_layer_{1}_rule'.format(node, i)))
-                    cmds.textField(cc=partial(self.set_render_layer_order, i), text=cmds.getAttr('{0}.render_layer_{1}_order'.format(node, i)))
-                    cmds.button(' - ', height=20, command=partial(self.remove_render_layer, node, i))
-            
-            cmds.setParent(self.render_layer_layout)
-            current_render_layer_layout = cmds.rowLayout(nc=2)
-            cmds.button(' + ', command=partial(self.add_render_layer, node))
+                    if cmds.attributeQuery(layer_name, exists=True, node=node):
+                        cmds.setParent(self.render_layer_layout)
+                        current_render_layer_layout = cmds.rowLayout(nc=5)
+                        for n, width in enumerate(self.render_layer_layout_widths):
+                            cmds.rowLayout(current_render_layer_layout, e=True, cw=[n + 1, width])
+                        cmds.textField(cc=partial(self.set_render_layer_name, node, i), text=cmds.getAttr('{0}.render_layer_{1}_name'.format(node, i)))
+                        entity_type_menu = cmds.optionMenu(cc=partial(self.set_render_layer_type, node, i))
+                        for entity_type in ENTITY_TYPES:
+                            cmds.menuItem(label=entity_type)
+                        cmds.optionMenu(entity_type_menu, e=True, v=cmds.getAttr('{0}.render_layer_{1}_type'.format(node, i)))
+                        rule_text_field = cmds.textField(cc=partial(self.set_render_layer_rule, node, i), text=cmds.getAttr('{0}.render_layer_{1}_rule'.format(node, i)))
+                        cmds.textField(cc=partial(self.set_render_layer_order, i), text=cmds.getAttr('{0}.render_layer_{1}_order'.format(node, i)))
+                        cmds.button(' - ', height=20, command=partial(self.remove_render_layer, node, i))
+                
+                cmds.setParent(self.render_layer_layout)
+                current_render_layer_layout = cmds.rowLayout(nc=2)
+                cmds.button(' + ', command=partial(self.add_render_layer, node))
 
 
-        def camera_select_create(self, attr):
+        def camera_select_create(self, attr=None):
             self.camera_select_layout = cmds.rowLayout(nc=3)
             cmds.text('Camera')
             self.camera_select_option_menu = cmds.optionMenu(cc=partial(self.camera_select_set, attr))
@@ -211,19 +213,20 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
 
         def camera_select_update(self, attr):
-            items = cmds.optionMenu(self.camera_select_option_menu, q=True, ill=True)
-            if items is not None:
-                for item in items:
-                    cmds.deleteUI(item)
-            cmds.menuItem(label='<none>', p=self.camera_select_option_menu)
-            for camera in cmds.ls(type='camera'):
-                if not cmds.getAttr(camera + '.orthographic'):
-                    cmds.menuItem(label=camera, p=self.camera_select_option_menu)
-            connection = cmds.listConnections(attr, sh=True)
-            if connection is None:
-                cmds.optionMenu(self.camera_select_option_menu, e=True, v='<none>')
-            else:
-                cmds.optionMenu(self.camera_select_option_menu, e=True, v=connection[0])
+            if self.camera_select_option_menu is not None:
+                items = cmds.optionMenu(self.camera_select_option_menu, q=True, ill=True)
+                if items is not None:
+                    for item in items:
+                        cmds.deleteUI(item)
+                cmds.menuItem(label='<none>', p=self.camera_select_option_menu)
+                for camera in cmds.ls(type='camera'):
+                    if not cmds.getAttr(camera + '.orthographic'):
+                        cmds.menuItem(label=camera, p=self.camera_select_option_menu)
+                connection = cmds.listConnections(attr, sh=True)
+                if connection is None:
+                    cmds.optionMenu(self.camera_select_option_menu, e=True, v='<none>')
+                else:
+                    cmds.optionMenu(self.camera_select_option_menu, e=True, v=connection[0])
 
 
         def camera_select_set(self, attr, camera):
