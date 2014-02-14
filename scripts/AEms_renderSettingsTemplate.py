@@ -57,7 +57,8 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
                 # environment settings
                 self.beginLayout('Environment settings')
-                self.addControl('environment')
+                self.callCustom(self.environment_select_create, self.environment_select_update, 'environment')
+                self.environment_select_option_menu = None
                 self.addControl('render_sky')
                 self.addControl('scene_index_of_refraction')
                 self.endLayout()
@@ -240,6 +241,43 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                     if connection[0] == camera:
                         return
                 cmds.connectAttr(camera + '.message', attr, f=True)
+
+
+        def environment_select_create(self, attr=None):
+            self.environment_select_layout = cmds.rowLayout(nc=3)
+            cmds.text('Environment')
+            self.environment_select_option_menu = cmds.optionMenu(cc=partial(self.environment_select_set, attr))
+            if attr is not None:
+                self.environment_select_update(attr)
+
+
+        def environment_select_update(self, attr):
+            if self.environment_select_option_menu is not None:
+                items = cmds.optionMenu(self.environment_select_option_menu, q=True, ill=True)
+                if items is not None:
+                    for item in items:
+                        cmds.deleteUI(item)
+                cmds.menuItem(label='<none>', p=self.environment_select_option_menu)
+                for environment in cmds.ls(type='ms_environment') + cmds.ls(type='ms_physical_environment'):
+                    cmds.menuItem(label=environment, p=self.environment_select_option_menu)
+                connection = cmds.listConnections(attr, sh=True)
+                if connection is None:
+                    cmds.optionMenu(self.environment_select_option_menu, e=True, v='<none>')
+                else:
+                    cmds.optionMenu(self.environment_select_option_menu, e=True, v=connection[0])
+
+
+        def environment_select_set(self, attr, environment):
+            value = cmds.optionMenu(self.environment_select_option_menu, q=True, v=True)
+            connection = cmds.listConnections(attr, sh=True)
+            if value == '<none>':
+                if connection is not None:
+                    cmds.disconnectAttr(connection[0] + '.message', attr)
+            else:
+                if connection is not None:
+                    if connection[0] == environment:
+                        return
+                cmds.connectAttr(environment + '.message', attr, f=True)
 
 
         def set_render_layer_name(self, node, layer_number, value):
