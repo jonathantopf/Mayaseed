@@ -47,7 +47,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
                 # output settings
                 self.beginLayout('Output settings')
-                self.addControl('camera')
+                self.callCustom(self.camera_select_create, self.camera_select_update, 'camera')
                 self.addControl('frame_width')
                 self.addControl('frame_height')
                 self.addControl('color_space')
@@ -201,6 +201,35 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
             cmds.setParent(self.render_layer_layout)
             current_render_layer_layout = cmds.rowLayout(nc=2)
             cmds.button(' + ', command=partial(self.add_render_layer, node))
+
+
+        def camera_select_create(self, attr):
+            self.camera_select_layout = cmds.rowLayout(nc=3)
+            cmds.text('Camera')
+            self.camera_select_option_menu = cmds.optionMenu(cc=partial(self.camera_select_set, attr))
+            self.camera_select_update(attr)
+
+
+        def camera_select_update(self, attr):
+            cmds.menuItem(label='<none>', p=self.camera_select_option_menu)
+            for camera in cmds.ls(type='camera'):
+                if not cmds.getAttr(camera + '.orthographic'):
+                    cmds.menuItem(label=camera, p=self.camera_select_option_menu)
+            connection = cmds.listConnections(attr, sh=True)
+            if connection is None:
+                cmds.optionMenu(self.camera_select_option_menu, e=True, v='<none>')
+            else:
+                cmds.optionMenu(self.camera_select_option_menu, e=True, v=connection[0])
+
+
+        def camera_select_set(self, attr, camera):
+            value = cmds.optionMenu(self.camera_select_option_menu, q=True, v=True)
+            if value == '<none>':
+                connection = cmds.listConnections(attr, sh=True)
+                if connection is not None:
+                    cmds.disconnectAttr(connection[0] + '.message', attr)
+            else:
+                cmds.connectAttr(camera + '.message', attr, f=True)
 
 
         def set_render_layer_name(self, node, layer_number, value):
