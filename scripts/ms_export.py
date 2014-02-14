@@ -1056,17 +1056,11 @@ class MMsShadingNode():
 
         self.type = cmds.getAttr(self.name + '.node_type')    # diffuse_component, edf etc.
         self.model = cmds.getAttr(self.name + '.node_model')  # lambertian etc.
-        self.render_layer = None
 
         self.child_shading_nodes = []
         self.attributes = dict()
         self.colors = []
         self.textures = []
-
-        # add a render layer attribute if it's set
-        maya_render_layer = cmds.getAttr(self.name + '.render_layer')
-        if maya_render_layer is not '':
-            self.render_layer = maya_render_layer
 
         # add the correct attributes based on the entity defs xml
         for attribute_key in params['entity_defs'][self.model].attributes.keys():
@@ -1496,14 +1490,11 @@ class AsBsdf():
         self.name = None
         self.model = None
         self.parameters = []
-        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('bsdf name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
-        if self.render_layer is not None:
-            self.render_layer.emit_xml(doc)
         doc.end_element('bsdf')
 
 
@@ -1519,14 +1510,11 @@ class AsEdf():
         self.name = None
         self.model = None
         self.parameters = []
-        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('edf name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
-        if self.render_layer is not None:
-            self.render_layer.emit_xml(doc) 
         doc.end_element('edf')
 
 
@@ -1542,14 +1530,11 @@ class AsSurfaceShader():
         self.name = None
         self.model = None
         self.parameters = []
-        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('surface_shader name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
-        if self.render_layer is not None:
-            self.render_layer.emit_xml(doc)
         doc.end_element('surface_shader')
 
 
@@ -2060,7 +2045,6 @@ def translate_maya_scene(params, maya_scene, maya_environment):
             environment_edf = AsEnvironmentEdf()
             environment_edf.name = maya_environment.safe_name + '_edf'
             environment_edf.model = maya_environment.model
-            environment_edf.parameters.append(AsParameter('render_layer', maya_environment.safe_name))
             environment.environment_edf = AsParameter('environment_edf', environment_edf.name)
 
             if maya_environment.__class__.__name__ == 'MMsPhysicalEnvironment':
@@ -2133,7 +2117,6 @@ def translate_maya_scene(params, maya_scene, maya_environment):
                 environment_shader = AsEnvironmentShader()
                 environment_shader.name = maya_environment.safe_name + '_shader'
                 environment_shader.edf = AsParameter('environment_edf', environment_edf.name)
-                environment_shader.parameters.append(AsParameter('render_layer', maya_environment.safe_name))
                 environment.environment_shader = AsParameter('environment_shader', environment_shader.name)
                 as_project.scene.environment_shaders.append(environment_shader)
 
@@ -2310,7 +2293,6 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                     light_edf = AsEdf()
                     light_edf.name = light.safe_name + '_edf'
                     light_edf.model = 'diffuse_edf'
-                    light_edf.render_layer = AsParameter('render_layer', light.safe_name)
                     light_edf.parameters.append(AsParameter('radiance', light_color.name))
                     light_edf.parameters.append(AsParameter('radiance_multiplier', light.multiplier))
 
@@ -2577,7 +2559,6 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         primary_surface_shader.model = 'constant_surface_shader'
         primary_surface_shader.parameters.append(AsParameter('color', material_attribs['incandescence']))
         primary_surface_shader.parameters.append(AsParameter('color', material_attribs['incandescence']))
-        primary_surface_shader.parameters.append(AsParameter('render_layer', generic_material.safe_name + 'light_emission'))
 
     else:
         # add a physical surface shader
@@ -2622,7 +2603,6 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         edf.name = generic_material.safe_name + '_edf'
         edf.model = 'diffuse_edf'
         edf.parameters.append(AsParameter('radiance', material_attribs['incandescence']))
-        edf.parameters.append(AsParameter('render_layer', generic_material.safe_name + 'light_emission'))
         root_assembly.edfs.append(edf)
 
         if 'ms_cast_indirect_light' in generic_material.export_modifiers:
@@ -2966,8 +2946,6 @@ def build_as_shading_nodes(params, root_assembly, current_maya_shading_node, non
 
     current_shading_node.name = current_maya_shading_node.safe_name
     current_shading_node.model = current_maya_shading_node.model
-    if current_shading_node.render_layer is not '':
-        current_shading_node.render_layer = AsParameter('render_layer', current_maya_shading_node.render_layer)
 
     for attrib_key in current_maya_shading_node.attributes:
         if current_maya_shading_node.attributes[attrib_key].__class__.__name__ == 'MMsShadingNode':
