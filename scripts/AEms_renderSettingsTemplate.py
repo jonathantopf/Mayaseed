@@ -211,6 +211,10 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
 
         def camera_select_update(self, attr):
+            items = cmds.optionMenu(self.camera_select_option_menu, q=True, ill=True)
+            if items is not None:
+                for item in items:
+                    cmds.deleteUI(item)
             cmds.menuItem(label='<none>', p=self.camera_select_option_menu)
             for camera in cmds.ls(type='camera'):
                 if not cmds.getAttr(camera + '.orthographic'):
