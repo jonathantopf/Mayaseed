@@ -69,6 +69,8 @@ def initializePlugin(obj):
 
     ms_shelf.create_if_absent()
 
+    import AEms_renderSettingsTemplate
+
 
 def uninitializePlugin(obj):
 
