@@ -205,6 +205,9 @@ def get_maya_params(render_settings_node):
     params['autodetect_alpha'] = cmds.getAttr(render_settings_node + '.autodetect_alpha')
     params['force_linear_texture_interpretation'] = cmds.getAttr(render_settings_node + '.force_linear_texture_interpretation')
     params['force_linear_color_interpretation'] = cmds.getAttr(render_settings_node + '.force_linear_color_interpretation')
+    params['tile_width'] = cmds.getAttr(render_settings_node + '.tile_width')
+    params['tile_height'] = cmds.getAttr(render_settings_node + '.tile_height')
+
     return params
 
 
@@ -1734,6 +1737,7 @@ class AsFrame():
         self.color_space = AsParameter('color_space', 'linear_rgb')
         self.resolution = None
         self.premultiplied_alpha = AsParameter('premultiplied_alpha', 'true')
+        self.tile_size = None
 
     def emit_xml(self, doc):
         doc.start_element('frame name="%s"' % self.name)
@@ -1741,6 +1745,7 @@ class AsFrame():
         self.color_space.emit_xml(doc)
         self.resolution.emit_xml(doc)
         self.premultiplied_alpha.emit_xml(doc)
+        self.tile_size.emit_xml(doc)
         doc.end_element('frame')
 
 
@@ -2021,6 +2026,8 @@ def translate_maya_scene(params, maya_scene, maya_environment):
 
         if params['export_straight_alpha']:
             as_frame.premultiplied_alpha.value = 'false'
+
+        as_frame.tile_size = AsParameter('tile_size', '{0} {1}'.format(params['tile_width'], params['tile_height']))
 
         # create render layers
 

@@ -317,6 +317,21 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.force_linear_color_interpretation = force_linear_color_interpretation_nAttr.create("force_linear_color_interpretation", "force_linear_color_interpretation", OpenMaya.MFnNumericData.kBoolean, False)
     ms_renderSettings.addAttribute(ms_renderSettings.force_linear_color_interpretation)
 
+    # tile_width
+    tile_width_AttrInt = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.tile_width = tile_width_AttrInt.create("tile_width", "tile_width", OpenMaya.MFnNumericData.kInt, 64)
+    tile_width_AttrInt.setHidden(False)
+    tile_width_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.tile_width)
+
+    # tile_height
+    tile_height_AttrInt = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.tile_height = tile_height_AttrInt.create("tile_height", "tile_height", OpenMaya.MFnNumericData.kInt, 64)
+    tile_height_AttrInt.setHidden(False)
+    tile_height_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.tile_height)
+
+
 
 def initializePlugin(obj):
     plugin = OpenMayaMPx.MFnPlugin(obj)

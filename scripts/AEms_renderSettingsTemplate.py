@@ -123,6 +123,9 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 self.addControl('export_all_cameras_as_thin_lens')
                 self.addSeparator()
                 self.addControl('export_maya_lights')
+                self.addSeparator()
+                self.addControl('tile_width')
+                self.addControl('tile_height')
 
                 self.endLayout()
 
