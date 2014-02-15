@@ -144,14 +144,18 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
         def output_directory_create(self, attr):
             cmds.rowLayout(nc=3)
-            cmds.text(label='Output Directory')
-            self.output_dir_text_field = cmds.textField(fileName=cmds.getAttr(attr))
+            self.output_directory_text_field = cmds.text(label='Output Directory')
+            self.output_dir_text_field = cmds.textField(fileName=cmds.getAttr(attr), cc=partial(self.output_directory_set, attr))
             self.output_dir_button = cmds.button(' Select directory ', c=partial(self.get_file_dir, attr))
 
 
         def output_directory_update(self, attr):
             cmds.textField(self.output_dir_text_field, edit=True, fileName=cmds.getAttr(attr))
             cmds.button(self.output_dir_button, edit=True, c=partial(self.get_file_dir, attr))
+
+
+        def output_directory_set(self, attr, value):
+            cmds.setAttr(attr, value, type='string')
 
 
         def render_layer_create_layout(self, args):
