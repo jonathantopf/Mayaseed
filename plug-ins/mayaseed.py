@@ -36,6 +36,7 @@ sys.path.append(os.path.join(ROOT_DIRECTORY, 'nodes'))
 
 import ms_menu
 import ms_shelf
+import ms_commands
 
 #--------------------------------------------------------------------------------------------------
 # mayaseed plugin.
@@ -68,6 +69,10 @@ def initializePlugin(obj):
     ms_shelf.create_if_absent()
 
     import AEms_renderSettingsTemplate
+
+    appleseed_version_notice = 'This version of mayaseed is designed to work with {0}. Other versions of appleseed may work but have not been tested.'.format(ms_commands.RECCOMENDED_APPLESEED_VERSION)
+
+    ms_commands.info(appleseed_version_notice)
 
 
 def uninitializePlugin(obj):

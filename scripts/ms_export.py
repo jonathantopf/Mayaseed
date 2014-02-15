@@ -3127,6 +3127,10 @@ def export_container(render_settings_node):
 
     cmds.progressWindow(endProgress=1)
 
+    appleseed_version_notice = 'This version of mayaseed is designed to work with {0}. Other versions of appleseed may work but have not been tested.'.format(ms_commands.RECCOMENDED_APPLESEED_VERSION)
+
+    ms_commands.info(appleseed_version_notice)
+
     completed_message = 'Export completed in %.2f seconds, see the script editor for details.' % (export_finish_time - export_start_time)
 
     ms_commands.info(completed_message)
