@@ -52,6 +52,10 @@ REFERENCED_SCENES = '_references'
 # http://stackoverflow.com/questions/12253014/why-does-popen-fail-on-windows-if-the-env-parameter-contains-a-unicode-object
 ENV_VARIABLES = dict((k, str(os.environ[k])) for k in os.environ.keys())
 
+# render layer attribs
+RENDER_LAYER_ATTRS = [['name', 'layer_name'], ['model', 'regex'], ['pattern', '.*object_name.*'], ['type', 'object_instance'], ['order', '0']]
+RENDER_LAYER_ENTITY_TYPES = ['object_instance', 'light', 'edf']
+
 INCH_TO_METER = 0.02539999983236
 
 #--------------------------------------------------------------------------------------------------

@@ -25,12 +25,7 @@ import pymel.core as pm
 import maya.cmds as cmds
 from functools import partial
 import ms_export
-
-
-ENTITY_TYPES = ['object_instance', 'light', 'edf']
-
-RENDER_LAYER_ATTRS = [['name', 'layer_name'], ['model', 'regex'], ['rule', '*object_name*'], ['type', 'object_instance'], ['order', '0']]
-
+import ms_commands
 
 class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
         def __init__(self, node):
@@ -137,7 +132,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
                 # suppress potential render layers
                 for i in range(50):
-                    for attr in RENDER_LAYER_ATTRS:
+                    for attr in ms_commands.RENDER_LAYER_ATTRS:
                         self.suppress('render_layer_{0}_{1}'.format(i, attr[0]))
 
 
@@ -182,7 +177,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 layer_name = 'render_layer_{0}_name'.format(i)  
             
                 if not cmds.attributeQuery(layer_name, exists=True, node=node):
-                    for attr in RENDER_LAYER_ATTRS:
+                    for attr in ms_commands.RENDER_LAYER_ATTRS:
                         cmds.addAttr(node, longName='render_layer_{0}_{1}'.format(i, attr[0]), dt="string", k=False, w=False)
                         cmds.setAttr('{0}.render_layer_{1}_{2}'.format(node, i, attr[0]), attr[1], type='string')
                     if refresh:
@@ -191,7 +186,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
 
         def remove_render_layer(self, node, number, args):
-            for attr in RENDER_LAYER_ATTRS:
+            for attr in ms_commands.RENDER_LAYER_ATTRS:
                 cmds.deleteAttr(n=node, at='render_layer_{0}_{1}'.format(number, attr[0]))
             self.populate_render_layer_layout(node)
 
@@ -217,7 +212,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                             cmds.rowLayout(current_render_layer_layout, e=True, cw=[n + 1, width])
                         cmds.textField(cc=partial(self.set_render_layer_name, node, i), text=cmds.getAttr('{0}.render_layer_{1}_name'.format(node, i)))
                         entity_type_menu = cmds.optionMenu(cc=partial(self.set_render_layer_type, node, i))
-                        for entity_type in ENTITY_TYPES:
+                        for entity_type in ms_commands.RENDER_LAYER_ENTITY_TYPES:
                             cmds.menuItem(label=entity_type)
                         cmds.optionMenu(entity_type_menu, e=True, v=cmds.getAttr('{0}.render_layer_{1}_type'.format(node, i)))
                         rule_text_field = cmds.textField(cc=partial(self.set_render_layer_rule, node, i), text=cmds.getAttr('{0}.render_layer_{1}_rule'.format(node, i)))
