@@ -160,6 +160,18 @@ def get_maya_params(render_settings_node):
     params['output_res_height'] = cmds.getAttr(render_settings_node + '.height')
     params['export_straight_alpha'] = cmds.getAttr(render_settings_node + '.export_straight_alpha')
 
+    # render layers
+    params['render_layers'] = []
+    for i in range(50):
+        i += 1
+        test_layer_name = 'render_layer_{0}_name'.format(i)  
+        if cmds.attributeQuery(test_layer_name, exists=True, node=render_settings_node):
+            layer = {}
+            for attr in ms_commands.RENDER_LAYER_ATTRS:
+                layer[attr[0]] = cmds.getAttr('{0}.render_layer_{1}_{2}'.format(render_settings_node, i, attr[0]))
+
+            params['render_layers'].append(layer)
+
     # configuration settings.
     params['sampler'] = cmds.getAttr(render_settings_node + '.sampler')
     if params['sampler'] == 0:
@@ -1671,6 +1683,44 @@ class AsAssemblyInstance():
 
 
 #--------------------------------------------------------------------------------------------------
+# AsRules class.
+#--------------------------------------------------------------------------------------------------
+
+class AsRules():
+
+    """ Class representing appleseed Rules entity """
+
+    def __init__(self):
+        self.rules = []
+
+    def emit_xml(self, doc):
+        doc.start_element('rules')
+        for rule in self.rules:
+            rule.emit_xml(doc)
+        doc.end_element('rules')
+
+
+#--------------------------------------------------------------------------------------------------
+# AsRenderLayerAssignment class.
+#--------------------------------------------------------------------------------------------------
+
+class AsRenderLayerAssignment():
+
+    """ Class representing appleseed RenderLayerAssignment entity """
+
+    def __init__(self, name, model):
+        self.name = name
+        self.model = model
+        self.parameters = []
+
+    def emit_xml(self, doc):
+        doc.start_element('render_layer_assignment name="{0}" model="{1}"'.format(self.name, self.model))
+        for param in self.parameters:
+            param.emit_xml(doc)
+        doc.end_element('render_layer_assignment')
+
+
+#--------------------------------------------------------------------------------------------------
 # AsFrame class.
 #--------------------------------------------------------------------------------------------------
 
@@ -1822,14 +1872,16 @@ class AsProject():
     """ Class representing appleseed Project entity """
 
     def __init__(self):
-        scene = None
-        output = None
-        configurations = None
+        self.scene = None
+        self.output = None
+        self.rules = None
+        self.configurations = None
 
     def emit_xml(self, doc):
         doc.start_element('project')
         self.scene.emit_xml(doc)
         self.output.emit_xml(doc)
+        self.rules.emit_xml(doc)
         self.configurations.emit_xml(doc)
         doc.end_element('project')
 
@@ -1969,6 +2021,19 @@ def translate_maya_scene(params, maya_scene, maya_environment):
 
         if params['export_straight_alpha']:
             as_frame.premultiplied_alpha.value = 'false'
+
+        # create render layers
+
+        as_rules = AsRules()
+        as_project.rules = as_rules
+
+        for layer in params['render_layers']:
+            render_layer_assignment = AsRenderLayerAssignment(layer['name'], layer['model'])
+            render_layer_assignment.parameters.append(AsParameter('render_layer', layer['name']))
+            render_layer_assignment.parameters.append(AsParameter('entity_type', layer['type']))
+            render_layer_assignment.parameters.append(AsParameter('pattern', layer['pattern']))
+            render_layer_assignment.parameters.append(AsParameter('order', layer['order']))
+            as_rules.rules.append(render_layer_assignment)
 
         # create configurations object
         as_configurations = AsConfigurations()
