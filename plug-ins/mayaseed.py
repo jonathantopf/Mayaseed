@@ -32,8 +32,6 @@ import os
 import os.path
 
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
-sys.path.append(os.path.join(ROOT_DIRECTORY, 'scripts'))
-sys.path.append(os.path.join(ROOT_DIRECTORY, 'graphics'))
 sys.path.append(os.path.join(ROOT_DIRECTORY, 'nodes'))
 
 import ms_menu
