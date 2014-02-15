@@ -36,7 +36,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
 
                 # export settings
                 self.beginLayout('Export settings', collapse=False)
-                self.callCustom(self.output_directory_create, self.populate_render_layer_layout, 'output_directory')
+                self.callCustom(self.output_directory_create, self.output_directory_update, 'output_directory')
                 self.addControl('output_file')
                 self.addSeparator()
                 self.addControl('convert_shading_nodes_to_textures', label='Bake shading networks')
