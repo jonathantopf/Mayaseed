@@ -161,7 +161,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 cmds.rowLayout(self.render_layer_label_layout, e=True, cw=[i + 1, width])
             cmds.text('name')
             cmds.text('entity type')
-            cmds.text('rule')
+            cmds.text('pattern')
             cmds.text('order')
             cmds.text(' - ')
             cmds.setParent('..')
@@ -215,7 +215,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                         for entity_type in ms_commands.RENDER_LAYER_ENTITY_TYPES:
                             cmds.menuItem(label=entity_type)
                         cmds.optionMenu(entity_type_menu, e=True, v=cmds.getAttr('{0}.render_layer_{1}_type'.format(node, i)))
-                        rule_text_field = cmds.textField(cc=partial(self.set_render_layer_rule, node, i), text=cmds.getAttr('{0}.render_layer_{1}_rule'.format(node, i)))
+                        pattern_text_field = cmds.textField(cc=partial(self.set_render_layer_pattern, node, i), text=cmds.getAttr('{0}.render_layer_{1}_pattern'.format(node, i)))
                         cmds.textField(cc=partial(self.set_render_layer_order, i), text=cmds.getAttr('{0}.render_layer_{1}_order'.format(node, i)))
                         cmds.button(' - ', height=20, command=partial(self.remove_render_layer, node, i))
                 
@@ -306,8 +306,8 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
             self.set_render_layer_attr(node, layer_number, 'type', value)
 
 
-        def set_render_layer_rule(self, node, layer_number, value):
-            self.set_render_layer_attr(node, layer_number, 'rule', value)
+        def set_render_layer_pattern(self, node, layer_number, value):
+            self.set_render_layer_attr(node, layer_number, 'pattern', value)
 
 
         def set_render_layer_order(self, node, layer_number, value):
