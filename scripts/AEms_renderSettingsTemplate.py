@@ -126,6 +126,8 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                 self.addSeparator()
                 self.addControl('tile_width')
                 self.addControl('tile_height')
+                self.addSeparator()
+                self.addControl('use_long_names', label='Use long object names')
 
                 self.endLayout()
 

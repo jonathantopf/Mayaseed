@@ -207,6 +207,7 @@ def get_maya_params(render_settings_node):
     params['force_linear_color_interpretation'] = cmds.getAttr(render_settings_node + '.force_linear_color_interpretation')
     params['tile_width'] = cmds.getAttr(render_settings_node + '.tile_width')
     params['tile_height'] = cmds.getAttr(render_settings_node + '.tile_height')
+    params['use_long_names'] = cmds.getAttr(render_settings_node + '.use_long_names')
 
     return params
 
@@ -485,12 +486,24 @@ class MTransformChild():
 
     """ Base class for all classes representing Maya scene entities """
 
+    current_id = 0
+
     def __init__(self, params, maya_entity_name, MTransform_object):
+        
+        # incrememnt transform child id counter
+        self.id = MTransformChild.current_id
+        MTransformChild.current_id += 1
+
         self.params = params
         self.name = maya_entity_name
         self.short_name = self.name.split('|')[-1]
-        self.safe_name = ms_commands.legalize_name(self.name)
         self.safe_short_name = ms_commands.legalize_name(self.short_name)
+
+        if params['use_long_names']:
+            self.safe_name = ms_commands.legalize_name(self.name)
+        else:
+            self.safe_name = '{0}_{1}'.format(self.safe_short_name, self.id)
+
         self.transform = MTransform_object
 
         self.export_modifiers = {}

@@ -331,6 +331,10 @@ def ms_renderSettings_nodeInitializer():
     tile_height_AttrInt.setKeyable(True)
     ms_renderSettings.addAttribute(ms_renderSettings.tile_height)
 
+    # use long object names
+    use_long_names_nAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.use_long_names = use_long_names_nAttr.create("use_long_names", "use_long_names", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.use_long_names)
 
 
 def initializePlugin(obj):
