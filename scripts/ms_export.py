@@ -301,6 +301,10 @@ def get_maya_scene(params):
 
         current_frame += sample_increment
 
+        MMesh.export_geo(params['obj_exporter'], current_frame)
+
+        MFile.export_images(params['output_directory'], params['overwrite_existing_textures'], current_frame)
+
         cmds.progressWindow(e=True, progress=current_frame - start_frame)
         cmds.refresh(cv=True)
 
@@ -506,6 +510,7 @@ class MMesh(MTransformChild):
 
     # because fill path names of geo can be too long for a file name we use the short name plus a counter
     object_counter = 1
+    export_queue = []
 
     def __init__(self, params, maya_mesh_name, MTransform_object):
         MTransformChild.__init__(self, params, maya_mesh_name, MTransform_object)
@@ -545,10 +550,20 @@ class MMesh(MTransformChild):
             # export mesh using absolute file path
             absolute_file_path = os.path.join(export_root, output_file_path)
             if not os.path.exists(absolute_file_path) or self.params['overwrite_existing_geometry']:
-                self.params['obj_exporter'](self.name, absolute_file_path, overwrite=True)
-
+                MMesh.export_queue.append([self.name, absolute_file_path])
         else:
             self.mesh_file_names.append(None)
+
+    @classmethod
+    def export_geo(cls_obj, exporter, frame_no):
+        queue_len = len(cls_obj.export_queue)
+        if queue_len > 0:
+            cmds.progressWindow(e=True, status='Exporting geo for frame {0}'.format(frame_no), progress=0, max=queue_len)
+            cmds.refresh(cv=True)
+            for i, geo in enumerate(cls_obj.export_queue):
+                cmds.progressWindow(e=True, progress=i)            
+                exporter(geo[0], geo[1], overwrite=True)
+            cls_obj.export_queue = []
 
 
 #--------------------------------------------------------------------------------------------------
@@ -640,7 +655,6 @@ class MMsAppleseedSceneInstance(MTransformChild):
         self.original = original
 
 
-
 #--------------------------------------------------------------------------------------------------
 # MFile class.
 #--------------------------------------------------------------------------------------------------
@@ -648,6 +662,8 @@ class MMsAppleseedSceneInstance(MTransformChild):
 class MFile():
 
     """ Lightweight class representing Maya file nodes """
+
+    export_queue = set()
 
     def __init__(self, params, maya_file_node, source_node=False, attribute=False):
         self.params = params
@@ -692,11 +708,27 @@ class MFile():
 
         if self.params['convert_textures_to_exr']:
             if image_name not in self.converted_images:
-                self.converted_images.add(image_name)
-                converted_image_name = ms_commands.convert_texture_to_exr(image_name, export_root, ms_commands.TEXTURE_DIR, overwrite=self.params['overwrite_existing_textures'], pass_through=False)
-                self.image_file_names.append(converted_image_name)
+                MFile.export_queue.add(image_name)
+                file_name = os.path.join(ms_commands.TEXTURE_DIR, os.path.split(image_name)[1])
+                self.image_file_names.append(file_name)
         else:
             self.image_file_names.append(image_name)
+
+    @classmethod
+    def export_images(cls_obj, export_root, overwrite, frame_no):
+        queue_len = len(cls_obj.export_queue)
+        if queue_len > 0:
+            cmds.progressWindow(e=True, status='Exporting textures for frame {0}'.format(frame_no), progress=0, max=queue_len)
+            cmds.refresh(cv=True)
+            for i, tex in enumerate(cls_obj.export_queue):
+                cmds.progressWindow(e=True, progress=i)  
+
+                dest = os.path.join(export_root, ms_commands.TEXTURE_DIR, os.path.split(tex)[1])
+
+                ms_commands.convert_texture_to_exr(tex, dest , overwrite=overwrite)
+
+
+            cls_obj.export_queue = set()
 
 
 #--------------------------------------------------------------------------------------------------

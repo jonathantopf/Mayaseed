@@ -188,29 +188,27 @@ def convert_connection_to_image(shader, attribute, dest_file, overwrite, resolut
 # Convert textures to OpenEXR format.
 #--------------------------------------------------------------------------------------------------
 
-def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, pass_through=False, relative=True):
-    relative_path = os.path.join(texture_dir, os.path.splitext(os.path.split(file_path)[1])[0] + '.exr')
-    dest_file = os.path.join(export_root, relative_path)
-    dest_dir = os.path.join(export_root, texture_dir)
-    result_file = relative_path if relative else dest_file
-
-    if not os.path.exists(file_path):
-        info("# error: {0} does not exist".format(file_path))
-        return result_file
+def convert_texture_to_exr(src, dest, overwrite=True, pass_through=False):
+    
+    info('Converting image: {0}'.format(src))
+    if not os.path.exists(src):
+        info("# error: {0} does not exist".format(src))
+        return 
 
     if pass_through:
-        info("# skipping conversion of {0}".format(file_path))
-        return result_file
+        info("# skipping conversion of {0}".format(src))
+        return 
 
-    if os.path.exists(dest_file) and not overwrite:
-        info("# {0} already exists, skipping conversion".format(dest_file))
-        return result_file
+    if os.path.exists(dest) and not overwrite:
+        info("# {0} already exists, skipping conversion".format(dest))
+        return 
 
+    dest_dir = os.path.split(dest)[0]
     create_dir(dest_dir)
 
     # -r: make a tiled OpenEXR file
     # -t: set the tile dimensions
-    args = ['imf_copy', "-r", "-t 32", file_path, dest_file]
+    args = ['imf_copy', "-r", "-t 32", src, dest]
 
     if sys.platform == 'win32':
         # http://stackoverflow.com/questions/2935704/running-shell-commands-without-a-shell-window
@@ -219,8 +217,6 @@ def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, 
     elif sys.platform == 'darwin':
         p = subprocess.Popen(args, env=ENV_VARIABLES)
         p.wait()
-
-    return result_file
 
 
 #--------------------------------------------------------------------------------------------------
