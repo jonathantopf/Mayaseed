@@ -461,7 +461,7 @@ class MTransform():
 
 
 #--------------------------------------------------------------------------------------------------
-# MTransformChild class.
+# get_ms_appleseed_scene_from_heirarchy function.
 #--------------------------------------------------------------------------------------------------
 
 def get_ms_appleseed_scene_from_heirarchy(ms_appleseed_scene_name, transform):
