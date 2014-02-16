@@ -71,14 +71,6 @@ With this check box checked, the sky will be rendered in your scene, otherwise t
 For refractive objects appleseed requires a bsdf to have an `in` index of refraction and an `out` index of refraction. Because of this, when material auto translation happens, the `in` index of refraction on the front surface will always be the `Scene Index Of Refraction` and the `out` index of refraction on the back surface will also be the `Scene Index Of Refraction`.
 
 
-Camera Settings
----------------
-
-`Export All Cameras As Thin Lens`
-
-In appleseed, Heinlein's camera's will render slightly faster but wont show any depth of field.
-
-
 Configuration Settings
 ----------------------
 
@@ -105,8 +97,6 @@ Some fireflies can be eliminated by telling appleseed to disregard unusually bri
 Advanced Settings
 -----------------
 
-![Advanced](/images/render_settings_advanced.png)
-
 `Profile Export` 
 
 This causes the export to run wrapped in a python `CProfile` function. Profiling information will be printed to the script editor. 
@@ -123,9 +113,17 @@ Mayaseed currently does not respect Maya color management. Because of this, it's
 
 Mayaseed interprets color attributes as sRGB color space by default. Cecking this box turns the default interpretation to linear.
 
+`Export All Cameras As Thin Lens`
 
+In appleseed, thinlens camera's will render slightly faster but wont show any depth of field.
 
+`Tile width & Tile height`
 
+These attributes allow you to manually set the tile size that appleseed will use.
+
+`Use long object names`
+
+By default mayaseed will create a unique name for each translated object from the maya scene, if you wish to use the full Maya objct path name as the object name in appleseed you can check this box. 
 
 
 
