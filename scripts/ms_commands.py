@@ -504,7 +504,6 @@ def get_file_texture_name(file_node, frame=None):
 
 def export_obj(object_name, file_path, overwrite=True):
     if overwrite or (not os.path.exists(file_path)):
-        print 'doesnt exist'
         directory = os.path.split(file_path)[0]
 
         create_dir(directory)
