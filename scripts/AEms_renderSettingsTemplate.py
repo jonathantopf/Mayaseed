@@ -187,7 +187,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
             
                 if not cmds.attributeQuery(layer_name, exists=True, node=node):
                     for attr in ms_commands.RENDER_LAYER_ATTRS:
-                        cmds.addAttr(node, longName='render_layer_{0}_{1}'.format(i, attr[0]), dt="string", k=False, w=False)
+                        cmds.addAttr(node, longName='render_layer_{0}_{1}'.format(i, attr[0]), dt="string", k=False)
                         cmds.setAttr('{0}.render_layer_{1}_{2}'.format(node, i, attr[0]), attr[1], type='string')
                     if refresh:
                         self.populate_render_layer_layout(attr)
