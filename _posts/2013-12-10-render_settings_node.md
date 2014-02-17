@@ -94,6 +94,24 @@ This will cause appleseed to spend more or less render effort on the environment
 Some fireflies can be eliminated by telling appleseed to disregard unusually bright samples.
 
 
+Render Layers
+-------------
+
+![Render Layers](/images/render_settings_layers.png)
+
+To add a new render layer use the ` + ` button. 
+
+Each layer can contain either Lights, Edfs or object_instances, select which entity type using the drop down menu.
+
+    Note. Maya area lights are translated to light emitting geometry, because of this you will want to chose 'edf' as the entity type for area lights.
+
+The string in the `pattern` column should contain a regular expression that will match the object names that you wish to appear in the render layer. For example adding `.*character.*` to the pattern column of a layer will match any object with the string `character` in its name - so in this example the objects named `character_eyes` and `character_mouth` will both be added to this layer. 
+
+More info on the syntax for regular expressions [here www.regular-expressions.info](http://www.regular-expressions.info/). 
+
+You may remove a layer by using its ` - ` button. 
+
+
 Advanced Settings
 -----------------
 
