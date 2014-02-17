@@ -2079,8 +2079,8 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         as_rules = AsRules()
         as_project.rules = as_rules
 
-        for layer in params['render_layers']:
-            render_layer_assignment = AsRenderLayerAssignment(layer['name'], layer['model'])
+        for i, layer in enumerate(params['render_layers']):
+            render_layer_assignment = AsRenderLayerAssignment('{0}_{1}'.format(layer['name'], i), layer['model'])
             render_layer_assignment.parameters.append(AsParameter('render_layer', layer['name']))
             render_layer_assignment.parameters.append(AsParameter('entity_type', layer['type']))
             render_layer_assignment.parameters.append(AsParameter('pattern', layer['pattern']))
