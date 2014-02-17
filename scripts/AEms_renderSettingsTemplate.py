@@ -225,7 +225,7 @@ class AEms_renderSettingsTemplate(pm.uitypes.AETemplate):
                             cmds.menuItem(label=entity_type)
                         cmds.optionMenu(entity_type_menu, e=True, v=cmds.getAttr('{0}.render_layer_{1}_type'.format(node, i)))
                         pattern_text_field = cmds.textField(cc=partial(self.set_render_layer_pattern, node, i), text=cmds.getAttr('{0}.render_layer_{1}_pattern'.format(node, i)))
-                        cmds.textField(cc=partial(self.set_render_layer_order, i), text=cmds.getAttr('{0}.render_layer_{1}_order'.format(node, i)))
+                        cmds.textField(cc=partial(self.set_render_layer_order, node, i), text=cmds.getAttr('{0}.render_layer_{1}_order'.format(node, i)))
                         cmds.button(' - ', height=20, command=partial(self.remove_render_layer, node, i))
                 
                 cmds.setParent(self.render_layer_layout)
