@@ -1,6 +1,6 @@
 
 #
-# Copyright (c) 2012-2013 Jonathan Topf
+# Copyright (c) 2012-2014 Jonathan Topf
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -30,8 +30,6 @@ import re
 import subprocess
 import sys
 import ms_commands
-import ms_render_view_connection
-import ms_export_obj
 import time
 import inspect
 import shutil
@@ -162,7 +160,19 @@ def get_maya_params(render_settings_node):
     params['output_res_height'] = cmds.getAttr(render_settings_node + '.height')
     params['export_straight_alpha'] = cmds.getAttr(render_settings_node + '.export_straight_alpha')
 
-    # Configuration settings.
+    # render layers
+    params['render_layers'] = []
+    for i in range(50):
+        i += 1
+        test_layer_name = 'render_layer_{0}_name'.format(i)  
+        if cmds.attributeQuery(test_layer_name, exists=True, node=render_settings_node):
+            layer = {}
+            for attr in ms_commands.RENDER_LAYER_ATTRS:
+                layer[attr[0]] = cmds.getAttr('{0}.render_layer_{1}_{2}'.format(render_settings_node, i, attr[0]))
+
+            params['render_layers'].append(layer)
+
+    # configuration settings.
     params['sampler'] = cmds.getAttr(render_settings_node + '.sampler')
     if params['sampler'] == 0:
         params['sampler'] = 'adaptive'
@@ -192,22 +202,12 @@ def get_maya_params(render_settings_node):
         ms_commands.warning("No native obj exporter found, exporting using Python obj exporter.")
         params['obj_exporter'] = ms_export_obj.export
 
-    # Advanced settings
     params['autodetect_alpha'] = cmds.getAttr(render_settings_node + '.autodetect_alpha')
     params['force_linear_texture_interpretation'] = cmds.getAttr(render_settings_node + '.force_linear_texture_interpretation')
     params['force_linear_color_interpretation'] = cmds.getAttr(render_settings_node + '.force_linear_color_interpretation')
-
-    params['start_interactive_render_session'] = cmds.getAttr(render_settings_node + '.start_interactive_render_session')
-
-    params['attach_render_view_callbacks'] = cmds.getAttr(render_settings_node + '.attach_render_view_callbacks')
-    if params['start_interactive_render_session'] and not params['attach_render_view_callbacks']:
-        ms_commands.warning('"attach_render_view_callbacks" has been turned on as it is a requirement for interactive renders')
-        params['attach_render_view_callbacks'] = True
-
-    params['optimise_assembly_heirarchy'] = cmds.getAttr(render_settings_node + '.optimise_assembly_heirarchy')
-    if params['start_interactive_render_session'] and params['optimise_assembly_heirarchy']:
-        ms_commands.warning('"optimise_assembly_heirarchy" has been turned off as it is a requirement for interactive renders')
-        params['optimise_assembly_heirarchy'] = False
+    params['tile_width'] = cmds.getAttr(render_settings_node + '.tile_width')
+    params['tile_height'] = cmds.getAttr(render_settings_node + '.tile_height')
+    params['use_long_names'] = cmds.getAttr(render_settings_node + '.use_long_names')
 
     return params
 
@@ -302,6 +302,10 @@ def get_maya_scene(params):
 
         current_frame += sample_increment
 
+        MMesh.export_geo(params['obj_exporter'], current_frame)
+
+        MFile.export_images(params['output_directory'], params['overwrite_existing_textures'], current_frame)
+
         cmds.progressWindow(e=True, progress=current_frame - start_frame)
         cmds.refresh(cv=True)
 
@@ -354,8 +358,9 @@ def add_scene_sample(m_transform, transform_blur, deform_blur, camera_blur, curr
     for camera in m_transform.child_cameras:
         if camera_blur or initial_sample or (frame_sample_number == 1):
             camera.add_matrix_sample()
-        if (frame_sample_number == 1):
+        if frame_sample_number == 1:
             camera.add_focal_distance_sample()
+            camera.add_focal_length_sample()
 
     for transform in m_transform.child_transforms:
         add_scene_sample(transform, transform_blur, deform_blur, camera_blur, current_frame, start_frame, frame_sample_number, initial_sample, export_root)
@@ -458,7 +463,7 @@ class MTransform():
 
 
 #--------------------------------------------------------------------------------------------------
-# MTransformChild class.
+# get_ms_appleseed_scene_from_heirarchy function.
 #--------------------------------------------------------------------------------------------------
 
 def get_ms_appleseed_scene_from_heirarchy(ms_appleseed_scene_name, transform):
@@ -482,12 +487,24 @@ class MTransformChild():
 
     """ Base class for all classes representing Maya scene entities """
 
+    current_id = 0
+
     def __init__(self, params, maya_entity_name, MTransform_object):
+        
+        # incrememnt transform child id counter
+        self.id = MTransformChild.current_id
+        MTransformChild.current_id += 1
+
         self.params = params
         self.name = maya_entity_name
         self.short_name = self.name.split('|')[-1]
-        self.safe_name = ms_commands.legalize_name(self.name)
         self.safe_short_name = ms_commands.legalize_name(self.short_name)
+
+        if params['use_long_names']:
+            self.safe_name = ms_commands.legalize_name(self.name)
+        else:
+            self.safe_name = '{0}_{1}'.format(self.safe_short_name, self.id)
+
         self.transform = MTransform_object
 
         self.export_modifiers = {}
@@ -507,6 +524,7 @@ class MMesh(MTransformChild):
 
     # because fill path names of geo can be too long for a file name we use the short name plus a counter
     object_counter = 1
+    export_queue = []
 
     def __init__(self, params, maya_mesh_name, MTransform_object):
         MTransformChild.__init__(self, params, maya_mesh_name, MTransform_object)
@@ -546,10 +564,20 @@ class MMesh(MTransformChild):
             # export mesh using absolute file path
             absolute_file_path = os.path.join(export_root, output_file_path)
             if not os.path.exists(absolute_file_path) or self.params['overwrite_existing_geometry']:
-                self.params['obj_exporter'](self.name, absolute_file_path, overwrite=True)
-
+                MMesh.export_queue.append([self.name, absolute_file_path])
         else:
             self.mesh_file_names.append(None)
+
+    @classmethod
+    def export_geo(cls_obj, exporter, frame_no):
+        queue_len = len(cls_obj.export_queue)
+        if queue_len > 0:
+            cmds.progressWindow(e=True, status='Exporting geo for frame {0}'.format(frame_no), progress=0, max=queue_len)
+            cmds.refresh(cv=True)
+            for i, geo in enumerate(cls_obj.export_queue):
+                cmds.progressWindow(e=True, progress=i)            
+                exporter(geo[0], geo[1], overwrite=True)
+            cls_obj.export_queue = []
 
 
 #--------------------------------------------------------------------------------------------------
@@ -591,8 +619,8 @@ class MCamera(MTransformChild):
         self.world_space_matrices = []
         self.dof = cmds.getAttr(self.name + '.depthOfField')
         self.focal_distance_values = []
+        self.focal_length_values = []
         self.focus_region_scale = cmds.getAttr(self.name + '.focusRegionScale')
-        self.focal_length = float(cmds.getAttr(self.name + '.focalLength')) / 10
         self.f_stop = self.focus_region_scale * cmds.getAttr(self.name + '.fStop')
 
         maya_resolution_aspect = float(self.params['output_res_width']) / float(self.params['output_res_height'])
@@ -611,6 +639,9 @@ class MCamera(MTransformChild):
 
     def add_focal_distance_sample(self):
         self.focal_distance_values.append(cmds.getAttr(self.name + '.focusDistance'))
+
+    def add_focal_length_sample(self):
+        self.focal_length_values.append(float(cmds.getAttr(self.name + '.focalLength')) / 10)
 
 
 #--------------------------------------------------------------------------------------------------
@@ -641,7 +672,6 @@ class MMsAppleseedSceneInstance(MTransformChild):
         self.original = original
 
 
-
 #--------------------------------------------------------------------------------------------------
 # MFile class.
 #--------------------------------------------------------------------------------------------------
@@ -649,6 +679,8 @@ class MMsAppleseedSceneInstance(MTransformChild):
 class MFile():
 
     """ Lightweight class representing Maya file nodes """
+
+    export_queue = set()
 
     def __init__(self, params, maya_file_node, source_node=False, attribute=False):
         self.params = params
@@ -693,11 +725,27 @@ class MFile():
 
         if self.params['convert_textures_to_exr']:
             if image_name not in self.converted_images:
-                self.converted_images.add(image_name)
-                converted_image_name = ms_commands.convert_texture_to_exr(image_name, export_root, ms_commands.TEXTURE_DIR, overwrite=self.params['overwrite_existing_textures'], pass_through=False)
-                self.image_file_names.append(converted_image_name)
+                MFile.export_queue.add(image_name)
+                file_name = os.path.join(ms_commands.TEXTURE_DIR, os.path.split(image_name)[1])
+                self.image_file_names.append(file_name)
         else:
             self.image_file_names.append(image_name)
+
+    @classmethod
+    def export_images(cls_obj, export_root, overwrite, frame_no):
+        queue_len = len(cls_obj.export_queue)
+        if queue_len > 0:
+            cmds.progressWindow(e=True, status='Exporting textures for frame {0}'.format(frame_no), progress=0, max=queue_len)
+            cmds.refresh(cv=True)
+            for i, tex in enumerate(cls_obj.export_queue):
+                cmds.progressWindow(e=True, progress=i)  
+
+                dest = os.path.join(export_root, ms_commands.TEXTURE_DIR, os.path.split(tex)[1])
+
+                ms_commands.convert_texture_to_exr(tex, dest , overwrite=overwrite)
+
+
+            cls_obj.export_queue = set()
 
 
 #--------------------------------------------------------------------------------------------------
@@ -1072,17 +1120,11 @@ class MMsShadingNode():
 
         self.type = cmds.getAttr(self.name + '.node_type')    # diffuse_component, edf etc.
         self.model = cmds.getAttr(self.name + '.node_model')  # lambertian etc.
-        self.render_layer = None
 
         self.child_shading_nodes = []
         self.attributes = dict()
         self.colors = []
         self.textures = []
-
-        # add a render layer attribute if it's set
-        maya_render_layer = cmds.getAttr(self.name + '.render_layer')
-        if maya_render_layer is not '':
-            self.render_layer = maya_render_layer
 
         # add the correct attributes based on the entity defs xml
         for attribute_key in params['entity_defs'][self.model].attributes.keys():
@@ -1512,14 +1554,11 @@ class AsBsdf():
         self.name = None
         self.model = None
         self.parameters = []
-        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('bsdf name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
-        if self.render_layer is not None:
-            self.render_layer.emit_xml(doc)
         doc.end_element('bsdf')
 
 
@@ -1535,14 +1574,11 @@ class AsEdf():
         self.name = None
         self.model = None
         self.parameters = []
-        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('edf name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
-        if self.render_layer is not None:
-            self.render_layer.emit_xml(doc) 
         doc.end_element('edf')
 
 
@@ -1558,14 +1594,11 @@ class AsSurfaceShader():
         self.name = None
         self.model = None
         self.parameters = []
-        self.render_layer = None
 
     def emit_xml(self, doc):
         doc.start_element('surface_shader name="%s" model="%s"' % (self.name, self.model))
         for parameter in self.parameters:
             parameter.emit_xml(doc)
-        if self.render_layer is not None:
-            self.render_layer.emit_xml(doc)
         doc.end_element('surface_shader')
 
 
@@ -1613,9 +1646,6 @@ class AsAssembly():
     def __init__(self, parent_assembly):
         self.parent_assembly = parent_assembly
         self.name = None
-
-        self.parent_assembly = parent_assembly
-
         self.colors = []
         self.textures = []
         self.texture_instances = []
@@ -1637,12 +1667,6 @@ class AsAssembly():
         assembly_instance = AsAssemblyInstance(self)
         self.instances.append(assembly_instance)
         return assembly_instance
-
-    def get_path(self):
-        path = [self.name]
-        if self.parent_assembly is not None:
-            path = self.parent_assembly.get_path() + path
-        return path
 
     def emit_xml(self, doc):
         doc.start_element('assembly name="%s"' % self.name)
@@ -1711,6 +1735,44 @@ class AsAssemblyInstance():
 
 
 #--------------------------------------------------------------------------------------------------
+# AsRules class.
+#--------------------------------------------------------------------------------------------------
+
+class AsRules():
+
+    """ Class representing appleseed Rules entity """
+
+    def __init__(self):
+        self.rules = []
+
+    def emit_xml(self, doc):
+        doc.start_element('rules')
+        for rule in self.rules:
+            rule.emit_xml(doc)
+        doc.end_element('rules')
+
+
+#--------------------------------------------------------------------------------------------------
+# AsRenderLayerAssignment class.
+#--------------------------------------------------------------------------------------------------
+
+class AsRenderLayerAssignment():
+
+    """ Class representing appleseed RenderLayerAssignment entity """
+
+    def __init__(self, name, model):
+        self.name = name
+        self.model = model
+        self.parameters = []
+
+    def emit_xml(self, doc):
+        doc.start_element('render_layer_assignment name="{0}" model="{1}"'.format(self.name, self.model))
+        for param in self.parameters:
+            param.emit_xml(doc)
+        doc.end_element('render_layer_assignment')
+
+
+#--------------------------------------------------------------------------------------------------
 # AsFrame class.
 #--------------------------------------------------------------------------------------------------
 
@@ -1724,6 +1786,7 @@ class AsFrame():
         self.color_space = AsParameter('color_space', 'linear_rgb')
         self.resolution = None
         self.premultiplied_alpha = AsParameter('premultiplied_alpha', 'true')
+        self.tile_size = None
 
     def emit_xml(self, doc):
         doc.start_element('frame name="%s"' % self.name)
@@ -1731,6 +1794,7 @@ class AsFrame():
         self.color_space.emit_xml(doc)
         self.resolution.emit_xml(doc)
         self.premultiplied_alpha.emit_xml(doc)
+        self.tile_size.emit_xml(doc)
         doc.end_element('frame')
 
 
@@ -1862,14 +1926,16 @@ class AsProject():
     """ Class representing appleseed Project entity """
 
     def __init__(self):
-        scene = None
-        output = None
-        configurations = None
+        self.scene = None
+        self.output = None
+        self.rules = None
+        self.configurations = None
 
     def emit_xml(self, doc):
         doc.start_element('project')
         self.scene.emit_xml(doc)
         self.output.emit_xml(doc)
+        self.rules.emit_xml(doc)
         self.configurations.emit_xml(doc)
         doc.end_element('project')
 
@@ -2010,6 +2076,21 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         if params['export_straight_alpha']:
             as_frame.premultiplied_alpha.value = 'false'
 
+        as_frame.tile_size = AsParameter('tile_size', '{0} {1}'.format(params['tile_width'], params['tile_height']))
+
+        # create render layers
+
+        as_rules = AsRules()
+        as_project.rules = as_rules
+
+        for i, layer in enumerate(params['render_layers']):
+            render_layer_assignment = AsRenderLayerAssignment('{0}_{1}'.format(layer['name'], i), layer['model'])
+            render_layer_assignment.parameters.append(AsParameter('render_layer', layer['name']))
+            render_layer_assignment.parameters.append(AsParameter('entity_type', layer['type']))
+            render_layer_assignment.parameters.append(AsParameter('pattern', layer['pattern']))
+            render_layer_assignment.parameters.append(AsParameter('order', layer['order']))
+            as_rules.rules.append(render_layer_assignment)
+
         # create configurations object
         as_configurations = AsConfigurations()
         as_project.configurations = as_configurations
@@ -2085,7 +2166,6 @@ def translate_maya_scene(params, maya_scene, maya_environment):
             environment_edf = AsEnvironmentEdf()
             environment_edf.name = maya_environment.safe_name + '_edf'
             environment_edf.model = maya_environment.model
-            environment_edf.parameters.append(AsParameter('render_layer', maya_environment.safe_name))
             environment.environment_edf = AsParameter('environment_edf', environment_edf.name)
 
             if maya_environment.__class__.__name__ == 'MMsPhysicalEnvironment':
@@ -2158,7 +2238,6 @@ def translate_maya_scene(params, maya_scene, maya_environment):
                 environment_shader = AsEnvironmentShader()
                 environment_shader.name = maya_environment.safe_name + '_shader'
                 environment_shader.edf = AsParameter('environment_edf', environment_edf.name)
-                environment_shader.parameters.append(AsParameter('render_layer', maya_environment.safe_name))
                 environment.environment_shader = AsParameter('environment_shader', environment_shader.name)
                 as_project.scene.environment_shaders.append(environment_shader)
 
@@ -2181,7 +2260,7 @@ def translate_maya_scene(params, maya_scene, maya_environment):
         as_camera = AsCamera()
         as_camera.name = camera.safe_name
         as_camera.film_dimensions = AsParameter('film_dimensions', '%f %f' % (camera.film_width, camera.film_height))
-        as_camera.focal_length = AsParameter('focal_length', camera.focal_length)
+        as_camera.focal_length = AsParameter('focal_length', camera.focal_length_values[non_mb_sample_number])
         as_camera.shutter_open_time.value = params['shutter_open_time']
         as_camera.shutter_close_time.value = params['shutter_close_time']
 
@@ -2281,12 +2360,12 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
 
     if maya_transform.has_children and maya_transform.visibility_states[non_mb_sample_number]:
 
-        if (not params['optimise_assembly_heirarchy']) or (maya_transform.is_animated and transformation_blur):
+        if maya_transform.is_animated and transformation_blur:
             current_assembly = AsAssembly(parent_assembly)
-            current_assembly.name = str(maya_transform.safe_name)
+            current_assembly.name = maya_transform.safe_name
+            parent_assembly.assemblies.append(current_assembly)
             current_assembly_instance = current_assembly.instantiate()
             parent_assembly.assembly_instances.append(current_assembly_instance)
-            parent_assembly.assemblies.append(current_assembly)
             current_matrix_stack = []
 
             sample_index = 0
@@ -2315,10 +2394,6 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                     light_color = m_color_connection_to_as_color(light.color, '_light_color')
                     current_assembly.colors.append(light_color)
 
-                if params['attach_render_view_callbacks']:
-                    print current_assembly.get_path()
-                    ms_render_view_connection.add_callback(light.name, ms_render_view_connection.update_color, [current_assembly.get_path(), light_color.name])
-
                 if light.model == 'areaLight':
                     
                     # create new light mesh instance and material
@@ -2339,7 +2414,6 @@ def construct_transform_descendents(params, root_assembly, parent_assembly, matr
                     light_edf = AsEdf()
                     light_edf.name = light.safe_name + '_edf'
                     light_edf.model = 'diffuse_edf'
-                    light_edf.render_layer = AsParameter('render_layer', light.safe_name)
                     light_edf.parameters.append(AsParameter('radiance', light_color.name))
                     light_edf.parameters.append(AsParameter('radiance_multiplier', light.multiplier))
 
@@ -2606,7 +2680,6 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         primary_surface_shader.model = 'constant_surface_shader'
         primary_surface_shader.parameters.append(AsParameter('color', material_attribs['incandescence']))
         primary_surface_shader.parameters.append(AsParameter('color', material_attribs['incandescence']))
-        primary_surface_shader.parameters.append(AsParameter('render_layer', generic_material.safe_name + 'light_emission'))
 
     else:
         # add a physical surface shader
@@ -2651,7 +2724,6 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         edf.name = generic_material.safe_name + '_edf'
         edf.model = 'diffuse_edf'
         edf.parameters.append(AsParameter('radiance', material_attribs['incandescence']))
-        edf.parameters.append(AsParameter('render_layer', generic_material.safe_name + 'light_emission'))
         root_assembly.edfs.append(edf)
 
         if 'ms_cast_indirect_light' in generic_material.export_modifiers:
@@ -2995,8 +3067,6 @@ def build_as_shading_nodes(params, root_assembly, current_maya_shading_node, non
 
     current_shading_node.name = current_maya_shading_node.safe_name
     current_shading_node.model = current_maya_shading_node.model
-    if current_shading_node.render_layer is not '':
-        current_shading_node.render_layer = AsParameter('render_layer', current_maya_shading_node.render_layer)
 
     for attrib_key in current_maya_shading_node.attributes:
         if current_maya_shading_node.attributes[attrib_key].__class__.__name__ == 'MMsShadingNode':
@@ -3080,10 +3150,6 @@ def export_container(render_settings_node):
     maya_scene, maya_environment = get_maya_scene(params)
     scene_cache_finish_time = time.time()
 
-    # if attach_render_view_callbacks it set remove any previous callbacks
-    if params['attach_render_view_callbacks']:
-        ms_render_view_connection.remove_callbacks()
-
     ms_commands.info('Scene cached for translation in %.2f seconds.' % (scene_cache_finish_time - export_start_time))
 
     # copy area light primitives into export directory
@@ -3113,28 +3179,19 @@ def export_container(render_settings_node):
         cmds.progressWindow(e=True, progress=i)
         cmds.refresh(cv=True)
 
-        last_output_file = as_object[0]
-
     export_finish_time = time.time()
 
     cmds.progressWindow(endProgress=1)
+
+    appleseed_version_notice = 'This version of mayaseed is designed to work with {0}. Other versions of appleseed may work but have not been tested.'.format(ms_commands.RECCOMENDED_APPLESEED_VERSION)
+
+    ms_commands.info(appleseed_version_notice)
 
     completed_message = 'Export completed in %.2f seconds, see the script editor for details.' % (export_finish_time - export_start_time)
 
     ms_commands.info(completed_message)
 
-    if params['start_interactive_render_session']:
-        ms_render_view_connection.window.show()
-
-        if ms_render_view_connection.socket_connection is None:
-            port = ms_render_view_connection.socket_open().serverPort()
-        else:
-            port = ms_render_view_connection.socket_connection.serverPort()
-
-        ms_render_view_connection.launch_viewer(port, last_output_file)
-
-    else:
-        cmds.confirmDialog(message=completed_message, button='ok')
+    cmds.confirmDialog(message=completed_message, button='ok')
 
 
 #--------------------------------------------------------------------------------------------------

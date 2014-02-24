@@ -1,6 +1,6 @@
 
 #
-# Copyright (c) 2012-2013 Jonathan Topf
+# Copyright (c) 2012-2014 Jonathan Topf
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -317,20 +317,24 @@ def ms_renderSettings_nodeInitializer():
     ms_renderSettings.force_linear_color_interpretation = force_linear_color_interpretation_nAttr.create("force_linear_color_interpretation", "force_linear_color_interpretation", OpenMaya.MFnNumericData.kBoolean, False)
     ms_renderSettings.addAttribute(ms_renderSettings.force_linear_color_interpretation)
 
-    # optimise_assembly_heirarchy
-    optimise_assembly_heirarchy_nAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.optimise_assembly_heirarchy = optimise_assembly_heirarchy_nAttr.create("optimise_assembly_heirarchy", "optimise_assembly_heirarchy", OpenMaya.MFnNumericData.kBoolean, True)
-    ms_renderSettings.addAttribute(ms_renderSettings.optimise_assembly_heirarchy)
+    # tile_width
+    tile_width_AttrInt = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.tile_width = tile_width_AttrInt.create("tile_width", "tile_width", OpenMaya.MFnNumericData.kInt, 64)
+    tile_width_AttrInt.setHidden(False)
+    tile_width_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.tile_width)
 
-    # attach_render_view_callbacks
-    attach_render_view_callbacks_nAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.attach_render_view_callbacks = attach_render_view_callbacks_nAttr.create("attach_render_view_callbacks", "attach_render_view_callbacks", OpenMaya.MFnNumericData.kBoolean, False)
-    ms_renderSettings.addAttribute(ms_renderSettings.attach_render_view_callbacks)
+    # tile_height
+    tile_height_AttrInt = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.tile_height = tile_height_AttrInt.create("tile_height", "tile_height", OpenMaya.MFnNumericData.kInt, 64)
+    tile_height_AttrInt.setHidden(False)
+    tile_height_AttrInt.setKeyable(True)
+    ms_renderSettings.addAttribute(ms_renderSettings.tile_height)
 
-    # start_interactive_render_session
-    start_interactive_render_session_nAttr = OpenMaya.MFnNumericAttribute()
-    ms_renderSettings.start_interactive_render_session = start_interactive_render_session_nAttr.create("start_interactive_render_session", "start_interactive_render_session", OpenMaya.MFnNumericData.kBoolean, False)
-    ms_renderSettings.addAttribute(ms_renderSettings.start_interactive_render_session)
+    # use long object names
+    use_long_names_nAttr = OpenMaya.MFnNumericAttribute()
+    ms_renderSettings.use_long_names = use_long_names_nAttr.create("use_long_names", "use_long_names", OpenMaya.MFnNumericData.kBoolean, False)
+    ms_renderSettings.addAttribute(ms_renderSettings.use_long_names)
 
 
 def initializePlugin(obj):

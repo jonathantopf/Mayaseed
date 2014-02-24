@@ -1,6 +1,6 @@
 
 #
-# Copyright (c) 2012-2013 Jonathan Topf
+# Copyright (c) 2012-2014 Jonathan Topf
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -32,12 +32,11 @@ import os
 import os.path
 
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
-sys.path.append(os.path.join(ROOT_DIRECTORY, 'scripts'))
-sys.path.append(os.path.join(ROOT_DIRECTORY, 'graphics'))
 sys.path.append(os.path.join(ROOT_DIRECTORY, 'nodes'))
 
 import ms_menu
 import ms_shelf
+import ms_commands
 
 #--------------------------------------------------------------------------------------------------
 # mayaseed plugin.
@@ -68,6 +67,12 @@ def initializePlugin(obj):
     ms_menu.buildMenu()
 
     ms_shelf.create_if_absent()
+
+    import AEms_renderSettingsTemplate
+
+    appleseed_version_notice = 'This version of mayaseed is designed to work with {0}. Other versions of appleseed may work but have not been tested.'.format(ms_commands.RECCOMENDED_APPLESEED_VERSION)
+
+    ms_commands.info(appleseed_version_notice)
 
 
 def uninitializePlugin(obj):

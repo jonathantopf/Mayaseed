@@ -1,6 +1,6 @@
 
 #
-# Copyright (c) 2012-2013 Jonathan Topf
+# Copyright (c) 2012-2014 Jonathan Topf
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,7 @@ import re
 #--------------------------------------------------------------------------------------------------
 
 MAYASEED_VERSION = '0.6.2'
+RECCOMENDED_APPLESEED_VERSION = 'Version 1.1.0-alpha-20-251-g78260f1'
 MAYASEED_URL = 'http://www.mayaseed.net/'
 APPLESEED_URL = 'http://appleseedhq.net/'
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
@@ -48,6 +49,13 @@ ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentf
 GEO_DIR = '_geometry'
 TEXTURE_DIR = '_textures'
 REFERENCED_SCENES = '_references'
+
+# http://stackoverflow.com/questions/12253014/why-does-popen-fail-on-windows-if-the-env-parameter-contains-a-unicode-object
+ENV_VARIABLES = dict((k, str(os.environ[k])) for k in os.environ.keys())
+
+# render layer attribs
+RENDER_LAYER_ATTRS = [['name', 'layer_name'], ['model', 'regex'], ['pattern', '.*object_name.*'], ['type', 'object_instance'], ['order', '0']]
+RENDER_LAYER_ENTITY_TYPES = ['object_instance', 'light', 'edf']
 
 INCH_TO_METER = 0.02539999983236
 
@@ -180,84 +188,35 @@ def convert_connection_to_image(shader, attribute, dest_file, overwrite, resolut
 # Convert textures to OpenEXR format.
 #--------------------------------------------------------------------------------------------------
 
-def find_path_to_imf_copy():
-    #
-    # Values of maya_base_path:
-    #
-    #                   Maya 2012                       Maya 2013                    Maya 2014
-    #   -----------------------------------------------------------------------------------------------------
-    #   Mac OS X        maya2012/Maya.app/Contents      maya2013/Maya.app/Contents   maya2014/Maya.app/Contents
-    #   Windows         Maya2012                        Maya2013
-    #   Linux           ?                               ?
-    #
-    # Locations of imf_copy:                    
-    #
-    #                   Maya 2012                       Maya 2013                    Maya 2014
-    #   -----------------------------------------------------------------------------------------------------
-    #   Mac OS X        maya2012/Maya.app/Contents/bin  maya2013/mentalray/bin       mentalrayForMaya2014/bin
-    #   Windows         Maya2012\bin                    Maya2013\mentalray\bin
-    #   Linux           ?                               ?
-    #
-
-    maya_base_path = os.path.split(sys.path[0])[0]
-    imf_copy_path = None
-    maya_version = mel.eval('getApplicationVersionAsFloat()')
-
-    if maya_version == 2013.0:
-        if sys.platform == 'darwin':
-            imf_copy_path = os.path.join(maya_base_path, '..', '..', 'mentalray', 'bin')
-        elif sys.platform == 'win32':
-            imf_copy_path = os.path.join(maya_base_path, 'mentalray', 'bin')
-    elif maya_version >= 2013.0:
-        if sys.platform == 'darwin':
-            imf_copy_path = os.path.join(maya_base_path, '..', '..', '..', 'mentalrayForMaya2014', 'bin')
-        elif sys.platform == 'win32':
-            imf_copy_path = os.path.join(maya_base_path, 'mentalray', 'bin')
-    else:
-        imf_copy_path = os.path.join(maya_base_path, 'bin')
-
-    return None if imf_copy_path is None else os.path.join(imf_copy_path, 'imf_copy')
-
-
-def convert_texture_to_exr(file_path, export_root, texture_dir, overwrite=True, pass_through=False, relative=True):
-    relative_path = os.path.join(texture_dir, os.path.splitext(os.path.split(file_path)[1])[0] + '.exr')
-    dest_file = os.path.join(export_root, relative_path)
-    dest_dir = os.path.join(export_root, texture_dir)
-    result_file = relative_path if relative else dest_file
-
-    if not os.path.exists(file_path):
-        info("# error: {0} does not exist".format(file_path))
-        return result_file
+def convert_texture_to_exr(src, dest, overwrite=True, pass_through=False):
+    
+    info('Converting image: {0}'.format(src))
+    if not os.path.exists(src):
+        info("# error: {0} does not exist".format(src))
+        return 
 
     if pass_through:
-        info("# skipping conversion of {0}".format(file_path))
-        return result_file
+        info("# skipping conversion of {0}".format(src))
+        return 
 
-    if os.path.exists(dest_file) and not overwrite:
-        info("# {0} already exists, skipping conversion".format(dest_file))
-        return result_file
+    if os.path.exists(dest) and not overwrite:
+        info("# {0} already exists, skipping conversion".format(dest))
+        return 
 
-    imf_copy_path = find_path_to_imf_copy()
-
-    if imf_copy_path is None:
-        info("# error: cannot convert {0}, imf_copy utility not found".format(file_path))
-        return result_file
-
+    dest_dir = os.path.split(dest)[0]
     create_dir(dest_dir)
 
     # -r: make a tiled OpenEXR file
     # -t: set the tile dimensions
-    args = [imf_copy_path, "-r", "-t 32", file_path, dest_file]
+    args = ['imf_copy', "-r", "-t 32", src, dest]
 
     if sys.platform == 'win32':
         # http://stackoverflow.com/questions/2935704/running-shell-commands-without-a-shell-window
-        p = subprocess.Popen(args, creationflags=0x08000000)
+        p = subprocess.Popen(args, creationflags=0x08000000, env=ENV_VARIABLES)
         p.wait()
     elif sys.platform == 'darwin':
-        p = subprocess.Popen(args)
+        p = subprocess.Popen(args, env=ENV_VARIABLES)
         p.wait()
-
-    return result_file
 
 
 #--------------------------------------------------------------------------------------------------
@@ -477,9 +436,6 @@ def create_shading_node(model, name=None, entity_defs_obj=False):
     cmds.addAttr(shading_node_name, longName='node_type', dt="string")
     cmds.setAttr(shading_node_name + '.node_type', entity_defs[model].type, type="string", lock=True)
 
-    cmds.addAttr(shading_node_name, longName='render_layer', dt="string")
-    cmds.setAttr(shading_node_name + '.render_layer', '', type="string")
-
     for entity_key in entity_defs.keys():
         if entity_key == model:
             for attr_key in entity_defs[entity_key].attributes.keys():
@@ -544,7 +500,6 @@ def get_file_texture_name(file_node, frame=None):
 
 def export_obj(object_name, file_path, overwrite=True):
     if overwrite or (not os.path.exists(file_path)):
-        print 'doesnt exist'
         directory = os.path.split(file_path)[0]
 
         create_dir(directory)
