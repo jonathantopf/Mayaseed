@@ -27,4 +27,4 @@ The output element contains info on the output format of your render, such as co
 
 The configurations element contains the main parameters that affect how the renderer performs: sample count, lighting engine etc.
 
-You can find a much more detailed overview of the appleseed scene file structure on the [appleseedhq site](http://appleseedhq.net/).
+You can find a much more detailed overview of the appleseed scene file structure on the [appleseedhq site](https://github.com/appleseedhq/appleseed/wiki/Project-File-Format).
