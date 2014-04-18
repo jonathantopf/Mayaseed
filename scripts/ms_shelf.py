@@ -150,8 +150,6 @@ def reload_modules():
     reload(ms_shelf)
     import ms_export_obj
     reload(ms_export_obj)
-    import ms_render_view_connection
-    reload(ms_render_view_connection)
 
 
 #--------------------------------------------------------------------------------------------------
