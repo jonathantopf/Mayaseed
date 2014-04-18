@@ -34,6 +34,7 @@ import random
 import math
 import shutil
 import re
+import copy
 
 
 #--------------------------------------------------------------------------------------------------
@@ -996,3 +997,20 @@ def create_ms_appleseed_scene():
         cmds.setAttr(new_node + '.z_max', bounding_box[5])
 
 
+#--------------------------------------------------------------------------------------------------
+# Create new ms_render_Settings node.
+#--------------------------------------------------------------------------------------------------
+
+def create_ms_render_Settings():
+
+    render_layer_attrs = copy.deepcopy(RENDER_LAYER_ATTRS)
+
+    render_layer_attrs[0][1] = '{entity-name}'
+    render_layer_attrs[2][1] = '.*light.*'
+    render_layer_attrs[3][1] = 'edf'
+
+    node = cmds.createNode("ms_renderSettings")
+
+    for attr in render_layer_attrs:
+        cmds.addAttr(node, longName='render_layer_{0}_{1}'.format(1, attr[0]), dt="string", k=False)
+        cmds.setAttr('{0}.render_layer_{1}_{2}'.format(node, 1, attr[0]), attr[1], type='string')

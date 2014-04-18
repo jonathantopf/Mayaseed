@@ -59,7 +59,7 @@ def buildMenu():
 
     # Add/Select Render Settings Node
     cmds.menuItem(divider=True, parent='ms_menu')
-    cmds.menuItem(label='Add Render Settings Node', parent='ms_menu', command='import maya.cmds\nmaya.cmds.createNode("ms_renderSettings")')
+    cmds.menuItem(label='Add Render Settings Node', parent='ms_menu', command='import ms_commands\nms_commands.create_ms_render_Settings()')
     cmds.menuItem('menu_select_render_settings', subMenu=True, label='Select Render Settings Node', to=True, parent='ms_menu')
     if len(render_settings_nodes) == 0:
         cmds.menuItem(label='Nothing to select', parent='menu_select_render_settings')
