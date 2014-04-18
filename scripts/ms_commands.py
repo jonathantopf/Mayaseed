@@ -41,7 +41,7 @@ import copy
 # Constants.
 #--------------------------------------------------------------------------------------------------
 
-MAYASEED_VERSION = '0.6.2'
+MAYASEED_VERSION = '0.7.0'
 RECCOMENDED_APPLESEED_VERSION = 'Version 1.1.0-alpha-21-0-g5c5df0b'
 MAYASEED_URL = 'http://www.mayaseed.net/'
 APPLESEED_URL = 'http://appleseedhq.net/'
