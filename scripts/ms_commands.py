@@ -42,7 +42,7 @@ import copy
 #--------------------------------------------------------------------------------------------------
 
 MAYASEED_VERSION = '0.6.2'
-RECCOMENDED_APPLESEED_VERSION = 'Version 1.1.0-alpha-20-251-g78260f1'
+RECCOMENDED_APPLESEED_VERSION = 'Version 1.1.0-alpha-21-0-g5c5df0b'
 MAYASEED_URL = 'http://www.mayaseed.net/'
 APPLESEED_URL = 'http://appleseedhq.net/'
 ROOT_DIRECTORY = os.path.split((os.path.dirname(inspect.getfile(inspect.currentframe()))))[0]
