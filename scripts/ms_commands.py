@@ -1005,8 +1005,8 @@ def create_ms_render_Settings():
 
     render_layer_attrs = copy.deepcopy(RENDER_LAYER_ATTRS)
 
-    render_layer_attrs[0][1] = '{entity-name}'
-    render_layer_attrs[2][1] = '.*light.*'
+    render_layer_attrs[0][1] = 'edf_{entity-name}'
+    render_layer_attrs[2][1] = '.*'
     render_layer_attrs[3][1] = 'edf'
 
     node = cmds.createNode("ms_renderSettings")
