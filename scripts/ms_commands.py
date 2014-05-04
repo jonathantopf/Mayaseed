@@ -81,6 +81,8 @@ MATERIAL_EXPORT_MODIFIERS = [
 ['ms_transparency_is_material_alpha', None, 'bool', False],
 ['ms_secondary_surface_shader', None, 'message', True],
 ['ms_emit_light', None, 'bool', True],
+['ms_surface_shader_visibility', None, 'bool', True],
+['ms_material_visibility', None, 'bool', True]
 ]
 
 #--------------------------------------------------------------------------------------------------

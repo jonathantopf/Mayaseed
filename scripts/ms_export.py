@@ -2654,13 +2654,17 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
 
     # material alpha component
-    if material_attribs['alpha'] is not None:
-        if isinstance(material_attribs['alpha'], (int, long, float, complex)):
-            front_material.alpha_map = AsParameter('alpha_map', 1 - material_attribs['alpha'])
+    if 'ms_material_visibility' in generic_material.export_modifiers:
+        if generic_material.export_modifiers['ms_material_visibility']:
+            if material_attribs['alpha'] is not None:
+                if isinstance(material_attribs['alpha'], (int, long, float, complex)):
+                    front_material.alpha_map = AsParameter('alpha_map', 1 - material_attribs['alpha'])
+                else:
+                    front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'])
         else:
-            front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'])
-        if double_sided and (single_material == False):
-            back_material.alpha_map = front_material.alpha_map
+            front_material.alpha_map = AsParameter('alpha_map', 0)
+    if double_sided and (single_material == False):
+        back_material.alpha_map = front_material.alpha_map
 
 
     # material displacement component
@@ -2687,6 +2691,11 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         primary_surface_shader.name = generic_material.safe_name + '_surface_shader'
         primary_surface_shader.model = 'physical_surface_shader'
 
+    # surface shader alpha multiplier
+    if 'ms_surface_shader_visibility' in generic_material.export_modifiers:
+        if not generic_material.export_modifiers['ms_surface_shader_visibility']:
+            primary_surface_shader.parameters.append(AsParameter('alpha_multiplier', 0))
+
 
     # secondary surface shader component
     if generic_material.secondary_surface_shader is not None:
@@ -2699,6 +2708,11 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
             secondary_surface_shader = build_as_shading_nodes(params, root_assembly,  generic_material.secondary_surface_shader, non_mb_sample_number)
         else:
             secondary_surface_shader.name += '_secondary'
+
+        # secondary surface shader alpha multiplier
+        if 'ms_surface_shader_visibility' in generic_material.export_modifiers:
+            if not generic_material.export_modifiers['ms_surface_shader_visibility']:
+                secondary_surface_shader.parameters.append(AsParameter('alpha_multiplier', 0))
 
         primary_surface_shader.name += '_primary'
         main_surface_shader.parameters.append(AsParameter('surface_shader1', primary_surface_shader.name))
