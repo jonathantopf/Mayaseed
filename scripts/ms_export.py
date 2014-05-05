@@ -2654,15 +2654,16 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
 
 
     # material alpha component
-    if 'ms_material_visibility' in generic_material.export_modifiers:
-        if generic_material.export_modifiers['ms_material_visibility']:
-            if material_attribs['alpha'] is not None:
-                if isinstance(material_attribs['alpha'], (int, long, float, complex)):
-                    front_material.alpha_map = AsParameter('alpha_map', 1 - material_attribs['alpha'])
-                else:
-                    front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'])
+    if material_attribs['alpha'] is not None:
+        if isinstance(material_attribs['alpha'], (int, long, float, complex)):
+            front_material.alpha_map = AsParameter('alpha_map', 1 - material_attribs['alpha'])
         else:
+            front_material.alpha_map = AsParameter('alpha_map', material_attribs['alpha'])
+
+    if 'ms_material_visibility' in generic_material.export_modifiers:
+        if not generic_material.export_modifiers['ms_material_visibility']:
             front_material.alpha_map = AsParameter('alpha_map', 0)
+    
     if double_sided and (single_material == False):
         back_material.alpha_map = front_material.alpha_map
 
