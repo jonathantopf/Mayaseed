@@ -986,6 +986,7 @@ class MGenericMaterial():
         self.reflectivity = None
         self.bump_map = None
         self.bump_multiplier = None
+        self.normal_map = None
         self.refractive_index = None
         self.translucence = None
 
@@ -1079,7 +1080,7 @@ class MGenericMaterial():
             elif self.incandescence.is_black:
                 self.incandescence = None
 
-        # work out bump component
+        # work out bump/normal component
         if cmds.attributeQuery('normalCamera', node=self.name, exists=True):
             connected_bump_node = cmds.listConnections(self.name + '.normalCamera', s=True, type='bump2d')
 
@@ -1089,8 +1090,12 @@ class MGenericMaterial():
                 
                 if bump_tex_connected_node is not None:
                     self.bump_multiplier = cmds.getAttr(bump_node + '.bumpDepth')
-                    self.bump_map = MFile(params, bump_tex_connected_node[0])
-                    self.textures.append(self.bump_map)
+                    if cmds.getAttr(bump_node + '.bumpInterp') == 0:
+                        self.bump_map = MFile(params, bump_tex_connected_node[0])
+                        self.textures.append(self.bump_map)
+                    else:
+                        self.normal_map = MFile(params, bump_tex_connected_node[0])
+                        self.textures.append(self.normal_map)
 
         # work out refractive index component
         if cmds.attributeQuery('refractiveIndex', node=self.name, exists=True):
@@ -2613,6 +2618,7 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
                         'reflectivity'     : generic_material.reflectivity,
                         'bump_map'         : generic_material.bump_map,
                         'bump_multiplier'  : generic_material.bump_multiplier,
+                        'normal_map'         : generic_material.normal_map,
                         'translucence'     : generic_material.translucence}
 
     for key in material_attribs.keys():
@@ -2673,6 +2679,10 @@ def convert_maya_generic_material(params, root_assembly, generic_material, non_m
         front_material.displacement_mode = AsParameter('displacement_method', 'bump')
         front_material.bump_amplitude = AsParameter('bump_amplitude', material_attribs['bump_multiplier'])
         front_material.displacement_map = AsParameter('displacement_map', material_attribs['bump_map'])
+    if generic_material.normal_map is not None:
+        front_material.displacement_mode = AsParameter('displacement_method', 'normal')
+        front_material.displacement_map = AsParameter('displacement_map', material_attribs['normal_map'])
+    if front_material.displacement_mode is not None:
         if double_sided and (single_material == False):
             back_material.displacement_map = front_material.displacement_map
 
