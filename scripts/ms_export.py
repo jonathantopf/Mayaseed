@@ -727,7 +727,7 @@ class MFile():
             if image_name not in self.converted_images:
                 MFile.export_queue.add(image_name)
                 file_name = os.path.join(ms_commands.TEXTURE_DIR, os.path.split(image_name)[1])
-                self.image_file_names.append(file_name)
+                self.image_file_names.append(os.path.splitext(file_name)[0] + '.exr')
         else:
             self.image_file_names.append(image_name)
 
@@ -740,7 +740,7 @@ class MFile():
             for i, tex in enumerate(cls_obj.export_queue):
                 cmds.progressWindow(e=True, progress=i)  
 
-                dest = os.path.join(export_root, ms_commands.TEXTURE_DIR, os.path.split(tex)[1])
+                dest = os.path.join(export_root, ms_commands.TEXTURE_DIR, os.path.splitext(os.path.split(tex)[1])[0] + '.exr')
 
                 ms_commands.convert_texture_to_exr(tex, dest , overwrite=overwrite)
 
